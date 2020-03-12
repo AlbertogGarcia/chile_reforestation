@@ -1,0 +1,192 @@
+---
+title: "match enrolled projects to CIRN properties"
+author: "Albert Garcia"
+output:
+  pdf_document:
+    number_sections: yes
+    toc: no
+fontsize: 11pt    
+documentclass: article
+geometry: margin=1in
+header-includes: 
+  \usepackage{sectsty}
+  \usepackage{enumitem}
+  \usepackage{comment}
+  \usepackage{multirow,array}
+  \usepackage{makecell}
+---
+
+``` {r setup, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
+                      echo = FALSE, message = FALSE, warning = FALSE)
+### loads tidyverse packages, defines helper functions
+library(latex2exp)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(readxl)
+library(sf)
+library(stringi)
+library(data.table)
+library(kableExtra)
+
+```
+
+``` {r data_load, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
+#setting working directory
+setwd("//babylon/phd/agarcia/Desktop/chile_reforestation/data/nativeforestlaw")
+
+# xls files downloaded from CONAF
+#projects
+proyecto_1 <- read_excel("proyectos_1.xls")
+proyecto_2 <- read_excel("proyectos_2.xls")
+proyecto_df <- merge(proyecto_1, proyecto_2, by = c("rptpro_id", "rptpro_numero_ingreso"), all=TRUE)
+#properties and coordinates
+predio_df <- read_excel("predio.xls")
+coordinadas_predio_df <- read_excel("coordinadas_predio.xls")
+#owners
+propietario_df <- read_excel("propietario.xls")
+#stands
+rodal_1 <- read_excel("rodal_1.xls")
+rodal_2 <- read_excel("rodal_2.xls")
+rodal_df <- merge(rodal_1, rodal_2, by = c("rptro_id"), all=TRUE)
+#activities
+actividades_1 <- read_excel("actividades_1.xls")
+actividades_2 <- read_excel("actividades_2.xls")
+actividades_df <- merge(actividades_1, actividades_2, by = c("rptac_id"), all=TRUE)
+#fences
+cercos_df <- read_excel("cerco.xls")
+
+#merging into full data set
+df_full <- proyecto_df %>%
+  inner_join(predio_df, by = c("rptpro_id", "rptpro_numero_ingreso")) %>%
+  inner_join(propietario_df, by = "rptpre_id") %>%
+  inner_join(rodal_df, by = "rptpre_id") %>%
+  inner_join(actividades_df, by = "rptro_id")
+
+#uploading rural property cadastre shapefile
+prop_rural.shp <- st_read(
+  "//babylon/phd/agarcia/Desktop/chile_reforestation/data/prop_rural/prop_rural.shp"
+  )
+# creating simple features object with rural properties shapefile
+prop_rural.sf <- st_as_sf(prop_rural.shp)
+
+#create property id
+prop_rural.sf$my_prop_id <- rownames(prop_rural.sf)
+```
+
+# matching enrolled Native Forest Law properties to CIRN rural properties
+
+## data
+
+``` {r rural prop data, echo = FALSE, message = FALSE, warning = FALSE}
+
+prop_clean.sf <- prop_rural.sf %>%
+  select(ROL, PROPIETARI, NOM_PREDIO, SUPERFICIE, AP_PATERBN, AP_MATERBN, NOMBRESBN, my_prop_id)
+
+# prop_clean.sf[1:5, 1:7] %>%
+#   kable("latex") %>%
+#   kable_styling(font_size = 7)
+```
+``` {r NFL project data, echo = TRUE, message = FALSE, warning = FALSE, include = TRUE}
+
+
+projects_df <- proyecto_df %>%
+  left_join(predio_df, by = c("rptpro_id", "rptpro_numero_ingreso")) %>%
+  left_join(propietario_df, by = "rptpre_id") %>%
+  inner_join(coordinadas_predio_df, by = "rptpre_id")
+
+# turn into spatial object
+projects_df.sf <- st_as_sf(projects_df, coords = c( "rptub_este", "rptub_norte"), na.fail = FALSE)
+
+#table(projects_df.sf$rptub_datum)
+# trying to clean entries into intended datum
+projects_df.sf$rptub_datum <- gsub(".*(84|wgs|WGS).*", "WGS84", projects_df.sf$rptub_datum)
+projects_df.sf$rptub_datum <- gsub(".*(56|PSAD).*", "PSAD56", projects_df.sf$rptub_datum)
+projects_df.sf$rptub_datum <- gsub(".*69*.", "SAD69", projects_df.sf$rptub_datum)
+#table(projects_df.sf$rptub_datum)
+
+projects_WGS19 <- projects_df.sf %>%
+  filter(rptub_huso == 19 & rptub_datum == "WGS84")%>%
+  st_set_crs("+proj=utm +zone=19 +south +datum=WGS84") %>%
+  st_transform(st_crs(prop_clean.sf))
+
+projects_WGS84 <- projects_df.sf %>%
+  filter(rptub_huso != 19 & rptub_datum == "WGS84")%>%
+  st_set_crs("+proj=utm +zone=18 +south +datum=WGS84") %>%
+  st_transform(st_crs(prop_clean.sf)) %>%
+  rbind(projects_WGS19)
+
+proj_enrolled <- prop_clean.sf %>%
+  st_join(projects_WGS84, join = st_intersects) %>%
+    drop_na(rptpro_ano)
+
+```
+
+``` {r display enrollment data, echo = FALSE, message = FALSE, warning = FALSE}
+display_proj <- proj_enrolled %>%
+  select(ROL, rptpre_rol, NOM_PREDIO, rptpre_nombre)
+display_proj <- display_proj[order(display_proj$rptpre_nombre),]
+display_proj$geometry <- NULL
+# display_proj[1:20,] %>%
+#   kable("latex", booktabs =T, caption = "Demo table") %>%
+#   kable_styling(latex_options = "hold_position", font_size = 6)
+kable(display_proj[16:30,], 
+      "latex", 
+      booktabs =T, 
+      caption = "Demo table"
+      ) %>%
+  kable_styling(latex_options = "hold_position", font_size = 6)
+
+```
+
+``` {r matching by rol, echo = TRUE, message = FALSE, warning = FALSE}
+#here, I just see how many rols match between the CIRN data and native forest law data
+
+#projects_df is the native forest law projects 
+#prop_rural.sf is the CIRN data with the rols as simple features object
+rol_df <- projects_df %>%
+  rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
+  inner_join(prop_rural.sf, by = "ROL") #merge by rol
+
+length(unique(rol_df$ROL)) #find number of unique rol numbers found
+
+```
+
+
+
+
+``` {r NFL stand data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = FALSE}
+
+#select only vars that can be used for matching purposes
+df_enrolled <- df_full %>%
+  select(rptpre_rol, rptpre_nombre, rptprop_apellido_materno, rptprop_apellido_paterno, rptprop_nombre, rptpre_provincia, rptpre_comuna, rptpre_region, rptpro_ano, rptro_norte, rptro_este, rptro_datum, rptro_huso)
+
+# turn into spatial object
+df_enrolled.sf <- st_as_sf(df_enrolled, coords = c( "rptro_este", "rptro_norte"), na.fail = FALSE)
+
+table(df_enrolled.sf$rptro_datum)
+# trying to clean coordinates into the right datum
+df_enrolled.sf$rptro_datum <- gsub(".*(84|wgs|WGS).*", "WGS84", df_enrolled.sf$rptro_datum)
+df_enrolled.sf$rptro_datum <- gsub(".*(56|PSAD).*", "PSAD56", df_enrolled.sf$rptro_datum)
+df_enrolled.sf$rptro_datum <- gsub(".*69*.", "SAD69", df_enrolled.sf$rptro_datum)
+table(df_enrolled.sf$rptro_datum)
+table(df_enrolled.sf$rptro_huso)
+
+rodal_WGS19 <- df_enrolled.sf %>%
+  filter(rptro_huso == 19 & rptro_datum == "WGS84")%>%
+  st_set_crs("+proj=utm +zone=19 +south +datum=WGS84") %>%
+  st_transform(st_crs(prop_clean.sf))
+
+rodal_WGS84 <- df_enrolled.sf %>%
+  filter(rptro_huso != 19 & rptro_datum == "WGS84")%>%
+  st_set_crs("+proj=utm +zone=18 +south +datum=WGS84") %>%
+  st_transform(st_crs(prop_clean.sf)) %>%
+  rbind(rodal_WGS19)
+
+prop_rural_enrolled <- prop_clean.sf %>%
+  st_join(rodal_WGS84, join = st_intersects) %>%
+    drop_na(rptpro_ano)
+
+```

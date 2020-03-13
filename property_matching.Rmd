@@ -1,5 +1,5 @@
 ---
-title: "match enrolled projects to CIRN properties"
+title: "current processes for matching Native Forest Law enrolled properties to CIRN cadastre"
 author: "Albert Garcia"
 output:
   pdf_document:
@@ -80,6 +80,59 @@ prop_rural.sf$my_prop_id <- rownames(prop_rural.sf)
 
 ## data
 
+Native Forest Law dataset contains the following variables:
+``` {r NFL data, echo = TRUE, message = FALSE, warning = FALSE}
+
+#merging project property, owner, and 
+projects_df <- proyecto_df %>%
+  inner_join(predio_df, by = c("rptpro_id", "rptpro_numero_ingreso")) %>%
+  left_join(propietario_df, by = "rptpre_id") %>%
+  inner_join(coordinadas_predio_df, by = "rptpre_id")
+
+colnames(projects_df)
+
+```
+ 
+ Some important variables for matching to CIRN data: 
+ 
+ rptpre_rol - property rol id
+ 
+ rptprop_nombre - property name
+ 
+ rptprop_nombre - owner name
+ 
+  rptub_norte, rptub_este - property location northing and easting respectively
+  
+ rptub_datum - corresponding property datum
+ 
+ rptub_huso - corresponding utm zone
+ 
+ We also have stand data with the following variables, but I will not use them at this point:
+ 
+``` {r NFL stand data, echo = TRUE, message = FALSE, warning = FALSE}
+
+colnames(rodal_df)
+
+```
+
+
+CIRN data contain the following relevant variables to match with Natove Forest Law properties: 
+
+``` {r CIRN data, echo = TRUE, message = FALSE, warning = FALSE}
+
+colnames(prop_rural.sf)
+
+```
+
+Some important variables to consider are:
+
+ROL - property rol id 
+
+PROPIETARI - owner name
+
+NOM_PREDIO - property name
+
+
 ``` {r rural prop data, echo = FALSE, message = FALSE, warning = FALSE}
 
 prop_clean.sf <- prop_rural.sf %>%
@@ -89,28 +142,30 @@ prop_clean.sf <- prop_rural.sf %>%
 #   kable("latex") %>%
 #   kable_styling(font_size = 7)
 ```
+
+
+## Native Forest Law property coordinates
+
 ``` {r NFL project data, echo = TRUE, message = FALSE, warning = FALSE, include = TRUE}
-
-
-projects_df <- proyecto_df %>%
-  left_join(predio_df, by = c("rptpro_id", "rptpro_numero_ingreso")) %>%
-  left_join(propietario_df, by = "rptpre_id") %>%
-  inner_join(coordinadas_predio_df, by = "rptpre_id")
 
 # turn into spatial object
 projects_df.sf <- st_as_sf(projects_df, coords = c( "rptub_este", "rptub_norte"), na.fail = FALSE)
 
 #table(projects_df.sf$rptub_datum)
 # trying to clean entries into intended datum
+
+#if datum contains, 84, wgs, or WGS, I change the name to WGS84
 projects_df.sf$rptub_datum <- gsub(".*(84|wgs|WGS).*", "WGS84", projects_df.sf$rptub_datum)
+#similar for SAD69 and PSAD56
 projects_df.sf$rptub_datum <- gsub(".*(56|PSAD).*", "PSAD56", projects_df.sf$rptub_datum)
 projects_df.sf$rptub_datum <- gsub(".*69*.", "SAD69", projects_df.sf$rptub_datum)
 #table(projects_df.sf$rptub_datum)
 
+#new dataframe for projects with WGS84 and utm zone 18 south
 projects_WGS19 <- projects_df.sf %>%
   filter(rptub_huso == 19 & rptub_datum == "WGS84")%>%
-  st_set_crs("+proj=utm +zone=19 +south +datum=WGS84") %>%
-  st_transform(st_crs(prop_clean.sf))
+  st_set_crs("+proj=utm +zone=19 +south +datum=WGS84") %>%  #set crs 
+  st_transform(st_crs(prop_clean.sf))   #change crs to same as CIRN data
 
 projects_WGS84 <- projects_df.sf %>%
   filter(rptub_huso != 19 & rptub_datum == "WGS84")%>%
@@ -118,20 +173,26 @@ projects_WGS84 <- projects_df.sf %>%
   st_transform(st_crs(prop_clean.sf)) %>%
   rbind(projects_WGS19)
 
+```
+
+Of the 15239 projects with property coordinates, the cleaned dataframe had 14554 in WGS84 datum, 376 in SAD69 and 288 in PSAD56. For now, I just focus on the WGS84 projects. Of those WGS84 projects, 13825 had an assigned UTM zone as either 18 or 19. I perform the join using these 13825 projects. 
+
+## joining by location
+``` {r spatial join, echo = TRUE, message = FALSE, warning = FALSE}
+
 proj_enrolled <- prop_clean.sf %>%
   st_join(projects_WGS84, join = st_intersects) %>%
-    drop_na(rptpro_ano)
-
+    drop_na(rptpro_id) # drop properties without a Native Forest Law project id
 ```
+
+We can visually examine some of the properties below to address the validity of the join:
 
 ``` {r display enrollment data, echo = FALSE, message = FALSE, warning = FALSE}
 display_proj <- proj_enrolled %>%
   select(ROL, rptpre_rol, NOM_PREDIO, rptpre_nombre)
 display_proj <- display_proj[order(display_proj$rptpre_nombre),]
 display_proj$geometry <- NULL
-# display_proj[1:20,] %>%
-#   kable("latex", booktabs =T, caption = "Demo table") %>%
-#   kable_styling(latex_options = "hold_position", font_size = 6)
+
 kable(display_proj[16:30,], 
       "latex", 
       booktabs =T, 
@@ -141,8 +202,28 @@ kable(display_proj[16:30,],
 
 ```
 
+Notice the first entry. The rol id does not match, but the property name is similar (Agua Fria vs. Ague Fria Lote B). 
 
+The number of unique Native Forest Law rol ids is : 
+``` {r unique joins, echo = FALSE, message = FALSE, warning = FALSE}
 
+length(unique(display_proj$rptpre_rol))
+
+```
+
+Note also that, of the 13825 properties used in the join, 3592 did not fall in regions contained in our current CIRN study area (regions 5-10, 13). Here are the Native Forest Law projects by region: 
+
+``` {r region number projects, echo = FALSE, message = FALSE, warning = FALSE}
+
+table(projects_WGS84$rptpro_numero_region)
+
+```
+
+We see that the main excluded regions with a significant number of Native Forest Law projects are 11, 12, 14, and 16. 
+
+## matching by rol id
+
+We can also match by rol id between the CIRN and Native Forest Law datasets
 
 ``` {r matching by rol, echo = TRUE, message = FALSE, warning = FALSE}
 #here, I just see how many rols match between the CIRN data and native forest law data
@@ -153,6 +234,8 @@ rol_df <- projects_df %>%
   rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
   inner_join(prop_rural.sf, by = "ROL") #merge by rol
 
+
+# just creating a df to display only a couple of choice variables
 rol_display <- rol_df %>%
   select(ROL, NOM_PREDIO, rptpre_nombre)
 rol_display$geometry <- NULL
@@ -164,29 +247,40 @@ kable(rol_display[1:20,],
       ) %>%
   kable_styling(latex_options = "hold_position", font_size = 6)
 
-#length(unique(rol_df$ROL)) #find number of unique rol numbers found
+length(unique(rol_df$ROL)) #find number of unique rol numbers found
 
 ```
 
+Visually examining the  exposes an interesting aspect of the CIRN data, which is that one rol id has multiple different property names associated to it. I'm unsure what the rol id corresponds to exactly, but found this interesting. 
+
+Using either method, we match about half of the potential native forest law properties (roughly 4500 out of 10233). We can look into more sophisticated ways to match. (maybe some combination of location, rol id, and part of property name)
 
 
 
-``` {r NFL stand data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = FALSE}
+
+
+
+
+## Spatially joining using the provided stand coordinates
+
+The number of unique Native Forest Law rol ids using the stand coordinates rather than the property is:
+
+``` {r NFL stand matching, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
 #select only vars that can be used for matching purposes
 df_enrolled <- df_full %>%
-  select(rptpre_rol, rptpre_nombre, rptprop_apellido_materno, rptprop_apellido_paterno, rptprop_nombre, rptpre_provincia, rptpre_comuna, rptpre_region, rptpro_ano, rptro_norte, rptro_este, rptro_datum, rptro_huso)
+  select(rptpro_id, rptpre_rol, rptpre_nombre, rptprop_apellido_materno, rptprop_apellido_paterno, rptprop_nombre, rptpre_provincia, rptpre_comuna, rptpre_region, rptpro_ano, rptro_norte, rptro_este, rptro_datum, rptro_huso)
 
 # turn into spatial object
 df_enrolled.sf <- st_as_sf(df_enrolled, coords = c( "rptro_este", "rptro_norte"), na.fail = FALSE)
 
-table(df_enrolled.sf$rptro_datum)
+#table(df_enrolled.sf$rptro_datum)
 # trying to clean coordinates into the right datum
 df_enrolled.sf$rptro_datum <- gsub(".*(84|wgs|WGS).*", "WGS84", df_enrolled.sf$rptro_datum)
 df_enrolled.sf$rptro_datum <- gsub(".*(56|PSAD).*", "PSAD56", df_enrolled.sf$rptro_datum)
 df_enrolled.sf$rptro_datum <- gsub(".*69*.", "SAD69", df_enrolled.sf$rptro_datum)
-table(df_enrolled.sf$rptro_datum)
-table(df_enrolled.sf$rptro_huso)
+#table(df_enrolled.sf$rptro_datum)
+#table(df_enrolled.sf$rptro_huso)
 
 rodal_WGS19 <- df_enrolled.sf %>%
   filter(rptro_huso == 19 & rptro_datum == "WGS84")%>%
@@ -201,6 +295,20 @@ rodal_WGS84 <- df_enrolled.sf %>%
 
 prop_rural_enrolled <- prop_clean.sf %>%
   st_join(rodal_WGS84, join = st_intersects) %>%
-    drop_na(rptpro_ano)
+    drop_na(rptpro_id)
+
+length(unique(prop_rural_enrolled$rptpre_rol))
+
+display_stand <- prop_rural_enrolled %>%
+  select(ROL, rptpre_rol, NOM_PREDIO, rptpre_nombre)
+display_stand <- display_stand[order(display_stand$rptpre_nombre),]
+display_stand$geometry <- NULL
+
+kable(display_stand[31:60,], 
+      "latex", 
+      booktabs =T, 
+      caption = "spatially joined dataframe based on stand location"
+      ) %>%
+  kable_styling(latex_options = "hold_position", font_size = 6)
 
 ```

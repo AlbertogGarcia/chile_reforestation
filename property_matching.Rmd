@@ -33,7 +33,7 @@ library(kableExtra)
 
 ```
 
-``` {r data_load, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
+``` {r NFL_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
 #setting working directory
 setwd("//babylon/phd/agarcia/Desktop/chile_reforestation/data/nativeforestlaw")
 
@@ -60,11 +60,21 @@ cercos_df <- read_excel("cerco.xls")
 
 #merging into full data set
 df_full <- proyecto_df %>%
-  inner_join(predio_df, by = c("rptpro_id", "rptpro_numero_ingreso")) %>%
-  inner_join(propietario_df, by = "rptpre_id") %>%
-  inner_join(rodal_df, by = "rptpre_id") %>%
-  inner_join(actividades_df, by = "rptro_id")
+  left_join(predio_df, by = c("rptpro_id", "rptpro_numero_ingreso")) %>%
+  left_join(propietario_df, by = "rptpre_id") %>%
+  left_join(coordinadas_predio_df, by = "rptpre_id") %>%
+  left_join(rodal_df, by = "rptpre_id") %>%
+  left_join(actividades_df, by = "rptro_id")
 
+#merging project property, owner, and 
+projects_df <- proyecto_df %>%
+  inner_join(predio_df, by = c("rptpro_id", "rptpro_numero_ingreso")) %>%
+  left_join(propietario_df, by = "rptpre_id") %>%
+  inner_join(coordinadas_predio_df, by = "rptpre_id")
+```
+
+
+``` {r CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
 #uploading rural property cadastre shapefile
 prop_rural.shp <- st_read(
   "//babylon/phd/agarcia/Desktop/chile_reforestation/data/prop_rural/prop_rural.shp"
@@ -79,58 +89,6 @@ prop_rural.sf$my_prop_id <- rownames(prop_rural.sf)
 # matching enrolled Native Forest Law properties to CIRN rural properties
 
 ## data
-
-Native Forest Law dataset contains the following variables:
-``` {r NFL data, echo = TRUE, message = FALSE, warning = FALSE}
-
-#merging project property, owner, and 
-projects_df <- proyecto_df %>%
-  inner_join(predio_df, by = c("rptpro_id", "rptpro_numero_ingreso")) %>%
-  left_join(propietario_df, by = "rptpre_id") %>%
-  inner_join(coordinadas_predio_df, by = "rptpre_id")
-
-colnames(projects_df)
-
-```
- 
- Some important variables for matching to CIRN data: 
- 
- rptpre_rol - property rol id
- 
- rptprop_nombre - property name
- 
- rptprop_nombre - owner name
- 
-  rptub_norte, rptub_este - property location northing and easting respectively
-  
- rptub_datum - corresponding property datum
- 
- rptub_huso - corresponding utm zone
- 
- We also have stand data with the following variables, but I will not use them at this point:
- 
-``` {r NFL stand data, echo = TRUE, message = FALSE, warning = FALSE}
-
-colnames(rodal_df)
-
-```
-
-
-CIRN data contain the following relevant variables to match with Natove Forest Law properties: 
-
-``` {r CIRN data, echo = TRUE, message = FALSE, warning = FALSE}
-
-colnames(prop_rural.sf)
-
-```
-
-Some important variables to consider are:
-
-ROL - property rol id 
-
-PROPIETARI - owner name
-
-NOM_PREDIO - property name
 
 
 ``` {r rural prop data, echo = FALSE, message = FALSE, warning = FALSE}

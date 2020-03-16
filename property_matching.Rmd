@@ -183,7 +183,10 @@ Of the 15239 projects with property coordinates, the cleaned dataframe had 14554
 proj_enrolled <- prop_clean.sf %>%
   st_join(projects_WGS84, join = st_intersects) %>%
     drop_na(rptpro_id) # drop properties without a Native Forest Law project id
+
+#length(unique(proj_enrolled[proj_enrolled$rptpre_rol == proj_enrolled$ROL,]$rptpro_id))
 ```
+
 
 We can visually examine some of the properties below to address the validity of the join:
 
@@ -251,9 +254,9 @@ length(unique(rol_df$ROL)) #find number of unique rol numbers found
 
 ```
 
-Visually examining the  exposes an interesting aspect of the CIRN data, which is that one rol id has multiple different property names associated to it. I'm unsure what the rol id corresponds to exactly, but found this interesting. 
+Visually examining the matches shows an interesting aspect of the CIRN data, which is that one rol id has multiple different property names associated to it. I'm unsure what the rol id corresponds to exactly, but found this interesting. 
 
-Using either method, we match about half of the potential native forest law properties (roughly 4500 out of 10233). We can look into more sophisticated ways to match. (maybe some combination of location, rol id, and part of property name)
+Using either method, we match about half of the potential native forest law properties (roughly 4500 out of 10233). We can look into more sophisticated ways to match. (maybe some combination of location, rol id, and part of property name). Something that might work is to look at the closest couple properties to a coordinate and then choose the one with the closest roi? 
 
 
 
@@ -311,4 +314,8 @@ kable(display_stand[31:60,],
       ) %>%
   kable_styling(latex_options = "hold_position", font_size = 6)
 
+length(unique(prop_rural_enrolled[prop_rural_enrolled$rptpre_rol == prop_rural_enrolled$ROL,]$rptpro_id))
+
 ```
+
+Using the stands seems to do better than just the property coordinates. This may be due to the stands being closer to the center of a property rather than near the entrance/border. 

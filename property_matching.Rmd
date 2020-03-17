@@ -1,5 +1,5 @@
 ---
-title: "current processes for matching Native Forest Law enrolled properties to CIRN cadastre"
+title: "current progress for matching Native Forest Law enrolled properties to CIREN cadastre"
 author: "Albert Garcia"
 output:
   pdf_document:
@@ -35,7 +35,10 @@ library(kableExtra)
 
 ``` {r NFL_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
 #setting working directory
-setwd("//babylon/phd/agarcia/Desktop/chile_reforestation/data/nativeforestlaw")
+#/Users/albertogarcia/Desktop/chile_reforestation
+#
+
+setwd("/Users/albertogarcia/Desktop/chile_reforestation/data/nativeforestlaw")
 
 # xls files downloaded from CONAF
 #projects
@@ -77,13 +80,10 @@ projects_df <- proyecto_df %>%
 ``` {r CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
 #uploading rural property cadastre shapefile
 prop_rural.shp <- st_read(
-  "//babylon/phd/agarcia/Desktop/chile_reforestation/data/prop_rural/prop_rural.shp"
+  "/Users/albertogarcia/Desktop/chile_reforestation/data/prop_rural/prop_rural.shp"
   )
 # creating simple features object with rural properties shapefile
 prop_rural.sf <- st_as_sf(prop_rural.shp)
-
-#create property id
-prop_rural.sf$my_prop_id <- rownames(prop_rural.sf)
 ```
 
 # matching enrolled Native Forest Law properties to CIRN rural properties

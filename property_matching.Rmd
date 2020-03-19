@@ -21,10 +21,8 @@ knitr::opts_chunk$set(fig.width = 6, fig.height = 4, fig.path = 'figs/',
                       echo = FALSE, message = FALSE, warning = FALSE)
 ### loads tidyverse packages, defines helper functions
 library(latex2exp)
-library(dplyr)
+library(tidyverse)
 library(ggplot2)
-library(tidyr)
-library(dplyr)
 library(readxl)
 library(sf)
 library(stringi)
@@ -35,10 +33,8 @@ library(kableExtra)
 
 ``` {r NFL_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
 #setting working directory
-#/Users/albertogarcia/Desktop/chile_reforestation
-#
 
-setwd("/Users/albertogarcia/Desktop/chile_reforestation/data/nativeforestlaw")
+setwd("C:/Users/garci/Desktop/chile_data/nativeforestlaw")
 
 # xls files downloaded from CONAF
 #projects
@@ -69,18 +65,29 @@ df_full <- proyecto_df %>%
   left_join(rodal_df, by = "rptpre_id") %>%
   left_join(actividades_df, by = "rptro_id")
 
-#merging project property, owner, and 
-projects_df <- proyecto_df %>%
-  inner_join(predio_df, by = c("rptpro_id", "rptpro_numero_ingreso")) %>%
-  left_join(propietario_df, by = "rptpre_id") %>%
-  inner_join(coordinadas_predio_df, by = "rptpre_id")
+
+#northing easting huso datum
+df_stand <- df_full %>%
+  mutate(northing = 
+           ifelse(is.na(rptro_norte), rptub_norte, rptro_norte)
+         ) %>%
+  mutate(easting = 
+           ifelse(is.na(rptro_este), rptub_este, rptro_este)
+         ) %>%
+  mutate(datum = 
+           ifelse(is.na(rptro_este) | is.na(rptro_norte), rptub_datum, rptro_datum)
+         ) %>%
+  mutate(huso = 
+           ifelse(is.na(rptro_este) | is.na(rptro_norte), rptub_huso, rptro_huso)
+         ) 
+
 ```
 
 
 ``` {r CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
 #uploading rural property cadastre shapefile
 prop_rural.shp <- st_read(
-  "/Users/albertogarcia/Desktop/chile_reforestation/data/prop_rural/prop_rural.shp"
+  "C:/Users/garci/Desktop/chile_data/prop_rural/prop_rural.shp"
   )
 # creating simple features object with rural properties shapefile
 prop_rural.sf <- st_as_sf(prop_rural.shp)
@@ -88,110 +95,46 @@ prop_rural.sf <- st_as_sf(prop_rural.shp)
 
 # matching enrolled Native Forest Law properties to CIRN rural properties
 
-## data
+## Native Forest Law property coordinates and projections
 
 
-``` {r rural prop data, echo = FALSE, message = FALSE, warning = FALSE}
-
-prop_clean.sf <- prop_rural.sf %>%
-  select(ROL, PROPIETARI, NOM_PREDIO, SUPERFICIE, AP_PATERBN, AP_MATERBN, NOMBRESBN, my_prop_id)
-
-# prop_clean.sf[1:5, 1:7] %>%
-#   kable("latex") %>%
-#   kable_styling(font_size = 7)
-```
 
 
-## Native Forest Law property coordinates
+## Spatially joining using the provided stand coordinates
 
-``` {r NFL project data, echo = TRUE, message = FALSE, warning = FALSE, include = TRUE}
+``` {r projection cleaning, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
-# turn into spatial object
-projects_df.sf <- st_as_sf(projects_df, coords = c( "rptub_este", "rptub_norte"), na.fail = FALSE)
+#using crs_clean_fcn to use common projection
+common_crs <- crs_clean_fcn(df_stand)
 
-#table(projects_df.sf$rptub_datum)
-# trying to clean entries into intended datum
-
-#if datum contains, 84, wgs, or WGS, I change the name to WGS84
-projects_df.sf$rptub_datum <- gsub(".*(84|wgs|WGS).*", "WGS84", projects_df.sf$rptub_datum)
-#similar for SAD69 and PSAD56
-projects_df.sf$rptub_datum <- gsub(".*(56|PSAD).*", "PSAD56", projects_df.sf$rptub_datum)
-projects_df.sf$rptub_datum <- gsub(".*69*.", "SAD69", projects_df.sf$rptub_datum)
-#table(projects_df.sf$rptub_datum)
-
-#new dataframe for projects with WGS84 and utm zone 18 south
-projects_WGS19 <- projects_df.sf %>%
-  filter(rptub_huso == 19 & rptub_datum == "WGS84")%>%
-  st_set_crs("+proj=utm +zone=19 +south +datum=WGS84") %>%  #set crs 
-  st_transform(st_crs(prop_clean.sf))   #change crs to same as CIRN data
-
-projects_WGS84 <- projects_df.sf %>%
-  filter(rptub_huso != 19 & rptub_datum == "WGS84")%>%
-  st_set_crs("+proj=utm +zone=18 +south +datum=WGS84") %>%
-  st_transform(st_crs(prop_clean.sf)) %>%
-  rbind(projects_WGS19)
+new_df.sf = crs_clean_fcn$new_df.sf #outputs sf df with common projection
 
 ```
 
-Of the 15239 projects with property coordinates, the cleaned dataframe had 14554 in WGS84 datum, 376 in SAD69 and 288 in PSAD56. For now, I just focus on the WGS84 projects. Of those WGS84 projects, 13825 had an assigned UTM zone as either 18 or 19. I perform the join using these 13825 projects. 
-
-## joining by location
-``` {r spatial join, echo = TRUE, message = FALSE, warning = FALSE}
-
-proj_enrolled <- prop_clean.sf %>%
-  st_join(projects_WGS84, join = st_intersects) %>%
-    drop_na(rptpro_id) # drop properties without a Native Forest Law project id
-
-#length(unique(proj_enrolled[proj_enrolled$rptpre_rol == proj_enrolled$ROL,]$rptpro_id))
-```
 
 
-We can visually examine some of the properties below to address the validity of the join:
+``` {r spatial join, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
-``` {r display enrollment data, echo = FALSE, message = FALSE, warning = FALSE}
-display_proj <- proj_enrolled %>%
-  select(ROL, rptpre_rol, NOM_PREDIO, rptpre_nombre)
-display_proj <- display_proj[order(display_proj$rptpre_nombre),]
-display_proj$geometry <- NULL
+df_joined <- prop_rural.sf %>%
+  st_join(new_df.sf, join = st_intersects) %>%
+  drop_na(rptpro_id)
 
-kable(display_proj[16:30,], 
-      "latex", 
-      booktabs =T, 
-      caption = "spatially joined dataframe"
-      ) %>%
-  kable_styling(latex_options = "hold_position", font_size = 6)
+length(unique(df_joined$rptpre_rol))
+
+#length(unique(df_joined[df_joined$rptpre_rol == df_joined$ROL,]$rptpro_id))
 
 ```
-
-Notice the first entry. The rol id does not match, but the property name is similar (Agua Fria vs. Ague Fria Lote B). 
-
-The number of unique Native Forest Law rol ids is : 
-``` {r unique joins, echo = FALSE, message = FALSE, warning = FALSE}
-
-length(unique(display_proj$rptpre_rol))
-
-```
-
-Note also that, of the 13825 properties used in the join, 3592 did not fall in regions contained in our current CIRN study area (regions 5-10, 13). Here are the Native Forest Law projects by region: 
-
-``` {r region number projects, echo = FALSE, message = FALSE, warning = FALSE}
-
-table(projects_WGS84$rptpro_numero_region)
-
-```
-
-We see that the main excluded regions with a significant number of Native Forest Law projects are 11, 12, 14, and 16. 
 
 ## matching by rol id
 
-We can also match by rol id between the CIRN and Native Forest Law datasets
+We can also match by rol id between the CIREN and Native Forest Law datasets
 
 ``` {r matching by rol, echo = TRUE, message = FALSE, warning = FALSE}
-#here, I just see how many rols match between the CIRN data and native forest law data
+#here, I just see how many rols match between the CIREN data and native forest law data
 
 #projects_df is the native forest law projects 
 #prop_rural.sf is the CIRN data with the rols as simple features object
-rol_df <- projects_df %>%
+rol_df <- df_stand %>%
   rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
   inner_join(prop_rural.sf, by = "ROL") #merge by rol
 
@@ -212,68 +155,5 @@ length(unique(rol_df$ROL)) #find number of unique rol numbers found
 
 ```
 
-Visually examining the matches shows an interesting aspect of the CIRN data, which is that one rol id has multiple different property names associated to it. I'm unsure what the rol id corresponds to exactly, but found this interesting. 
-
-Using either method, we match about half of the potential native forest law properties (roughly 4500 out of 10233). We can look into more sophisticated ways to match. (maybe some combination of location, rol id, and part of property name). Something that might work is to look at the closest couple properties to a coordinate and then choose the one with the closest roi? 
 
 
-
-
-
-
-
-## Spatially joining using the provided stand coordinates
-
-The number of unique Native Forest Law rol ids using the stand coordinates rather than the property is:
-
-``` {r NFL stand matching, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
-#select only vars that can be used for matching purposes
-df_enrolled <- df_full %>%
-  select(rptpro_id, rptpre_rol, rptpre_nombre, rptprop_apellido_materno, rptprop_apellido_paterno, rptprop_nombre, rptpre_provincia, rptpre_comuna, rptpre_region, rptpro_ano, rptro_norte, rptro_este, rptro_datum, rptro_huso)
-
-# turn into spatial object
-df_enrolled.sf <- st_as_sf(df_enrolled, coords = c( "rptro_este", "rptro_norte"), na.fail = FALSE)
-
-#table(df_enrolled.sf$rptro_datum)
-# trying to clean coordinates into the right datum
-df_enrolled.sf$rptro_datum <- gsub(".*(84|wgs|WGS).*", "WGS84", df_enrolled.sf$rptro_datum)
-df_enrolled.sf$rptro_datum <- gsub(".*(56|PSAD).*", "PSAD56", df_enrolled.sf$rptro_datum)
-df_enrolled.sf$rptro_datum <- gsub(".*69*.", "SAD69", df_enrolled.sf$rptro_datum)
-#table(df_enrolled.sf$rptro_datum)
-#table(df_enrolled.sf$rptro_huso)
-
-rodal_WGS19 <- df_enrolled.sf %>%
-  filter(rptro_huso == 19 & rptro_datum == "WGS84")%>%
-  st_set_crs("+proj=utm +zone=19 +south +datum=WGS84") %>%
-  st_transform(st_crs(prop_clean.sf))
-
-rodal_WGS84 <- df_enrolled.sf %>%
-  filter(rptro_huso != 19 & rptro_datum == "WGS84")%>%
-  st_set_crs("+proj=utm +zone=18 +south +datum=WGS84") %>%
-  st_transform(st_crs(prop_clean.sf)) %>%
-  rbind(rodal_WGS19)
-
-prop_rural_enrolled <- prop_clean.sf %>%
-  st_join(rodal_WGS84, join = st_intersects) %>%
-    drop_na(rptpro_id)
-
-length(unique(prop_rural_enrolled$rptpre_rol))
-
-display_stand <- prop_rural_enrolled %>%
-  select(ROL, rptpre_rol, NOM_PREDIO, rptpre_nombre)
-display_stand <- display_stand[order(display_stand$rptpre_nombre),]
-display_stand$geometry <- NULL
-
-kable(display_stand[31:60,], 
-      "latex", 
-      booktabs =T, 
-      caption = "spatially joined dataframe based on stand location"
-      ) %>%
-  kable_styling(latex_options = "hold_position", font_size = 6)
-
-length(unique(prop_rural_enrolled[prop_rural_enrolled$rptpre_rol == prop_rural_enrolled$ROL,]$rptpro_id))
-
-```
-
-Using the stands seems to do better than just the property coordinates. This may be due to the stands being closer to the center of a property rather than near the entrance/border. 

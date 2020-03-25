@@ -28,6 +28,7 @@ library(sf)
 library(stringi)
 library(data.table)
 library(kableExtra)
+library(stringdist)
 
 ```
 
@@ -90,32 +91,70 @@ prop_rural.shp <- st_read(
   "C:/Users/garci/Desktop/chile_data/prop_rural/prop_rural.shp"
   )
 # creating simple features object with rural properties shapefile
-prop_rural.sf <- st_as_sf(prop_rural.shp)
+prop_rural.sf <- st_as_sf(prop_rural.shp) %>%
+  st_transform(crs = "+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
 ```
+
+
+``` {r updated CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
+#uploading rural property cadastre shapefile
+
+reg3.shp<- st_read(
+  "C:/Users/garci/Desktop/Roles_sad69_19s/III_REGION/rroles_3.shp"
+  )
+
+reg4.shp<- st_read(
+  "C:/Users/garci/Desktop/Roles_sad69_19s/IV_REGION/region_4.shp"
+  )
+
+reg11.shp<- st_read(
+  "C:/Users/garci/Desktop/Roles_sad69_19s/XI_REGION/region_11.shp"
+  )
+
+reg12.shp<- st_read(
+  "C:/Users/garci/Desktop/Roles_sad69_19s/XII_REGION/PREDIOS-MARZO2007.shp"
+  )
+
+# creating simple features object with shapefile
+reg3.sf <- st_as_sf(reg3.shp) %>%
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+reg4.sf <- st_as_sf(reg3.shp) %>%
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+reg11.sf <- st_as_sf(reg3.shp) %>%
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+reg12.sf <- st_as_sf(reg3.shp) %>%
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+
+properties.sf <- prop_rural.sf %>% 
+  st_join(reg3.sf, join = st_union) %>%
+  st_join(reg4.sf, join = st_union) %>%
+  st_join(reg11.sf, join = st_union) %>%
+  st_join(reg12.sf, join = st_union)
+
+```
+
 
 # matching enrolled Native Forest Law properties to CIRN rural properties
 
 ## Native Forest Law property coordinates and projections
 
 
-
-
-## Spatially joining using the provided stand coordinates
-
 ``` {r projection cleaning, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
 #using crs_clean_fcn to use common projection
-common_crs <- crs_clean_fcn(df_stand)
+new_df.sf <- crs_clean_fcn(df_stand) #outputs sf df with common projection (sad69 zone 19s)
 
-new_df.sf = crs_clean_fcn$new_df.sf #outputs sf df with common projection
+st_crs(new_df.sf)
 
 ```
 
 
 
+## Spatially joining using the provided stand coordinates
+
 ``` {r spatial join, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
-df_joined <- prop_rural.sf %>%
+df_joined <- properties.sf %>%
   st_join(new_df.sf, join = st_intersects) %>%
   drop_na(rptpro_id)
 
@@ -124,6 +163,59 @@ length(unique(df_joined$rptpre_rol))
 #length(unique(df_joined[df_joined$rptpre_rol == df_joined$ROL,]$rptpro_id))
 
 ```
+
+
+
+``` {r fuzzy scoring, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+# We will create columns with measures of how close the match was
+# variables for matching score:
+### if rol matches exactly
+### if rol is similar (matches on first part)
+
+
+#create variable with only first part of rol, separating by -
+
+
+join_assess_df <- df_joined %>%
+  select(rptpro_id, ROL, rptpre_rol, NOM_PREDIO, rptpre_nombre) %>%
+  separate(col = ROL, into = c("partial_rol_CIREN", NA), sep = "-", remove = FALSE) %>%
+  separate(col = rptpre_rol, into = c("partial_rol_NFL", NA), sep = "-", remove = FALSE) %>%
+  mutate(partial_rol_match = 
+           ifelse(partial_rol_CIREN==partial_rol_NFL, 1, 0)
+         ) %>%
+  mutate(rol_match = 
+           ifelse(ROL==rptpre_rol, 1, 0)
+         ) %>%
+  mutate(rptpre_nombre =
+               tolower(rptpre_nombre)
+               ) %>%
+  mutate(NOM_PREDIO =
+               tolower(NOM_PREDIO)
+               ) %>%
+  mutate(stringd =
+           stringdist(NOM_PREDIO, rptpre_nombre, method = "dl")
+         ) %>%
+  mutate(under20 = 
+           ifelse(stringd <=20, 1, 0))
+  
+### if property name is the same
+### if property name is similar (shares word longer than 3 letters)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## matching by rol id
 

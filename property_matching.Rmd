@@ -1,5 +1,5 @@
 ---
-title: "current progress for matching Native Forest Law enrolled properties to CIREN cadastre"
+title: "spatial join summary"
 author: "Albert Garcia"
 output:
   pdf_document:
@@ -32,10 +32,11 @@ library(kableExtra)
 library(stringdist)
 
 source('crs_clean_fcn.R')
+source('join_metrics.R')
 
 ```
 
-``` {r NFL_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
+``` {r NFL_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 #setting working directory
 
 setwd("C:/Users/garci/Desktop/chile_data/nativeforestlaw")
@@ -88,7 +89,7 @@ df_stand <- df_full %>%
 ```
 
 
-``` {r CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
+``` {r CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 #uploading rural property cadastre shapefile
 prop_rural.shp <- st_read(
   "C:/Users/garci/Desktop/chile_data/prop_rural/prop_rural.shp"
@@ -99,21 +100,61 @@ prop_rural.sf <- st_as_sf(prop_rural.shp) %>%
 ```
 
 
-``` {r updated CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
+
+``` {r projection cleaning, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+#using crs_clean_fcn to use common projection
+new_df.sf <- crs_clean_fcn(df_stand) #outputs sf df with common projection (sad69 zone 19s)
+
+
+# joining initial CIREN properties with cleaned NFL stand dataframe
+df_joined <- prop_rural.sf %>%
+  st_join(new_df.sf, join = st_intersects) %>%
+  drop_na(rptpro_id)
+
+```
+
+
+
+``` {r fuzzy scoring, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+# We will create columns with measures of how close the match was
+# variables for matching score:
+### if rol matches exactly
+### if rol is similar (matches on first part)
+### string distance of property names
+### proportion of properties that differ by less than a specified string distance
+
+prop_rural_metrics <- join_metrics(df_joined)
+  
+by_region_table <- prop_rural_metrics %>%
+  group_by(rptpre_region) %>%
+  summarise(
+    number_of_projects = length(unique(rptpro_id)),
+    number_of_stands = length(rptpro_id), 
+    rol_match = mean(rol_match),
+    similar_rol = mean(partial_rol_match),
+    stringd = mean(stringd, na.rm = TRUE),
+    under20 = mean(under20, na.rm = TRUE)
+    )
+  
+
+```
+
+
+
+``` {r regions3_4_11_12 , echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 #uploading rural property cadastre shapefile
 
 reg3.shp<- st_read(
   "C:/Users/garci/Desktop/Roles_sad69_19s/III_REGION/rroles_3.shp"
   )
-
 reg4.shp<- st_read(
   "C:/Users/garci/Desktop/Roles_sad69_19s/IV_REGION/region_4.shp"
   )
-
 reg11.shp<- st_read(
   "C:/Users/garci/Desktop/Roles_sad69_19s/XI_REGION/region_11.shp"
   )
-
 reg12.shp<- st_read(
   "C:/Users/garci/Desktop/Roles_sad69_19s/XII_REGION/PREDIOS-MARZO2007.shp"
   )
@@ -128,116 +169,142 @@ reg11.sf <- st_as_sf(reg11.shp) %>%
 reg12.sf <- st_as_sf(reg12.shp) %>%
   st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
 
-# oth_regions.sf <- reg3.sf %>% 
-#   st_join(reg4.sf, join = st_union) %>%
-#   st_join(reg11.sf, join = st_union) %>%
-#   st_join(reg12.sf, join = st_union)
-
-```
-
-
-# matching enrolled Native Forest Law properties to CIRN rural properties
-
-## Native Forest Law property coordinates and projections
-
-
-``` {r projection cleaning, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
-#using crs_clean_fcn to use common projection
-new_df.sf <- crs_clean_fcn(df_stand) #outputs sf df with common projection (sad69 zone 19s)
-
-st_crs(new_df.sf)
-
-```
-
-
-
-## Spatially joining using the provided stand coordinates
-
-``` {r spatial join, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
-df_joined <- prop_rural.sf %>%
-  st_join(new_df.sf, join = st_intersects) %>%
-  drop_na(rptpro_id)
 
 reg12_joined <- reg12.sf %>%
   st_join(new_df.sf, join = st_intersects) %>%
-  drop_na(rptpro_id)
+  drop_na(rptpro_id) %>%
+  rename(NOM_PREDIO = N_PREDIO)
+
+reg12_metrics <- join_metrics(reg12_joined)
+
+reg12_table <- reg12_metrics %>%
+  summarise(
+    number_of_projects = length(unique(rptpro_id)),
+    number_of_stands = length(rptpro_id), 
+    rol_match = mean(rol_match, na.rm = TRUE),
+    similar_rol = mean(partial_rol_match, na.rm = TRUE),
+    stringd = mean(stringd, na.rm = TRUE),
+    under20 = mean(under20, na.rm = TRUE)
+    )
+
+reg12_table$region <- "Región de Magallanes y la Antártica Chilena"
+
 
 reg11_joined <- reg11.sf %>%
   st_join(new_df.sf, join = st_intersects) %>%
+  drop_na(rptpro_id) %>%
+  rename(NOM_PREDIO = NOM_PREDI)
+
+reg11_metrics <- join_metrics(reg11_joined)
+
+reg11_table <- reg11_metrics %>%
+  summarise(
+    number_of_projects = length(unique(rptpro_id)),
+    number_of_stands = length(rptpro_id), 
+    rol_match = mean(rol_match, na.rm = TRUE),
+    similar_rol = mean(partial_rol_match, na.rm = TRUE),
+    stringd = mean(stringd, na.rm = TRUE),
+    under20 = mean(under20, na.rm = TRUE)
+    )
+
+reg11_table$region <- "Región de Aysen del General Carlos Ibáñez del Campo"
+
+reg3_joined <- reg3.sf %>%
+  st_join(new_df.sf, join = st_intersects) %>%
   drop_na(rptpro_id)
 
-length(unique(df_joined$rptpre_rol))
+reg3_metrics <- join_metrics(reg3_joined)
 
-#length(unique(df_joined[df_joined$rptpre_rol == df_joined$ROL,]$rptpro_id))
+reg3_table <- reg3_metrics %>%
+  summarise(
+    number_of_projects = length(unique(rptpro_id)),
+    number_of_stands = length(rptpro_id), 
+    rol_match = mean(rol_match, na.rm = TRUE),
+    similar_rol = mean(partial_rol_match, na.rm = TRUE),
+    stringd = mean(stringd, na.rm = TRUE),
+    under20 = mean(under20, na.rm = TRUE)
+    )
+
+reg3_table$region <- "Región de Atacama"
+
+
+reg4_joined <- reg4.sf %>%
+  st_join(new_df.sf, join = st_intersects) %>%
+  drop_na(rptpro_id)
+
+reg4_metrics <- join_metrics(reg4_joined)
+
+reg4_table <- reg4_metrics %>%
+  summarise(
+    joined_projects = length(unique(rptpro_id)),
+    joined_stands = length(rptpro_id), 
+    rol_match = mean(rol_match, na.rm = TRUE),
+    similar_rol = mean(partial_rol_match, na.rm = TRUE),
+    stringd = mean(stringd, na.rm = TRUE),
+    under20 = mean(under20, na.rm = TRUE)
+    )
+reg4_table$region <- "Región de Coquimbo"
+
+reg3_table$geometry <- NULL
+reg4_table$geometry <- NULL
+reg11_table$geometry <- NULL
+reg12_table$geometry <- NULL
+
+newregions_table <- reg3_table %>%
+  bind_rows(reg4_table) %>%
+  bind_rows(reg11_table) %>%
+  bind_rows(reg12_table)
+
+by_region_table$geometry <- NULL
+by_region_table = by_region_table[-1,]
+
+by_region_summary <- by_region_table %>%
+  mutate(region = rptpre_region) %>%
+  select(- rptpre_region) %>%
+  bind_rows(newregions_table)
 
 ```
 
+ 
 
+``` {r NFLtotals, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
-``` {r fuzzy scoring, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
-# We will create columns with measures of how close the match was
-# variables for matching score:
-### if rol matches exactly
-### if rol is similar (matches on first part)
-
-
-#create variable with only first part of rol, separating by -
-
-
-join_assess_df <- df_joined %>%
-  select(rptpro_id, rptpre_region, ROL, rptpre_rol, NOM_PREDIO, rptpre_nombre) %>%
-  separate(col = ROL, into = c("partial_rol_CIREN", NA), sep = "-", remove = FALSE) %>%
-  separate(col = rptpre_rol, into = c("partial_rol_NFL", NA), sep = "-", remove = FALSE) %>%
-  mutate(partial_rol_match = 
-           ifelse(partial_rol_CIREN==partial_rol_NFL, 1, 0)
-         ) %>%
-  mutate(rol_match = 
-           ifelse(ROL==rptpre_rol, 1, 0)
-         ) %>%
-  mutate(rptpre_nombre =
-               tolower(rptpre_nombre)
-               ) %>%
-  mutate(NOM_PREDIO =
-               tolower(NOM_PREDIO)
-               ) %>%
-  mutate(stringd =
-           stringdist(NOM_PREDIO, rptpre_nombre, method = "dl")
-         ) %>%
-  mutate(under20 = 
-           ifelse(stringd <=20, 1, 0))
+summary_tab <- df_stand %>%
+  rename(region = rptpre_region)%>%
+  group_by(region) %>%
+  summarise(
+    total_projects = length(unique(rptpro_id)),
+    total_stands = length(rptpro_id)
+    ) %>%
+  left_join(by_region_summary, by = "region")
   
 
+
 ```
 
+This table shows the progress of the spatial join and metrics that assess its validity. 
+
+``` {r summary table, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+summary_tab1 <- summary_tab %>%
+  select(region, total_projects, total_stands, joined_projects, joined_stands) %>%
+  mutate(prop_joined_proj = joined_projects/total_projects)
+
+summary_tab2 <- summary_tab %>%
+  select(region, rol_match, similar_rol, stringd, under20)
 
 
-
-``` {r join metrics, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
-#  group by region
-
-by_reg <- join_assess_df %>%
-  group_by(rptpre_region)
-
-summary_table <- by_reg %>% 
-  summarise(
-  number_of_projects = length(unique(rptpro_id)),
-  number_of_stands = length(rptpro_id), 
-  rol_match = mean(rol_match),
-  similar_rol = mean(partial_rol_match),
-  stringd = mean(stringd, na.rm = TRUE),
-  under20 = mean(under20, na.rm = TRUE)
-)
-
-summary_table$geometry <- NULL
-
-kable(summary_table, 
+kable(summary_tab1, 
       "latex", 
       booktabs =T, 
-      caption = "spatial join statistics"
+      caption = "spatial join metrics by region"
+      ) %>%
+  kable_styling(latex_options = "hold_position", font_size = 6)
+
+kable(summary_tab2, 
+      "latex", 
+      booktabs =T, 
+      caption = "spatial join statistics continued.."
       ) %>%
   kable_styling(latex_options = "hold_position", font_size = 6)
 
@@ -245,8 +312,21 @@ kable(summary_table,
 
 
 
+\begin{table}[h]
+\begin{tabular}{c|c}
+total_projects & total Native Forest Law projects\\
+total_stands & total Native Forest Law stands\\
+joined_projects & Native Forest Law projects joined with CIREN properties\\
+joined_stands & Native Forest Law stands joined with CIREN properties\\
+rol_match & proportion of stands with matching rol id\\ 
+similar_rol & proportion of stands with matching first part of rol id\\
+stringd & average string distance between property names from NFL stands and CIREN properties\\
+under20 & proportion of joined property  names with string distance of less than 20\\
+\end{tabular}
+\end{table}
 
-``` {r matching by rol, eval - FALSE}
+
+``` {r matching by rol, echo = FALSE, include = FALSE, eval = FALSE}
 
 #here, I just see how many rols match between the CIREN data and native forest law data
 

@@ -1,5 +1,5 @@
 ---
-title: "spatial join summary"
+title: "spatial join summary statistics"
 author: "Albert Garcia"
 output:
   pdf_document:
@@ -130,8 +130,8 @@ prop_rural_metrics <- join_metrics(df_joined)
 by_region_table <- prop_rural_metrics %>%
   group_by(rptpre_region) %>%
   summarise(
-    number_of_projects = length(unique(rptpro_id)),
-    number_of_stands = length(rptpro_id), 
+    joined_projects = length(unique(rptpro_id)),
+    joined_stands = length(rptpro_id), 
     rol_match = mean(rol_match),
     similar_rol = mean(partial_rol_match),
     stringd = mean(stringd, na.rm = TRUE),
@@ -146,18 +146,10 @@ by_region_table <- prop_rural_metrics %>%
 ``` {r regions3_4_11_12 , echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 #uploading rural property cadastre shapefile
 
-reg3.shp<- st_read(
-  "C:/Users/garci/Desktop/Roles_sad69_19s/III_REGION/rroles_3.shp"
-  )
-reg4.shp<- st_read(
-  "C:/Users/garci/Desktop/Roles_sad69_19s/IV_REGION/region_4.shp"
-  )
-reg11.shp<- st_read(
-  "C:/Users/garci/Desktop/Roles_sad69_19s/XI_REGION/region_11.shp"
-  )
-reg12.shp<- st_read(
-  "C:/Users/garci/Desktop/Roles_sad69_19s/XII_REGION/PREDIOS-MARZO2007.shp"
-  )
+reg3.shp<- st_read("C:/Users/garci/Desktop/Roles_sad69_19s/III_REGION/rroles_3.shp")
+reg4.shp<- st_read("C:/Users/garci/Desktop/Roles_sad69_19s/IV_REGION/region_4.shp")
+reg11.shp<- st_read("C:/Users/garci/Desktop/Roles_sad69_19s/XI_REGION/region_11.shp")
+reg12.shp<- st_read("C:/Users/garci/Desktop/Roles_sad69_19s/XII_REGION/PREDIOS-MARZO2007.shp")
 
 # creating simple features object with shapefile
 reg3.sf <- st_as_sf(reg3.shp) %>%
@@ -179,8 +171,8 @@ reg12_metrics <- join_metrics(reg12_joined)
 
 reg12_table <- reg12_metrics %>%
   summarise(
-    number_of_projects = length(unique(rptpro_id)),
-    number_of_stands = length(rptpro_id), 
+    joined_projects = length(unique(rptpro_id)),
+    joined_stands = length(rptpro_id), 
     rol_match = mean(rol_match, na.rm = TRUE),
     similar_rol = mean(partial_rol_match, na.rm = TRUE),
     stringd = mean(stringd, na.rm = TRUE),
@@ -199,8 +191,8 @@ reg11_metrics <- join_metrics(reg11_joined)
 
 reg11_table <- reg11_metrics %>%
   summarise(
-    number_of_projects = length(unique(rptpro_id)),
-    number_of_stands = length(rptpro_id), 
+    joined_projects = length(unique(rptpro_id)),
+    joined_stands = length(rptpro_id), 
     rol_match = mean(rol_match, na.rm = TRUE),
     similar_rol = mean(partial_rol_match, na.rm = TRUE),
     stringd = mean(stringd, na.rm = TRUE),
@@ -217,8 +209,8 @@ reg3_metrics <- join_metrics(reg3_joined)
 
 reg3_table <- reg3_metrics %>%
   summarise(
-    number_of_projects = length(unique(rptpro_id)),
-    number_of_stands = length(rptpro_id), 
+    joined_projects = length(unique(rptpro_id)),
+    joined_stands = length(rptpro_id), 
     rol_match = mean(rol_match, na.rm = TRUE),
     similar_rol = mean(partial_rol_match, na.rm = TRUE),
     stringd = mean(stringd, na.rm = TRUE),
@@ -282,7 +274,6 @@ summary_tab <- df_stand %>%
 
 ```
 
-This table shows the progress of the spatial join and metrics that assess its validity. 
 
 ``` {r summary table, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
@@ -299,29 +290,34 @@ kable(summary_tab1,
       booktabs =T, 
       caption = "spatial join metrics by region"
       ) %>%
-  kable_styling(latex_options = "hold_position", font_size = 6)
+  kable_styling(latex_options = "hold_position", font_size = 7) %>%
+  row_spec(0, angle = 45)
 
 kable(summary_tab2, 
       "latex", 
       booktabs =T, 
-      caption = "spatial join statistics continued.."
+      caption = "spatial join metrics continued.."
       ) %>%
-  kable_styling(latex_options = "hold_position", font_size = 6)
+  kable_styling(latex_options = "hold_position", font_size = 7) %>%
+  row_spec(0, angle = 45)
 
 ```
 
 
 
 \begin{table}[h]
-\begin{tabular}{c|c}
-total_projects & total Native Forest Law projects\\
-total_stands & total Native Forest Law stands\\
-joined_projects & Native Forest Law projects joined with CIREN properties\\
-joined_stands & Native Forest Law stands joined with CIREN properties\\
-rol_match & proportion of stands with matching rol id\\ 
-similar_rol & proportion of stands with matching first part of rol id\\
+\caption{variable descriptions}
+\begin{tabular}{|c|c|}
+\hline
+total\_projects & total Native Forest Law projects\\
+total\_stands & total Native Forest Law stands\\
+joined\_projects & Native Forest Law projects joined with CIREN properties\\
+joined\_stands & Native Forest Law stands joined with CIREN properties\\
+rol\_match & proportion of stands with matching rol id\\ 
+similar\_rol & proportion of stands with matching first part of rol id\\
 stringd & average string distance between property names from NFL stands and CIREN properties\\
 under20 & proportion of joined property  names with string distance of less than 20\\
+\hline
 \end{tabular}
 \end{table}
 

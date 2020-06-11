@@ -1,5 +1,5 @@
 ---
-title: "spatial join summary statistics"
+title: "CIREN and Native Forest Law spatial Join"
 author: "Albert Garcia"
 output:
   pdf_document:
@@ -15,6 +15,7 @@ header-includes:
   \usepackage{multirow,array}
   \usepackage{makecell}
 ---
+# Summary Statistics
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -274,6 +275,7 @@ summary_tab <- df_stand %>%
 
 ```
 
+## Overview statistics from spatial join
 
 ``` {r summary table, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
@@ -303,23 +305,97 @@ kable(summary_tab2,
 
 ```
 
+\clearpage
 
+## Variable Descriptions
 
-\begin{table}[h]
-\caption{variable descriptions}
+\begin{table}[!h]
 \begin{tabular}{|c|c|}
 \hline
-total\_projects & total Native Forest Law projects\\
+total\_projects & total Native Forest Law (NFL) projects\\
 total\_stands & total Native Forest Law stands\\
 joined\_projects & Native Forest Law projects joined with CIREN properties\\
 joined\_stands & Native Forest Law stands joined with CIREN properties\\
+prop\_joined\_proj & proportion of NFL projects joined\\
 rol\_match & proportion of stands with matching rol id\\ 
 similar\_rol & proportion of stands with matching first part of rol id\\
-stringd & average string distance between property names from NFL stands and CIREN properties\\
+stringd & avg. string distance$^*$ between property names from NFL and CIREN properties\\
 under20 & proportion of joined property  names with string distance of less than 20\\
 \hline
 \end{tabular}
 \end{table}
+
+
+
+$^*$stringd is calculated according to Damerau–Levenshtein method, which counts the number of operations (consisting of insertions, deletions or substitutions of a single character, or transposition of two adjacent characters) required to change one property name into the other
+
+
+``` {r matching unprocesables, echo = FALSE, include = FALSE, eval = TRUE}
+
+region_nombres <- df_stand %>%
+  select(rptpro_region, rptpro_numero_region) %>%
+  rename(Region = rptpro_region) %>%
+  rename(region_number = rptpro_numero_region) %>%
+  distinct() 
+
+setwd("C:/Users/garci/Desktop/chile_data/nativeforestlaw")
+no_procesables <- read_excel("Proy_no_procesables_Fondo_Concursable.xlsx")
+rejected <- read_excel("Proy_no_asignados_Fondo_Concursable.xlsx") %>%    # combining unassigned and unprocesable projects
+  bind_rows(no_procesables) %>%
+  rename(ROL = Rol) %>%
+  rename(Region = Región) %>%
+  left_join(region_nombres, by = "Region")
+
+# note that we can distinguish unprocesable vs unassigned projects by the presence of score
+
+controls <- rejected %>%
+  inner_join(prop_rural.sf, by = "ROL") #joining based on Rol id with CIREN data
+
+#Need to account for regions 13-16
+#this line of code ensures that Nuble and Los Rios obs have the correct region number
+reg_match <- controls %>%
+  mutate(region_CIREN = 
+           ifelse(Region == "Región de Ñuble" & region == 8, 16, region)
+         ) %>%
+  mutate(region_CIREN = 
+           ifelse(Region == "Región de Los Ríos" & region == 10, 14, region_CIREN)
+         ) %>%
+  filter(region_number == region_CIREN) #subset to only obs with same CIREN and NFL region number
+
+##### Same with regions 3,4,11,12 ####
+controls_12 <- rejected %>%
+  inner_join(reg12.sf, by = "ROL") %>% #joining based on Rol id with CIREN data
+  filter(Region == "Región de Magallanes y la Antártica Chilena")
+
+controls_11 <- rejected %>%
+  inner_join(reg11.sf, by = "ROL") %>% #joining based on Rol id with CIREN data
+  filter(Region == "Región de Aysen del General Carlos Ibáñez del Campo")
+
+controls_3 <- rejected %>%
+  inner_join(reg3.sf, by = "ROL") %>% #joining based on Rol id with CIREN data
+  filter(Region == "Región de Atacama")
+
+controls_extra <- rejected %>%
+  inner_join(reg4.sf, by = "ROL") %>% #joining based on Rol id with CIREN data
+  filter(Region == "Región de Coquimbo") %>%
+  bind_rows(controls_3) %>%
+  bind_rows(controls_12) %>%
+  bind_rows(controls_11)
+
+#####################################
+
+#Joining to have all rejected projects
+all_rejected <- reg_match %>%
+  bind_rows(controls_extra) %>%
+  mutate(DESCCOMU = 
+           ifelse(is.na(DESCCOMU), COMUNAS, DESCCOMU)
+         ) %>%
+  mutate(comuna_stringd = stringdist(Comuna, DESCCOMU, method = "dl")) %>%
+  filter(comuna_stringd <= 1)
+
+summary(all_rejected$Puntaje)
+
+```
 
 
 ``` {r matching by rol, echo = FALSE, include = FALSE, eval = FALSE}

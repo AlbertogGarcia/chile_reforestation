@@ -1,0 +1,180 @@
+---
+title: "preliminary stand analysis"
+author: "Albert Garcia"
+output:
+  pdf_document:
+    number_sections: yes
+    toc: no
+fontsize: 11pt    
+documentclass: article
+geometry: margin=1in
+header-includes: 
+  \usepackage{sectsty}
+  \usepackage{enumitem}
+  \usepackage{comment}
+  \usepackage{multirow,array}
+  \usepackage{makecell}
+  \usepackage{dcolumn}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+### loads tidyverse packages, defines helper functions
+library(latex2exp)
+library(tinytex)
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+library(sf)
+library(stringi)
+library(data.table)
+library(kableExtra)
+library(stringdist)
+library(GADMTools)
+library(rnaturalearth)
+
+library(did)
+library(AER)
+library(dynlm)
+library(plm)
+library(stargazer)
+library(Metrics)
+library(DataCombine)
+
+```
+
+
+
+
+``` {r NFL_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+#setting working directory
+
+setwd("C:/Users/garci/Desktop/chile_data/nativeforestlaw")
+
+# xls files downloaded from CONAF
+#projects
+proyecto_1 <- read_excel("proyectos_1.xls")
+proyecto_2 <- read_excel("proyectos_2.xls")
+proyecto_df <- merge(proyecto_1, proyecto_2, by = c("rptpro_id", "rptpro_numero_ingreso"), all=TRUE)
+#properties and coordinates
+predio_df <- read_excel("predio.xls")
+coordinadas_predio_df <- read_excel("coordinadas_predio.xls")
+#owners
+propietario_df <- read_excel("propietario.xls")
+#stands
+rodal_1 <- read_excel("rodal_1.xls")
+rodal_2 <- read_excel("rodal_2.xls")
+rodal_df <- merge(rodal_1, rodal_2, by = c("rptro_id"), all=TRUE)
+#activities
+actividades_1 <- read_excel("actividades_1.xls")
+actividades_2 <- read_excel("actividades_2.xls")
+actividades_df <- merge(actividades_1, actividades_2, by = c("rptac_id"), all=TRUE)
+#fences
+cercos_df <- read_excel("cerco.xls")
+
+#merging into full data set
+df_NFL <- proyecto_df %>%
+  left_join(predio_df, by = c("rptpro_id", "rptpro_numero_ingreso")) %>%
+  left_join(propietario_df, by = "rptpre_id") %>%
+  left_join(coordinadas_predio_df, by = "rptpre_id") %>%
+  left_join(rodal_df, by = "rptpre_id") %>%
+  left_join(actividades_df, by = "rptro_id")
+
+
+```
+
+
+
+``` {r stands, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+property_df <- df_NFL %>%
+  select(rptpro_id, rptpro_numero_ingreso.x, rptpre_rol, rptpro_objetivo_manejo, rptro_id, rptpro_tipo_concurso, rptpro_puntaje, rptpro_ano, rptpre_id, rptpre_comuna, rptpre_region, rptpro_superficie, rptpro_monto_total, rptpro_monto_ordenacion, rptpro_monto_actividades, rptprop_nombre, rptprop_etnia, rptprop_apellido_paterno, rptprop_apellido_materno) %>%
+  distinct()
+
+```
+
+
+``` {r loading CIREN properties, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+#uploading rural property cadastre shapefile
+
+reg3.shp<- st_read("C:/Users/garci/Desktop/Roles_sad69_19s/III_REGION/rroles_3.shp")
+reg4.shp<- st_read("C:/Users/garci/Desktop/Roles_sad69_19s/IV_REGION/region_4.shp")
+reg11.shp<- st_read("C:/Users/garci/Desktop/Roles_sad69_19s/XI_REGION/region_11.shp")
+reg12.shp<- st_read("C:/Users/garci/Desktop/Roles_sad69_19s/XII_REGION/PREDIOS-MARZO2007.shp")
+
+# creating simple features object with shapefile
+reg3.sf <- st_as_sf(reg3.shp) %>%
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+reg4.sf <- st_as_sf(reg4.shp) %>%
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+reg11.sf <- st_as_sf(reg11.shp) %>%
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+reg12.sf <- st_as_sf(reg12.shp) %>%
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+
+#uploading rural property cadastre shapefile
+prop_rural.shp <- st_read(
+  "C:/Users/garci/Desktop/chile_data/prop_rural/prop_rural.shp"
+  )
+# creating simple features object with rural properties shapefile
+prop_rural.sf <- st_as_sf(prop_rural.shp) %>%
+  st_transform(crs = "+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+```
+
+
+
+``` {r rol matches, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+region_nombres <- df_NFL %>%
+  select(rptpre_region, rptpro_numero_region) %>%
+  rename(region_number = rptpro_numero_region) %>%
+  distinct() 
+
+rol_df3 <- property_df %>%
+  rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
+  inner_join(reg3.sf, by = "ROL") %>%#merge by rol
+  filter(rptpre_region == "Región de Atacama")
+
+rol_df4 <- property_df %>%
+  rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
+  inner_join(reg4.sf, by = "ROL") %>%#merge by rol
+  filter(rptpre_region == "Región de Coquimbo")
+
+rol_df11 <- property_df %>%
+  rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
+  inner_join(reg11.sf, by = "ROL") %>%#merge by rol
+  filter(rptpre_region == "Región de Aysen del General Carlos Ibáñez del Campo")
+
+rol_df12 <- property_df %>%
+  rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
+  inner_join(reg12.sf, by = "ROL") %>% #joining based on Rol id with CIREN data
+  filter(rptpre_region == "Región de Magallanes y la Antártica Chilena")
+
+rol_df <- property_df %>%
+  rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
+  left_join(region_nombres, by = "rptpre_region") %>%
+  inner_join(prop_rural.sf, by = "ROL") %>% #merge by rol
+  mutate(region_CIREN =
+           ifelse(rptpre_region == "Región de Ñuble" & region == 8, 16, region)
+         ) %>%
+  mutate(region_CIREN =
+           ifelse(rptpre_region == "Región de Los Ríos" & region == 10, 14, region_CIREN)
+         ) %>%
+  filter(region_number == region_CIREN) %>%
+  bind_rows(rol_df3) %>%
+  bind_rows(rol_df4) %>%
+  bind_rows(rol_df11) %>%
+  bind_rows(rol_df12) %>%
+  mutate(DESCCOMU =
+           ifelse(is.na(DESCCOMU), COMUNAS, DESCCOMU)
+         ) %>%
+  distinct(rptpro_numero_ingreso.x, .keep_all = TRUE) %>%
+  separate(rptpro_numero_ingreso.x, c(NA, "contest"), sep = "-", remove = FALSE)
+
+
+rol_df_comuna <- rol_df %>%
+  mutate(comuna_stringd = stringdist(rptpre_comuna, DESCCOMU, method = "dl")) %>%
+  filter(comuna_stringd <= 3)
+```

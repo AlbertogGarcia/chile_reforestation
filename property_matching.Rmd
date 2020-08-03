@@ -305,29 +305,6 @@ kable(summary_tab2,
 
 ```
 
-\clearpage
-
-## Variable Descriptions
-
-\begin{table}[!h]
-\begin{tabular}{|c|c|}
-\hline
-total\_projects & total Native Forest Law (NFL) projects\\
-total\_stands & total Native Forest Law stands\\
-joined\_projects & Native Forest Law projects joined with CIREN properties\\
-joined\_stands & Native Forest Law stands joined with CIREN properties\\
-prop\_joined\_proj & proportion of NFL projects joined\\
-rol\_match & proportion of stands with matching rol id\\ 
-similar\_rol & proportion of stands with matching first part of rol id\\
-stringd & avg. string distance$^*$ between property names from NFL and CIREN properties\\
-under20 & proportion of joined property  names with string distance of less than 20\\
-\hline
-\end{tabular}
-\end{table}
-
-
-
-$^*$stringd is calculated according to Damerau–Levenshtein method, which counts the number of operations (consisting of insertions, deletions or substitutions of a single character, or transposition of two adjacent characters) required to change one property name into the other
 
 
 ``` {r matching unprocesables, echo = FALSE, include = FALSE, eval = TRUE}
@@ -398,32 +375,6 @@ summary(all_rejected$Puntaje)
 ```
 
 
-``` {r matching by rol, echo = FALSE, include = FALSE, eval = FALSE}
-
-#here, I just see how many rols match between the CIREN data and native forest law data
-
-#projects_df is the native forest law projects 
-#prop_rural.sf is the CIRN data with the rols as simple features object
-rol_df <- df_stand %>%
-  rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
-  inner_join(prop_rural.sf, by = "ROL") #merge by rol
-
-
-# just creating a df to display only a couple of choice variables
-rol_display <- rol_df %>%
-  select(ROL, NOM_PREDIO, rptpre_nombre)
-rol_display$geometry <- NULL
-
-kable(rol_display[1:20,], 
-      "latex", 
-      booktabs =T, 
-      caption = "merged on rol dataframe"
-      ) %>%
-  kable_styling(latex_options = "hold_position", font_size = 6)
-
-length(unique(rol_df$ROL)) #find number of unique rol numbers found
-
-```
 
 
 

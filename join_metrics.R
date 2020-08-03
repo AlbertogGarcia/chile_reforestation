@@ -25,8 +25,8 @@ join_metrics <- function(df){
     mutate(stringd =
              stringdist(NOM_PREDIO, rptpre_nombre, method = "dl")
     ) %>%
-    mutate(under20 = 
-             ifelse(stringd <=20, 1, 0)) 
+    mutate(under10 = 
+             ifelse(stringd <=10, 1, 0)) 
 
   
   return(byregion_assess)

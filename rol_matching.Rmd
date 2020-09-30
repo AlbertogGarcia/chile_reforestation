@@ -33,6 +33,7 @@ library(kableExtra)
 library(stringdist)
 library(GADMTools)
 library(rnaturalearth)
+#library(reshape2)
 
 library(did)
 library(AER)
@@ -89,8 +90,7 @@ df_NFL <- proyecto_df %>%
 ``` {r stands, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 
 property_df <- df_NFL %>%
-  select(rptpro_id, rptpro_numero_ingreso.x, rptpre_rol, rptpro_objetivo_manejo, rptro_id, rptpro_tipo_concurso, rptpro_puntaje, rptpro_ano, rptpre_id, rptpre_comuna, rptpre_region, rptpro_superficie, rptpro_monto_total, rptpro_monto_ordenacion, rptpro_monto_actividades, rptprop_nombre, rptprop_etnia, rptprop_apellido_paterno, rptprop_apellido_materno) %>%
-  distinct()
+  select(rptpro_id, rptpro_numero_ingreso.x, rptpre_rol, rptpro_objetivo_manejo, rptro_id, rptpro_tipo_concurso, rptpro_puntaje, rptpro_ano, rptpre_id, rptpre_comuna, rptpre_region, rptpro_superficie, rptpre_superficie_bonificada, rptpre_superficie_predial, rptpro_monto_total, rptpro_monto_ordenacion, rptpro_monto_actividades, rptprop_nombre, rptprop_etnia, rptprop_apellido_paterno, rptprop_apellido_materno, rptac_tipo, rptro_tipo_forestal) 
 
 ```
 
@@ -106,13 +106,17 @@ reg12.shp<- st_read("C:/Users/garci/Desktop/Roles_sad69_19s/XII_REGION/PREDIOS-M
 
 # creating simple features object with shapefile
 reg3.sf <- st_as_sf(reg3.shp) %>%
-  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs") %>%
+  st_transform("+proj=longlat +datum=WGS84") #transform crs
 reg4.sf <- st_as_sf(reg4.shp) %>%
-  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs") %>%
+  st_transform("+proj=longlat +datum=WGS84") #transform crs
 reg11.sf <- st_as_sf(reg11.shp) %>%
-  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs") %>%
+  st_transform("+proj=longlat +datum=WGS84") #transform crs
 reg12.sf <- st_as_sf(reg12.shp) %>%
-  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs") %>%
+  st_transform("+proj=longlat +datum=WGS84") #transform crs
 
 #uploading rural property cadastre shapefile
 prop_rural.shp <- st_read(
@@ -120,7 +124,7 @@ prop_rural.shp <- st_read(
   )
 # creating simple features object with rural properties shapefile
 prop_rural.sf <- st_as_sf(prop_rural.shp) %>%
-  st_transform(crs = "+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs")
+  st_transform("+proj=longlat +datum=WGS84")#transform crs
 ```
 
 
@@ -155,26 +159,350 @@ rol_df12 <- property_df %>%
 rol_df <- property_df %>%
   rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
   left_join(region_nombres, by = "rptpre_region") %>%
-  inner_join(prop_rural.sf, by = "ROL") %>% #merge by rol
-  mutate(region_CIREN =
-           ifelse(rptpre_region == "Región de Ñuble" & region == 8, 16, region)
-         ) %>%
-  mutate(region_CIREN =
-           ifelse(rptpre_region == "Región de Los Ríos" & region == 10, 14, region_CIREN)
-         ) %>%
-  filter(region_number == region_CIREN) %>%
+  inner_join(prop_rural.sf, by = "ROL") %>%#merge by rol
   bind_rows(rol_df3) %>%
   bind_rows(rol_df4) %>%
   bind_rows(rol_df11) %>%
   bind_rows(rol_df12) %>%
+  separate(rptpro_numero_ingreso.x, c(NA, "contest"), sep = "-", remove = FALSE) %>%#creating column that has year and second contest if relevant
+  mutate(secondcontest = ifelse(is.na(contest), 0, 1))
+
+
+rol_comuna <- rol_df %>%
   mutate(DESCCOMU =
            ifelse(is.na(DESCCOMU), COMUNAS, DESCCOMU)
          ) %>%
-  distinct(rptpro_numero_ingreso.x, .keep_all = TRUE) %>%
-  separate(rptpro_numero_ingreso.x, c(NA, "contest"), sep = "-", remove = FALSE)
-
-
-rol_df_comuna <- rol_df %>%
   mutate(comuna_stringd = stringdist(rptpre_comuna, DESCCOMU, method = "dl")) %>%
-  filter(comuna_stringd <= 3)
+  filter(comuna_stringd <= 1) 
+
+rol_geoms <- rol_comuna %>%
+  select(rptpro_id, geometry) %>%
+  distinct() 
+
+activity_df <- rol_comuna %>%
+  select(rptpro_id, rptpro_ano, rptpro_objetivo_manejo, rptpro_tipo_concurso, rptpro_puntaje, rptpre_comuna, rptpre_region, rptpre_superficie_bonificada, rptpre_superficie_predial, rptpro_monto_total, rptac_tipo, rptro_tipo_forestal, geometry) %>%
+  distinct() %>%
+  dcast(rptpro_id + rptpro_ano + rptpro_objetivo_manejo + rptpro_tipo_concurso + rptpro_puntaje + rptpre_comuna + rptpre_region + rptpre_superficie_bonificada + rptpre_superficie_predial + rptpro_monto_total
+        ~ rptac_tipo , 
+        fun.aggregate = function(x){as.integer(length(x) > 0)}) %>%
+  left_join(rol_geoms, by = "rptpro_id") %>%
+  st_sf(sf_column_name = "geometry", crs = "+proj=longlat +datum=WGS84")
+
+activity_df.shp <- rol_comuna %>%
+  select(rptpro_id, rptpro_ano, rptac_tipo, geometry) %>%
+  st_sf(sf_column_name = "geometry", crs = "+proj=longlat +datum=WGS84")
+
+#st_write(activity_df, dsn = "enrolledprops_rolmatch.kml", driver = "KML")
+#st_write(enrollees_2015, dsn = "enrolled2015_props.json", driver = "GeoJSON")
+
 ```
+
+
+
+
+
+
+
+``` {r export geometries, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+activity_df.json <- activity_df %>%
+  select(rptpro_id)
+
+# poly_code1 <- paste0(activity_df.json$rptpro_id[1:100], collapse=",")
+# write.csv(poly_code1, file = "polycode1.txt", row.names = FALSE)
+# st_write(activity_df.json[1:100,], dsn = "poly1.json", driver = "GeoJSON")
+# 
+# poly_code2 <- paste0(activity_df.json$rptpro_id[101:150], collapse=",")
+# write.csv(poly_code2, file = "polycode2.txt", row.names = FALSE)
+# st_write(activity_df.json[101:150,], dsn = "poly2.json", driver = "GeoJSON")
+# 
+# poly_code3 <- paste0(activity_df.json$rptpro_id[151:200], collapse=",")
+# write.csv(poly_code3, file = "polycode3.txt", row.names = FALSE)
+# st_write(activity_df.json[151:200,], dsn = "poly3.json", driver = "GeoJSON")
+# 
+# poly_code4 <- paste0(activity_df.json$rptpro_id[201:250], collapse=",")
+# write.csv(poly_code4, file = "polycode4.txt", row.names = FALSE)
+# st_write(activity_df.json[201:250,], dsn = "poly4.json", driver = "GeoJSON")
+# 
+# poly_code5 <- paste0(activity_df.json$rptpro_id[252:300], collapse=",")
+# write.csv(poly_code5, file = "polycode5.txt", row.names = FALSE)
+# st_write(activity_df.json[252:300,], dsn = "poly5.json", driver = "GeoJSON")
+
+# poly_code6 <- paste0(activity_df.json$rptpro_id[301:350], collapse=",")
+# write.csv(poly_code6, file = "polycode6.txt", row.names = FALSE)
+# st_write(activity_df.json[301:350,], dsn = "poly6.json", driver = "GeoJSON")
+
+# poly_code7 <- paste0(activity_df.json$rptpro_id[351:450], collapse=",")
+# write.csv(poly_code7, file = "polycode7.txt", row.names = FALSE)
+# st_write(activity_df.json[351:450,], dsn = "poly7.json", driver = "GeoJSON")
+# 
+# poly_code9 <- paste0(activity_df.json$rptpro_id[501:600], collapse=",")
+# write.csv(poly_code9, file = "polycode9.txt", row.names = FALSE)
+# st_write(activity_df.json[501:600,], dsn = "poly9.json", driver = "GeoJSON")
+# 
+# poly_code10 <- paste0(activity_df.json$rptpro_id[670:700], collapse=",")
+# write.csv(poly_code10, file = "polycode10.txt", row.names = FALSE)
+# st_write(activity_df.json[670:700,], dsn = "poly10.json", driver = "GeoJSON")
+# 
+# poly_code11 <- paste0(activity_df.json$rptpro_id[701:800], collapse=",")
+# write.csv(poly_code11, file = "polycode11.txt", row.names = FALSE)
+# st_write(activity_df.json[701:800,], dsn = "poly11.json", driver = "GeoJSON")
+
+# poly_code12 <- paste0(activity_df.json$rptpro_id[801:850], collapse=",")
+# write.csv(poly_code12, file = "polycode12.txt", row.names = FALSE)
+# st_write(activity_df.json[801:850,], dsn = "poly12.json", driver = "GeoJSON")
+# # 
+# poly_code14 <- paste0(activity_df.json$rptpro_id[951:1050], collapse=",")
+# write.csv(poly_code14, file = "polycode14.txt", row.names = FALSE)
+# st_write(activity_df.json[951:1050,], dsn = "poly14.json", driver = "GeoJSON")
+
+# poly_code15 <- paste0(activity_df.json$rptpro_id[1051:1100], collapse=",")
+# write.csv(poly_code15, file = "polycode15.txt", row.names = FALSE)
+# st_write(activity_df.json[1051:1100,], dsn = "poly15.json", driver = "GeoJSON")
+# 
+# poly_code16 <- paste0(activity_df.json$rptpro_id[1051:1100], collapse=",")
+# write.csv(poly_code16, file = "polycode16.txt", row.names = FALSE)
+# st_write(activity_df.json[1051:1100,], dsn = "poly16.json", driver = "GeoJSON")
+
+
+# poly_code17 <- paste0(activity_df.json$rptpro_id[1101:1150], collapse=",")
+# write.csv(poly_code17, file = "polycode17.txt", row.names = FALSE)
+# st_write(activity_df.json[1101:1150,], dsn = "poly17.json", driver = "GeoJSON")
+# 
+# poly_code18 <- paste0(activity_df.json$rptpro_id[1151:1200], collapse=",")
+# write.csv(poly_code18, file = "polycode18.txt", row.names = FALSE)
+# st_write(activity_df.json[1151:1200,], dsn = "poly18.json", driver = "GeoJSON")
+
+
+# poly_code19 <- paste0(activity_df.json$rptpro_id[1201:1275], collapse=",")
+# write.csv(poly_code19, file = "polycode19.txt", row.names = FALSE)
+# st_write(activity_df.json[1151:1275,], dsn = "poly19.json", driver = "GeoJSON")
+
+# poly_code20 <- paste0(activity_df.json$rptpro_id[1276:1350], collapse=",")
+# write.csv(poly_code20, file = "polycode20.txt", row.names = FALSE)
+# st_write(activity_df.json[1276:1350,], dsn = "poly20.json", driver = "GeoJSON")
+# 
+# poly_code21 <- paste0(activity_df.json$rptpro_id[1351:1365], collapse=",")
+# write.csv(poly_code21, file = "polycode21.txt", row.names = FALSE)
+# st_write(activity_df.json[1351:1365,], dsn = "poly21.json", driver = "GeoJSON")
+
+###################################################################################
+poly_code22 <- paste0(activity_df.json$rptpro_id[1365:1370], collapse=",")
+write.csv(poly_code22, file = "polycode22.txt", row.names = FALSE)
+st_write(activity_df.json[1365:1370,], dsn = "poly15.json", driver = "GeoJSON")
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
+
+# poly_code_a <- paste0(activity_df.json$rptpro_id[2501:2525], collapse=",")
+# write.csv(poly_code_a, file = "polycode_a.txt", row.names = FALSE)
+# st_write(activity_df.json[2501:2525,], dsn = "polya.json", driver = "GeoJSON")
+# poly_code_b <- paste0(activity_df.json$rptpro_id[2526:2575], collapse=",")
+# write.csv(poly_code_b, file = "polycode_b.txt", row.names = FALSE)
+# st_write(activity_df.json[2526:2575,], dsn = "polyb.json", driver = "GeoJSON")
+
+# poly_code_c <- paste0(activity_df.json$rptpro_id[2576:2650], collapse=",")
+# write.csv(poly_code_c, file = "polycode_c.txt", row.names = FALSE)
+# st_write(activity_df.json[2576:2650,], dsn = "polyc.json", driver = "GeoJSON")
+# poly_code_d <- paste0(activity_df.json$rptpro_id[2651:2700], collapse=",")
+# write.csv(poly_code_d, file = "polycode_d.txt", row.names = FALSE)
+# st_write(activity_df.json[2651:2700,], dsn = "polyd.json", driver = "GeoJSON")
+# poly_code_e <- paste0(activity_df.json$rptpro_id[2701:2750], collapse=",")
+# write.csv(poly_code_e, file = "polycode_e.txt", row.names = FALSE)
+# st_write(activity_df.json[2701:2750,], dsn = "polye.json", driver = "GeoJSON")
+# poly_code_f <- paste0(activity_df.json$rptpro_id[2751:2800], collapse=",")
+# write.csv(poly_code_f, file = "polycode_f.txt", row.names = FALSE)
+# st_write(activity_df.json[2751:2800,], dsn = "polyf.json", driver = "GeoJSON")
+# poly_code_g <- paste0(activity_df.json$rptpro_id[2801:2850], collapse=",")
+# write.csv(poly_code_g, file = "polycode_g.txt", row.names = FALSE)
+# st_write(activity_df.json[2801:2850,], dsn = "polyg.json", driver = "GeoJSON")
+# poly_code_i <- paste0(activity_df.json$rptpro_id[2926:3000], collapse=",")
+# write.csv(poly_code_i, file = "polycode_i.txt", row.names = FALSE)
+# st_write(activity_df.json[2926:3000,], dsn = "polyi.json", driver = "GeoJSON")
+# poly_code_j <- paste0(activity_df.json$rptpro_id[3001:3075], collapse=",")
+# write.csv(poly_code_j, file = "polycode_j.txt", row.names = FALSE)
+# st_write(activity_df.json[3001:3075,], dsn = "polyj.json", driver = "GeoJSON")
+
+# poly_code_l <- paste0(activity_df.json$rptpro_id[3151:3200], collapse=",")
+# write.csv(poly_code_l, file = "polycode_l.txt", row.names = FALSE)
+# st_write(activity_df.json[3151:3200,], dsn = "polyl.json", driver = "GeoJSON")
+# poly_code_m <- paste0(activity_df.json$rptpro_id[3201:3300], collapse=",")
+# write.csv(poly_code_m, file = "polycode_m.txt", row.names = FALSE)
+# st_write(activity_df.json[3201:3300,], dsn = "polym.json", driver = "GeoJSON")
+
+# poly_code_n <- paste0(activity_df.json$rptpro_id[3301:3375], collapse=",")
+# write.csv(poly_code_n, file = "polycode_n.txt", row.names = FALSE)
+# st_write(activity_df.json[3301:3375,], dsn = "polyn.json", driver = "GeoJSON")
+# poly_code_o <- paste0(activity_df.json$rptpro_id[3376:3450], collapse=",")
+# write.csv(poly_code_o, file = "polycode_o.txt", row.names = FALSE)
+# st_write(activity_df.json[3376:3450,], dsn = "polyo.json", driver = "GeoJSON")
+# poly_code_p <- paste0(activity_df.json$rptpro_id[3451:3525], collapse=",")
+# write.csv(poly_code_p, file = "polycode_p.txt", row.names = FALSE)
+# st_write(activity_df.json[3451:3525,], dsn = "polyp.json", driver = "GeoJSON")
+# poly_code_q <- paste0(activity_df.json$rptpro_id[3526:3600], collapse=",")
+# write.csv(poly_code_q, file = "polycode_q.txt", row.names = FALSE)
+# st_write(activity_df.json[3526:3600,], dsn = "polyq.json", driver = "GeoJSON")
+# poly_code_r <- paste0(activity_df.json$rptpro_id[3601:3675], collapse=",")
+# write.csv(poly_code_r, file = "polycode_r.txt", row.names = FALSE)
+# st_write(activity_df.json[3601:3675,], dsn = "polyr.json", driver = "GeoJSON")
+# poly_code_s <- paste0(activity_df.json$rptpro_id[3676:3750], collapse=",")
+# write.csv(poly_code_s, file = "polycode_s.txt", row.names = FALSE)
+# st_write(activity_df.json[3676:3750,], dsn = "polys.json", driver = "GeoJSON")
+# poly_code_t <- paste0(activity_df.json$rptpro_id[3751:3814], collapse=",")
+# write.csv(poly_code_t, file = "polycode_t.txt", row.names = FALSE)
+# st_write(activity_df.json[3751:3814,], dsn = "polyt.json", driver = "GeoJSON")
+# poly_code_u <- paste0(activity_df.json$rptpro_id[3816:3900], collapse=",")
+# write.csv(poly_code_u, file = "polycode_u.txt", row.names = FALSE)
+# st_write(activity_df.json[3816:3900,], dsn = "polyu.json", driver = "GeoJSON")
+# poly_code_v <- paste0(activity_df.json$rptpro_id[3901:3975], collapse=",")
+# write.csv(poly_code_v, file = "polycode_v.txt", row.names = FALSE)
+# st_write(activity_df.json[3901:3975,], dsn = "polyv.json", driver = "GeoJSON")
+poly_code_w <- paste0(activity_df.json$rptpro_id[3976:4050], collapse=",")
+write.csv(poly_code_w, file = "polycode_w.txt", row.names = FALSE)
+st_write(activity_df.json[3976:4050,], dsn = "polyw.json", driver = "GeoJSON")
+
+```
+
+``` {r NDVI data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+#setting working directory
+
+setwd("C:/Users/garci/Desktop/chile_data/property_NDVI/awarded_NDVI")
+
+#upload and bind csvs together
+
+property_ndvi <- 
+  list.files(pattern = "*.csv") %>% 
+  map_df(~read_csv(.)) %>%
+  as.data.frame() %>% #turn into dataframe
+  rename(rptpro_id = Code)
+  
+#join with regen stand dataframe to get panel
+panel_ndvi <- property_ndvi %>%
+  inner_join(activity_df, by = "rptpro_id") %>%
+  mutate(intensity = rptpre_superficie_bonificada/rptpre_superficie_predial)
+```
+
+``` {r dynamic effect event study, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE, results='asis'}
+
+dynamic_ndvi <- panel_ndvi %>%
+  mutate(treat = (Year >= rptpro_ano)*1)  
+
+#adding lags for dynamic treament
+dynamic_ndvi <- dynamic_ndvi[order(dynamic_ndvi$rptpro_id, dynamic_ndvi$Year),]
+dynamic_ndvi <- dynamic_ndvi %>%
+  slide(Var = "treat", GroupVar = "rptpro_id", NewVar = "treat_1", slideBy = -1, reminder = FALSE) %>%
+  slide(Var = "treat", GroupVar = "rptpro_id", NewVar = "treat_2", slideBy = -2, reminder = FALSE)%>%
+  slide(Var = "treat", GroupVar = "rptpro_id", NewVar = "treat_3", slideBy = -3, reminder = FALSE) %>%
+  slide(Var = "treat", GroupVar = "rptpro_id", NewVar = "treat_4", slideBy = -4, reminder = FALSE) %>%
+  slide(Var = "treat", GroupVar = "rptpro_id", NewVar = "treat_5", slideBy = -5, reminder = FALSE) %>%
+  slide(Var = "treat", GroupVar = "rptpro_id", NewVar = "treat_6", slideBy = -6, reminder = FALSE) %>%
+  slide(Var = "treat", GroupVar = "rptpro_id", NewVar = "treat_7", slideBy = -7, reminder = FALSE) %>%
+  slide(Var = "treat", GroupVar = "rptpro_id", NewVar = "treat1", slideBy = +1, reminder = FALSE) %>%
+  slide(Var = "treat", GroupVar = "rptpro_id", NewVar = "treat2", slideBy = +2, reminder = FALSE) %>%
+  mutate(treat_int = treat*intensity,
+    treat_int_1 = treat_1*intensity,
+    treat_int_2 = treat_2*intensity,
+    treat_int_3 = treat_3*intensity,
+    treat_int_4 = treat_4*intensity,
+    treat_int_5 = treat_5*intensity,
+    treat_int_6 = treat_6*intensity
+  )
+
+dynamic_ndvi <- dynamic_ndvi[!is.infinite(dynamic_ndvi$intensity),]
+
+clear_ndvi <- dynamic_ndvi %>%
+  filter(`corta-regeneracion` == 1
+            | `corta-sanitaria`==1
+          | `corta-selectiva` ==1 |
+     `corta-liberacion`==1
+           |`corta-mejoramiento`==1 | `corta-recuperacion`==1
+           | `clareo-tardio`==1|`clareo-temprano`==1|`clareo-no-maderero-tardio`==1|`clareo-no-maderero-temprano`==1| `clareo-no-maderero`==1
+          | `poda-baja`==1|`poda-formacion`==1|`poda-latizal-alto`==1|`poda-latizal-bajo`==1|`poda-no-maderero`==1
+           | `raleo-fustal-joven`==1 | `raleo-latizal-alto`==1 | `raleo-latizal-bajo`==1 | `raleo-no-maderero`==1|`raleo-no-maderero-latizal-bajo`==1
+     # |`siembra-directa`==1
+     #  |`plantacion-suplementaria`==1
+     # | regeneracion==1
+     # | plantacion==1
+     # | enriquecimiento==1
+  #     ###################################################################################################|`NA` ==1
+      ) %>%
+  filter(rptpro_tipo_concurso != "Pequeños Propietarios") %>%
+  filter(rptpro_objetivo_manejo == "PRODUCCION MADERERA" & rptpro_objetivo_manejo != "PRODUCCION NO MADERERA")%>%
+  #filter(rptpre_region != "Región de La Araucanía") %>%
+#   Región de La Araucanía
+ # "Región del Bío-Bío"
+# Región de Los Ríos
+#   Región del Maule
+# Región del Libertador General Bernardo O'Higgins
+# Región de Valparaíso
+# Región del Bío-Bío
+# Región Metropolitana de Santiago
+  distinct(Year, rptpro_id, .keep_all = TRUE) 
+
+ndvi_clear <- plm(NDVI ~ #treat2+treat1+
+              treat_int
+              +treat_int_1
+              +treat_int_2
+              +treat_int_3
+              +treat_int_4
+              #+treat_int_5
+              #+treat_int_6
+                + rptpre_superficie_predial + rptpre_superficie_bonificada + rptpro_monto_total+ rptpro_puntaje 
+                +as.factor(rptpre_region) 
+                , 
+                            data   = clear_ndvi, 
+                            method = "within", #fixed effects model
+                            effect = "twoway", #grid and year fixed effects
+                            index  = c("rptpro_id", "Year")
+    )
+
+
+
+ndvi_mod <- plm(NDVI ~ treat, data   = clear_ndvi, 
+                            method = "within", #fixed effects model
+                            effect = "twoway", #grid and year fixed effects
+                            index  = c("rptpro_id", "Year")
+    )
+
+#making plots with confidence intervals
+#clustered standard errors at stand level
+cluster_se_dyn = sqrt(diag(vcovHC(ndvi_clear, type = "HC0", cluster = "group")))
+cluster_se_mod = sqrt(diag(vcovHC(ndvi_mod, type = "HC0", cluster = "group")))
+
+stargazer(ndvi_mod, ndvi_clear, se=list(cluster_se_mod, cluster_se_dyn), title="Chile Results", align=TRUE, no.space=TRUE, header=FALSE)
+
+
+#making plots with confidence intervals
+#plot w/ CIs
+plot_df <- data.frame(x = 1:length(ndvi_clear$coefficients), 
+                      coeff = ndvi_clear$coefficients,
+                      lower_95 = ndvi_clear$coefficients - 1.96 *cluster_se_dyn,
+                      upper_95 = ndvi_clear$coefficients + 1.96 *cluster_se_dyn
+)
+
+
+
+ggplot(plot_df, aes(x = x, y = coeff)) +
+  geom_point(size = 4) +
+  geom_line()+
+  geom_linerange(aes(ymax = upper_95, ymin = lower_95)) + 
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed")+
+    ggtitle("Time varying treatment in Chile") +
+    xlab("year of treatment") + ylab("effect of award on NDVI")
+
+
+```
+
+``` {r did event study, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE, results='asis'}
+
+out <- mp.spatt(formla= NDVI ~ treat, data=dynamic_ndvi,
+                 panel=TRUE, first.treat.name="first.treat",
+                 idname="rptpro_id", tname="Year",
+                 bstrap=FALSE, se=TRUE, cband=FALSE)
+
+
+```
+
+

@@ -1,0 +1,176 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load}
+### loads tidyverse packages, defines helper functions
+library(latex2exp)
+library(tinytex)
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+library(sf)
+library(stringi)
+library(data.table)
+library(kableExtra)
+library(stringdist)
+library(GADMTools)
+library(rnaturalearth)
+#library(reshape2)
+
+```
+
+
+```{r cars}
+setwd("C:/Users/garci/Desktop/chile_data/nativeforestlaw")
+no_procesables <- read_excel("Proy_no_procesables_Fondo_Concursable.xlsx")
+rejected <- read_excel("Proy_no_asignados_Fondo_Concursable.xlsx") %>%    # combining unassigned and unprocesable projects
+  bind_rows(no_procesables) %>%
+  rename(rptpre_rol = Rol) %>%
+  rename(Region = Región)
+
+proyecto_1 <- read_excel("proyectos_1.xls")
+proyecto_2 <- read_excel("proyectos_2.xls")
+proyecto_df <- merge(proyecto_1, proyecto_2, by = c("rptpro_id", "rptpro_numero_ingreso"), all=TRUE)
+#properties and coordinates
+predio_df <- read_excel("predio.xls")
+
+awarded_props <- proyecto_df %>%
+  left_join(predio_df, by = c("rptpro_id", "rptpro_numero_ingreso"))
+
+not_later_awarded <- rejected %>%
+  left_join(awarded_props, by = "rptpre_rol") %>%
+  filter(is.na(rptpro_numero_ingreso))
+```
+
+``` {r loading CIREN properties, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+region_nombres <- awarded_props %>%
+  select(rptpre_region, rptpro_numero_region) %>%
+  rename(region_number = rptpro_numero_region) %>%
+  distinct() 
+
+#uploading rural property cadastre shapefile
+
+reg3.shp<- st_read("C:/Users/garci/Desktop/Roles_sad69_19s/III_REGION/rroles_3.shp")
+reg4.shp<- st_read("C:/Users/garci/Desktop/Roles_sad69_19s/IV_REGION/region_4.shp")
+reg11.shp<- st_read("C:/Users/garci/Desktop/Roles_sad69_19s/XI_REGION/region_11.shp")
+reg12.shp<- st_read("C:/Users/garci/Desktop/Roles_sad69_19s/XII_REGION/PREDIOS-MARZO2007.shp")
+
+# creating simple features object with shapefile
+reg3.sf <- st_as_sf(reg3.shp) %>%
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs") %>%
+  st_transform("+proj=longlat +datum=WGS84") #transform crs
+reg4.sf <- st_as_sf(reg4.shp) %>%
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs") %>%
+  st_transform("+proj=longlat +datum=WGS84") #transform crs
+reg11.sf <- st_as_sf(reg11.shp) %>%
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs") %>%
+  st_transform("+proj=longlat +datum=WGS84") #transform crs
+reg12.sf <- st_as_sf(reg12.shp) %>%
+  st_set_crs("+proj=utm +zone=19 +south +ellps=aust_SA +units=m +no_defs") %>%
+  st_transform("+proj=longlat +datum=WGS84") #transform crs
+
+#uploading rural property cadastre shapefile
+prop_rural.shp <- st_read(
+  "C:/Users/garci/Desktop/chile_data/prop_rural/prop_rural.shp"
+  )
+# creating simple features object with rural properties shapefile
+prop_rural.sf <- st_as_sf(prop_rural.shp) %>%
+  st_transform("+proj=longlat +datum=WGS84")#transform crs
+```
+
+
+``` {r matching CIREN properties, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+# NLA_3 <- not_later_awarded %>%
+#   rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
+#   inner_join(reg3.sf, by = "ROL") %>%#merge by rol
+#   filter(Region == "Región de Atacama")
+# 
+# NLA_4 <- not_later_awarded %>%
+#   rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
+#   inner_join(reg4.sf, by = "ROL") %>%#merge by rol
+#   filter(Region == "Región de Coquimbo")
+
+NLA_11 <- not_later_awarded %>%
+  rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
+  inner_join(reg11.sf, by = "ROL") %>%#merge by rol
+  filter(Region == "Región de Aysen del General Carlos Ibáñez del Campo")
+
+NLA_12 <- not_later_awarded %>%
+  rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
+  inner_join(reg12.sf, by = "ROL") %>% #joining based on Rol id with CIREN data
+  filter(Region == "Región de Magallanes y la Antártica Chilena")
+
+NLA_df <- not_later_awarded %>%
+  rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
+  left_join(region_nombres, by = "rptpre_region") %>%
+  inner_join(prop_rural.sf, by = "ROL") %>%#merge by rol
+  # bind_rows(NLA_3) %>%
+  # bind_rows(NLA_4) %>%
+  bind_rows(NLA_11) %>%
+  bind_rows(NLA_12) %>%
+  mutate(DESCCOMU =
+           ifelse(is.na(DESCCOMU), COMUNAS, DESCCOMU)
+         ) %>%
+  mutate(comuna_stringd = stringdist(Comuna, DESCCOMU, method = "dl")) %>%
+  #select(Comuna, DESCCOMU, comuna_stringd, Propietario, PROPIETARI) %>%
+  filter(comuna_stringd <=3) %>%
+  tibble::rowid_to_column("polygon_id")
+
+```
+
+```{r json rejected, echo = FALSE}
+
+rejected <- NLA_df %>%
+  st_sf(sf_column_name = "geometry", crs = "+proj=longlat +datum=WGS84")%>%
+  select(polygon_id)
+  
+#st_write(rejected[1:33,], dsn = "reject_poly.json", driver = "GeoJSON")
+
+st_write(rejected[37:49,], dsn = "reject_poly2.json", driver = "GeoJSON")
+
+```
+
+
+``` {r partial rol matching CIREN properties, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+# trying to generate more control properties by using partial rols
+# should be in same neighborhood as others
+
+not_later_awarded <- not_later_awarded %>%
+  separate(col = rptpre_rol, into = c("partial_rol", NA), sep = "-", remove = FALSE)
+
+
+NLA_11 <- reg11.sf %>%
+  separate(col = ROL, into = c("partial_rol", NA), sep = "-", remove = FALSE) %>%
+  right_join(not_later_awarded, by = "partial_rol") %>%#merge by rol
+  filter(Region == "Región de Aysen del General Carlos Ibáñez del Campo")
+
+NLA_12 <- reg12.sf %>%
+  separate(col = ROL, into = c("partial_rol", NA), sep = "-", remove = FALSE) %>%
+  right_join(not_later_awarded, by = "partial_rol") %>% #joining based on Rol id with CIREN data
+  filter(Region == "Región de Magallanes y la Antártica Chilena")
+
+NLA_df <- prop_rural.sf %>%
+  separate(col = ROL, into = c("partial_rol", NA), sep = "-", remove = FALSE) %>%
+  #rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
+  #left_join(region_nombres, by = "rptpre_region") %>%
+  right_join(not_later_awarded, by = "partial_rol") %>%#merge by rol
+  bind_rows(NLA_11) %>%
+  bind_rows(NLA_12) %>%
+  mutate(DESCCOMU =
+           ifelse(is.na(DESCCOMU), COMUNAS, DESCCOMU)
+         ) %>%
+  mutate(comuna_stringd = stringdist(Comuna, DESCCOMU, method = "dl"),
+         rol_stringd = stringdist(ROL, rptpre_rol, method = "dl")) %>%
+  #select(rptpre_rol, ROL, rol_stringd, Comuna, DESCCOMU, comuna_stringd, Propietario, PROPIETARI) %>%
+  filter(comuna_stringd <=2 & rol_stringd <=1)
+
+```

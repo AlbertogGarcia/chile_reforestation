@@ -159,9 +159,13 @@ nativeforestlaw_df <- rol_df %>%
   filter(rptpro_ano == first.treat) %>%
   ungroup() %>%
   mutate(treated.later = ifelse( first.treat != latest.treat, 1, 0)) %>%
-  distinct(ID, .keep_all = TRUE)
+  distinct(ID, .keep_all = TRUE) %>%
+  st_sf(sf_column_name = "geometry", crs = "+proj=longlat +datum=WGS84") %>%
+  st_centroid()%>%
+    mutate(lat = unlist(map(nativeforestlaw_df$geometry,1)),
+           long = unlist(map(nativeforestlaw_df$geometry,2))) 
 
-table(nativeforestlaw_df$treated.later)
+#table(nativeforestlaw_df$treated.later)
 
 ```
 
@@ -269,50 +273,20 @@ table(nativeforestlaw_df$treated.later)
 # write.csv(id_poly_x, file = "id_poly_x.txt", row.names = FALSE)
 # st_write(id_distinct[1552:1625,], dsn = "id_poly_x.json", driver = "GeoJSON")
 
-id_poly_y <- paste0(id_distinct$ID[1626:1700], collapse=",")
-write.csv(id_poly_y, file = "id_poly_y.txt", row.names = FALSE)
-st_write(id_distinct[1626:1700,], dsn = "id_poly_y.json", driver = "GeoJSON")
+# id_poly_y1 <- paste0(id_distinct$ID[1626:1631], collapse=",")
+# write.csv(id_poly_y1, file = "id_poly_y1.txt", row.names = FALSE)
+# st_write(id_distinct[1626:1631,], dsn = "id_poly_y1.json", driver = "GeoJSON")
+# 
+# id_poly_y2 <- paste0(id_distinct$ID[1632:1700], collapse=",")
+# write.csv(id_poly_y2, file = "id_poly_y2.txt", row.names = FALSE)
+# st_write(id_distinct[1632:1700,], dsn = "id_poly_y2.json", driver = "GeoJSON")
 
-id_poly_z <- paste0(id_distinct$ID[1701:1775], collapse=",")
-write.csv(id_poly_z, file = "id_poly_z.txt", row.names = FALSE)
-st_write(id_distinct[1701:1775,], dsn = "id_poly_z.json", driver = "GeoJSON")
-
-```
-
-``` {r rejected NDVI, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
-
-#setting working directory
-
-setwd("C:/Users/garci/Desktop/chile_data/rejected_NDVI")
-
-#upload and bind csvs together
-rejected_ndvi <- 
-  list.files(pattern = "*.csv") %>% 
-  map_df(~read_csv(.)) %>%
-  as.data.frame() %>% #turn into dataframe
-  rename(polygon_id = Code)
-
-
-#match NDVIs with dataset
-rejected_panel <- rejected_ndvi %>%
-  inner_join(NLA_df, by = "polygon_id") %>%
-  mutate(first.treat = 0,
-         treat = 0
-         ) %>%
-  filter(Year < 2019) %>%
-  unite(ID, c(polygon_id, treat), sep = "-") %>%
-  mutate(rptpre_comuna = Comuna,
-         rptpre_region = Region,
-         rptpro_objetivo_manejo = `Objetivo Manejo`,
-         rptpro_tipo_concurso = `Tipo Concurso`,
-         rptpro_puntaje = Puntaje,
-         rptpre_superficie_bonificada = Superficie,
-         rptpre_superficie_predial = SUPERFICIE,
-         rptpro_monto_total = `Monto Solicitado`,
-         treat = 0)
+# id_poly_z <- paste0(id_distinct$ID[1701:1775], collapse=",")
+# write.csv(id_poly_z, file = "id_poly_z.txt", row.names = FALSE)
+# st_write(id_distinct[1701:1775,], dsn = "id_poly_z.json", driver = "GeoJSON")
 
 ```
+
 
 ``` {r awarded NDVI, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
@@ -336,20 +310,21 @@ awarded_panel <- awarded_ndvi %>%
   inner_join(covars, by = c("rptpre_comuna", "ROL", "rptpro_ano"))%>%
   mutate(first.treat = ifelse(first.treat >=2019, 0, first.treat),
          treat = ifelse(first.treat >= 2019, 0, 1)
-         ) %>%
-  filter(Year < 2019) 
+         ) 
 
 awarded_panel$ID <- as.character(awarded_panel$ID)
 
-full_panel <- awarded_panel %>%
-  bind_rows(rejected_panel)
-  
+
 
 ```
 
+``` {r awarded panel, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+#export(awarded_panel, "awarded_panel.rds")
+
+```
 
 ``` {r did awarded, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
 
 
 did <- mp.spatt(NDVI ~ treat, data= awarded_panel,
@@ -362,7 +337,7 @@ did <- mp.spatt(NDVI ~ treat, data= awarded_panel,
 
 library(gridExtra)
 
-summary(did$aggte, type="dynamic")
+summary(did)
 
 ggdid(did)
 ggdid(did, type = "dynamic")
@@ -372,20 +347,32 @@ ggdid(did, type = "dynamic")
 
 ``` {r did full, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
-full_panel <- full_panel %>%
+full_panel_2007 <- full_panel %>%
+  filter(Year >= 2007)
+
+full_panel <- full_panel_2007 %>%
   filter(rptpre_superficie_predial > 0)
 
 did <- mp.spatt(NDVI ~ treat, data= full_panel,
                 xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial + as.factor(rptpre_region) ,
                  panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
-                 method = "logit", # activate to use logit for propensity score matching
+                 method = "logit", # activate to use logit, probit, lpm for propensity score matching
                  bstrap=FALSE, se=TRUE, cband=FALSE
                 , cluster = "ID"
                 )
 
+# mp.spatt.test(NDVI ~ treat, data= full_panel,
+#                  xformlalist=list(~rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial) ,
+#                  panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
+#                  method = "logit", # activate to use logit for propensity score matching
+#                 , clustervarlist  = list("ID")
+#                 )
+
 library(gridExtra)
 
-summary(did$aggte, type="dynamic")
+summary(did)
+summary(did$aggte)
+
 
 ggdid(did)
 ggdid(did, type = "dynamic")
@@ -490,3 +477,4 @@ ggdid(did, type = "dynamic")
 
 
 ```
+

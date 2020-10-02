@@ -1,0 +1,172 @@
+---
+title: "intensity analysis"
+#author: "Albert Garcia"
+output:
+  pdf_document:
+    number_sections: yes
+    toc: no
+fontsize: 11pt    
+documentclass: article
+geometry: margin=1in
+header-includes: 
+  \usepackage{sectsty}
+  \usepackage{enumitem}
+  \usepackage{comment}
+  \usepackage{multirow,array}
+  \usepackage{makecell}
+  \usepackage{dcolumn}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(out.height='300px', dpi=200)
+
+### loads tidyverse packages, defines helper functions
+library(latex2exp)
+library(tinytex)
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+library(sf)
+library(stringi)
+library(data.table)
+library(did)
+library(rio)
+
+```
+
+``` {r NFL_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+#setting working directory
+
+setwd("C:/Users/garci/Desktop/chile_data")
+
+# xls files downloaded from CONAF
+#projects
+awarded_panel <- readRDS("awarded_panel.rds")
+rejected_panel <- readRDS("rejected_panel.rds")
+
+full_panel_2007 <- awarded_panel %>%
+  bind_rows(rejected_panel)%>%
+  filter(Year >= 2007 & Year < 2019)
+```
+
+
+
+``` {r did full, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+library(gridExtra)
+
+
+full_panel <- full_panel_2007 %>%
+  filter(rptpre_superficie_predial > 0)
+
+did <- mp.spatt(NDVI ~ treat, data= full_panel,
+                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial + lat + long +as.factor(rptpre_region) + as.factor(rptpro_objetivo_manejo),
+                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
+                 method = "logit", # activate to use logit, probit, lpm for propensity score matching
+                 bstrap=FALSE, se=TRUE, cband=FALSE
+                , cluster = "ID"
+                )
+
+summary(did)
+summary(did$aggte)
+
+
+ggdid(did)
+ggdid(did, type = "dynamic")
+
+
+```
+
+
+``` {r did otros interesados, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+otros_panel <- full_panel %>%
+  filter(rptpre_superficie_predial > 0) %>%
+  filter(rptpro_tipo_concurso == "Otros Interesados" & rptpre_region != "Región de Ñuble") 
+
+did_otros <- mp.spatt(NDVI ~ treat, data= otros_panel,
+                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial + lat + long +as.factor(rptpre_region) + as.factor(rptpro_objetivo_manejo),
+                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
+                 method = "logit", # activate to use logit for propensity score matching
+                 bstrap=FALSE, se=TRUE, cband=FALSE
+                , cluster = "ID"
+                )
+
+
+summary(did_otros)
+
+ggdid(did_otros)
+ggdid(did_otros, type = "dynamic")
+
+
+```
+
+
+``` {r did smallholders, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+smallholder_panel <- full_panel %>%
+  filter(rptpre_superficie_predial > 0) %>%
+  filter(rptpro_tipo_concurso != "Otros Interesados")
+
+did_sh <- mp.spatt(NDVI ~ treat, data= smallholder_panel,
+                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial +lat+long,
+                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
+                 method = "logit", # activate to use logit for propensity score matching
+                 bstrap=FALSE, se=TRUE, cband=FALSE
+                , cluster = "ID"
+                )
+
+
+#summary(did_sh$aggte, type="dynamic")
+
+ggdid(did_sh)
+ggdid(did_sh, type = "dynamic")
+
+
+```
+
+``` {r did timber, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+timber_panel <- full_panel %>%
+  filter(rptpre_superficie_predial > 0) %>%
+  filter(rptpro_objetivo_manejo == "PRODUCCION MADERERA")
+
+did <- mp.spatt(NDVI ~ treat, data= otros_panel,
+                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial ,
+                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
+                 method = "logit", # activate to use logit for propensity score matching
+                 bstrap=FALSE, se=TRUE, cband=FALSE
+                , cluster = "ID"
+                )
+
+summary(did$aggte, type="dynamic")
+
+ggdid(did)
+ggdid(did, type = "dynamic")
+
+
+```
+
+``` {r did non timber, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+nontimber_panel <- full_panel %>%
+  filter(rptpre_superficie_predial > 0) %>%
+  filter(rptpro_objetivo_manejo == "PRODUCCION NO MADERERA")
+
+did <- mp.spatt(NDVI ~ treat, data= nontimber_panel,
+                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial,
+                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
+                 method = "logit", # activate to use logit for propensity score matching
+                 bstrap=FALSE, se=TRUE, cband=FALSE
+                , cluster = "ID"
+                )
+
+library(gridExtra)
+
+summary(did$aggte, type="dynamic")
+
+ggdid(did)
+ggdid(did, type = "dynamic")
+
+
+```
+

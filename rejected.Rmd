@@ -108,6 +108,8 @@ NLA_12 <- not_later_awarded %>%
   inner_join(reg12.sf, by = "ROL") %>% #joining based on Rol id with CIREN data
   filter(Region == "Región de Magallanes y la Antártica Chilena")
 
+
+
 NLA_df <- not_later_awarded %>%
   rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
   left_join(region_nombres, by = "rptpre_region") %>%
@@ -115,11 +117,16 @@ NLA_df <- not_later_awarded %>%
   # bind_rows(NLA_3) %>%
   # bind_rows(NLA_4) %>%
   bind_rows(NLA_11) %>%
-  bind_rows(NLA_12) %>%
-  mutate(DESCCOMU =
+  bind_rows(NLA_12) 
+
+NLA_df$DESCCOMU <- as.character(NLA_df$DESCCOMU)
+NLA_df$COMUNAS <- as.character(NLA_df$COMUNAS)
+
+NLA_df <- NLA_df %>%
+  mutate(Comuna_2 =
            ifelse(is.na(DESCCOMU), COMUNAS, DESCCOMU)
          ) %>%
-  mutate(comuna_stringd = stringdist(Comuna, DESCCOMU, method = "dl")) %>%
+  mutate(comuna_stringd = stringdist(Comuna, Comuna_2, method = "dl")) %>%
   #select(Comuna, DESCCOMU, comuna_stringd, Propietario, PROPIETARI) %>%
   filter(comuna_stringd <=3) %>%
   tibble::rowid_to_column("polygon_id")
@@ -128,49 +135,60 @@ NLA_df <- not_later_awarded %>%
 
 ```{r json rejected, echo = FALSE}
 
-rejected <- NLA_df %>%
+rejected_df <- NLA_df %>%
+  st_sf(sf_column_name = "geometry", crs = "+proj=longlat +datum=WGS84") %>%
+  st_centroid()%>%
+    mutate(lat = unlist(map(rejected_df$geometry,1)),
+           long = unlist(map(rejected_df$geometry,2))) 
+
+rej_json <- NLA_df %>%
   st_sf(sf_column_name = "geometry", crs = "+proj=longlat +datum=WGS84")%>%
   select(polygon_id)
   
-#st_write(rejected[1:33,], dsn = "reject_poly.json", driver = "GeoJSON")
+#st_write(rej_json[1:33,], dsn = "reject_poly.json", driver = "GeoJSON")
 
-st_write(rejected[37:49,], dsn = "reject_poly2.json", driver = "GeoJSON")
+# 34.35.36 did not work in gee
+#st_write(rej_json[37:49,], dsn = "reject_poly2.json", driver = "GeoJSON")
+
+#51 didn't work
+#st_write(rej_json[52,], dsn = "reject_poly3.json", driver = "GeoJSON")
+
+```
+
+``` {r rejected NDVI, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+
+#setting working directory
+
+setwd("C:/Users/garci/Desktop/chile_data/rejected_NDVI")
+
+#upload and bind csvs together
+rejected_ndvi <- 
+  list.files(pattern = "*.csv") %>% 
+  map_df(~read_csv(.)) %>%
+  as.data.frame() %>% #turn into dataframe
+  rename(polygon_id = Code)
+
+
+#match NDVIs with dataset
+rejected_panel <- rejected_ndvi %>%
+  inner_join(rejected_df, by = "polygon_id") %>%
+  mutate(rptpre_comuna = Comuna,
+         rptpre_region = Region,
+         rptpro_objetivo_manejo = `Objetivo Manejo`,
+         rptpro_tipo_concurso = `Tipo Concurso`,
+         rptpro_puntaje = Puntaje,
+         rptpre_superficie_bonificada = Superficie,
+         rptpre_superficie_predial = SUPERFICIE,
+         rptpro_monto_total = `Monto Solicitado`,
+         first.treat = 0,
+         treat = 0)%>%
+  unite(ID, c(polygon_id, treat), sep = "-") 
+```
+
+``` {r rejected panel, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+export(rejected_panel, "rejected_panel.rds")
 
 ```
 
-
-``` {r partial rol matching CIREN properties, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
-
-# trying to generate more control properties by using partial rols
-# should be in same neighborhood as others
-
-not_later_awarded <- not_later_awarded %>%
-  separate(col = rptpre_rol, into = c("partial_rol", NA), sep = "-", remove = FALSE)
-
-
-NLA_11 <- reg11.sf %>%
-  separate(col = ROL, into = c("partial_rol", NA), sep = "-", remove = FALSE) %>%
-  right_join(not_later_awarded, by = "partial_rol") %>%#merge by rol
-  filter(Region == "Región de Aysen del General Carlos Ibáñez del Campo")
-
-NLA_12 <- reg12.sf %>%
-  separate(col = ROL, into = c("partial_rol", NA), sep = "-", remove = FALSE) %>%
-  right_join(not_later_awarded, by = "partial_rol") %>% #joining based on Rol id with CIREN data
-  filter(Region == "Región de Magallanes y la Antártica Chilena")
-
-NLA_df <- prop_rural.sf %>%
-  separate(col = ROL, into = c("partial_rol", NA), sep = "-", remove = FALSE) %>%
-  #rename(ROL = rptpre_rol) %>% #renaming rols to be the same in both datasets
-  #left_join(region_nombres, by = "rptpre_region") %>%
-  right_join(not_later_awarded, by = "partial_rol") %>%#merge by rol
-  bind_rows(NLA_11) %>%
-  bind_rows(NLA_12) %>%
-  mutate(DESCCOMU =
-           ifelse(is.na(DESCCOMU), COMUNAS, DESCCOMU)
-         ) %>%
-  mutate(comuna_stringd = stringdist(Comuna, DESCCOMU, method = "dl"),
-         rol_stringd = stringdist(ROL, rptpre_rol, method = "dl")) %>%
-  #select(rptpre_rol, ROL, rol_stringd, Comuna, DESCCOMU, comuna_stringd, Propietario, PROPIETARI) %>%
-  filter(comuna_stringd <=2 & rol_stringd <=1)
-
-```

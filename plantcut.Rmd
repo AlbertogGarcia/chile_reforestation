@@ -277,13 +277,41 @@ nativeforestlaw_df <- rol_df %>%
 # write.csv(id_poly_y1, file = "id_poly_y1.txt", row.names = FALSE)
 # st_write(id_distinct[1626:1631,], dsn = "id_poly_y1.json", driver = "GeoJSON")
 # 
-# id_poly_y2 <- paste0(id_distinct$ID[1632:1700], collapse=",")
+# id_poly_y2 <- paste0(id_distinct$ID[1634:1700], collapse=",")
 # write.csv(id_poly_y2, file = "id_poly_y2.txt", row.names = FALSE)
-# st_write(id_distinct[1632:1700,], dsn = "id_poly_y2.json", driver = "GeoJSON")
+# st_write(id_distinct[1634:1700,], dsn = "id_poly_y2.json", driver = "GeoJSON")
 
 # id_poly_z <- paste0(id_distinct$ID[1701:1775], collapse=",")
 # write.csv(id_poly_z, file = "id_poly_z.txt", row.names = FALSE)
 # st_write(id_distinct[1701:1775,], dsn = "id_poly_z.json", driver = "GeoJSON")
+
+# id_poly_aa <- paste0(id_distinct$ID[1776:1825], collapse=",")
+# write.csv(id_poly_aa, file = "id_poly_aa.txt", row.names = FALSE)
+# st_write(id_distinct[1776:1825,], dsn = "id_poly_aa.json", driver = "GeoJSON")
+
+# id_poly_ab <- paste0(id_distinct$ID[1826:1900], collapse=",")
+# write.csv(id_poly_ab, file = "id_poly_ab.txt", row.names = FALSE)
+# st_write(id_distinct[1826:1900,], dsn = "id_poly_ab.json", driver = "GeoJSON")
+
+# id_poly_ac <- paste0(id_distinct$ID[1901:1950], collapse=",")
+# write.csv(id_poly_ac, file = "id_poly_ac.txt", row.names = FALSE)
+# st_write(id_distinct[1901:1950,], dsn = "id_poly_ac.json", driver = "GeoJSON")
+
+# id_poly_ad <- paste0(id_distinct$ID[1951:2000], collapse=",")
+# write.csv(id_poly_ad, file = "id_poly_ad.txt", row.names = FALSE)
+# st_write(id_distinct[1951:2000,], dsn = "id_poly_ad.json", driver = "GeoJSON")
+# 
+# id_poly_ae <- paste0(id_distinct$ID[2001:2075], collapse=",")
+# write.csv(id_poly_ae, file = "id_poly_ae.txt", row.names = FALSE)
+# st_write(id_distinct[2001:2075,], dsn = "id_poly_ae.json", driver = "GeoJSON")
+# 
+# id_poly_af <- paste0(id_distinct$ID[2076:2136], collapse=",")
+# write.csv(id_poly_af, file = "id_poly_af.txt", row.names = FALSE)
+# st_write(id_distinct[2076:2136,], dsn = "id_poly_af.json", driver = "GeoJSON")
+# 
+# id_poly_ag <- paste0(id_distinct$ID[2138:2200], collapse=",")
+# write.csv(id_poly_ag, file = "id_poly_ag.txt", row.names = FALSE)
+# st_write(id_distinct[2138:2200,], dsn = "id_poly_ag.json", driver = "GeoJSON")
 
 ```
 
@@ -314,167 +342,13 @@ awarded_panel <- awarded_ndvi %>%
 
 awarded_panel$ID <- as.character(awarded_panel$ID)
 
-
-
 ```
 
 ``` {r awarded panel, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
-#export(awarded_panel, "awarded_panel.rds")
+# write_rds(
+#   awarded_panel,
+#   path = "awarded_panel.rds")
+# #export(awarded_panel, "awarded_panel.rds")
 
 ```
-
-``` {r did awarded, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
-
-did <- mp.spatt(NDVI ~ treat, data= awarded_panel,
-                xformla=~ rptpro_monto_total + rptpro_puntaje + rptpre_superficie_bonificada + rptpre_superficie_predial + treated.later + as.factor(rptpre_region) ,
-                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
-                 method = "logit", # activate to use logit for propensity score matching
-                 bstrap=FALSE, se=TRUE, cband=FALSE
-                , cluster = "ID"
-                )
-
-library(gridExtra)
-
-summary(did)
-
-ggdid(did)
-ggdid(did, type = "dynamic")
-
-
-```
-
-``` {r did full, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
-full_panel_2007 <- full_panel %>%
-  filter(Year >= 2007)
-
-full_panel <- full_panel_2007 %>%
-  filter(rptpre_superficie_predial > 0)
-
-did <- mp.spatt(NDVI ~ treat, data= full_panel,
-                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial + as.factor(rptpre_region) ,
-                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
-                 method = "logit", # activate to use logit, probit, lpm for propensity score matching
-                 bstrap=FALSE, se=TRUE, cband=FALSE
-                , cluster = "ID"
-                )
-
-# mp.spatt.test(NDVI ~ treat, data= full_panel,
-#                  xformlalist=list(~rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial) ,
-#                  panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
-#                  method = "logit", # activate to use logit for propensity score matching
-#                 , clustervarlist  = list("ID")
-#                 )
-
-library(gridExtra)
-
-summary(did)
-summary(did$aggte)
-
-
-ggdid(did)
-ggdid(did, type = "dynamic")
-
-
-```
-
-
-``` {r did otros interesados, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
-otros_panel <- full_panel %>%
-  filter(rptpre_superficie_predial > 0) %>%
-  filter(rptpro_tipo_concurso == "Otros Interesados")
-
-did <- mp.spatt(NDVI ~ treat, data= otros_panel,
-                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial ,
-                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
-                 method = "logit", # activate to use logit for propensity score matching
-                 bstrap=FALSE, se=TRUE, cband=FALSE
-                , cluster = "ID"
-                )
-
-library(gridExtra)
-
-summary(did$aggte, type="dynamic")
-
-ggdid(did)
-ggdid(did, type = "dynamic")
-
-
-```
-
-
-``` {r did smallholders, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
-smallholder_panel <- full_panel %>%
-  filter(rptpre_superficie_predial > 0) %>%
-  filter(rptpro_tipo_concurso != "Otros Interesados")
-
-did <- mp.spatt(NDVI ~ treat, data= smallholder_panel,
-                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial ,
-                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
-                 method = "logit", # activate to use logit for propensity score matching
-                 bstrap=FALSE, se=TRUE, cband=FALSE
-                , cluster = "ID"
-                )
-
-library(gridExtra)
-
-summary(did$aggte, type="dynamic")
-
-ggdid(did)
-ggdid(did, type = "dynamic")
-
-
-```
-
-``` {r did timber, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
-timber_panel <- full_panel %>%
-  filter(rptpre_superficie_predial > 0) %>%
-  filter(rptpro_objetivo_manejo == "PRODUCCION MADERERA")
-
-did <- mp.spatt(NDVI ~ treat, data= otros_panel,
-                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial ,
-                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
-                 method = "logit", # activate to use logit for propensity score matching
-                 bstrap=FALSE, se=TRUE, cband=FALSE
-                , cluster = "ID"
-                )
-
-library(gridExtra)
-
-summary(did$aggte, type="dynamic")
-
-ggdid(did)
-ggdid(did, type = "dynamic")
-
-
-```
-
-``` {r did non timber, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
-nontimber_panel <- full_panel %>%
-  filter(rptpre_superficie_predial > 0) %>%
-  filter(rptpro_objetivo_manejo == "PRODUCCION NO MADERERA")
-
-did <- mp.spatt(NDVI ~ treat, data= nontimber_panel,
-                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial,
-                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
-                 method = "logit", # activate to use logit for propensity score matching
-                 bstrap=FALSE, se=TRUE, cband=FALSE
-                , cluster = "ID"
-                )
-
-library(gridExtra)
-
-summary(did$aggte, type="dynamic")
-
-ggdid(did)
-ggdid(did, type = "dynamic")
-
-
-```
-

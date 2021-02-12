@@ -37,13 +37,12 @@ I use a difference-in-differences event study to evaluate the impact of the subs
 
 ## Why aggregate group-time treatment effects ex-post?
 
-I use the difference-in-differences estimator proposed by Callaway and Santa'ana (2019) to mitigate concerns over issues surrounding the use of TWFE models in the presence of heterogeneous treatment effects. 
-This amounts to first using a generalized propensity score method to better compare treatment and control units based on a set of covariates. Then, for each cohort, I compute the standard DID event study, before aggregating the group-time treatment effects with weights corresponding to Callaway and Santa'ana (2019). This ensures that the weights for each group-time treatment effect are not negative, and therefore, do not risk reversing the sign of the treatment effect estimate.
+I use the difference-in-differences estimator proposed by Callaway and Santa'ana (2019) to mitigate concerns over issues surrounding the use of TWFE models in the presence of heterogeneous treatment effects. This amounts to first using a generalized propensity score method to better compare treatment and control units based on a set of covariates. Then, for each cohort, I compute the standard DID event study, before aggregating the group-time treatment effects with weights corresponding to each group's representativeness in the sample. This ensures that the weights for each group-time treatment effect are not negative, and therefore, do not risk reversing the sign of the treatment effect estimate.
 
 The current set of covariates includes:
 \begin{itemize}
-\item property characteristics (lattitude, longitude, area in ha, etc. )
-\item award characteristics (ha subsidized, money awarded, primary project objective, etc.)
+\item property characteristics (lattitude, longitude, area in hectares, etc. )
+\item award characteristics (hectares subsidized, money awarded, primary project objective, etc.)
 \end{itemize}
 
 ## Anticipation considerations
@@ -62,11 +61,12 @@ library(readxl)
 library(sf)
 library(stringi)
 library(data.table)
-library(did)
 library(rio)
-
+#library(DIDmultiplegt)
 # library(devtools)
 # install_github("bcallaway11/did")
+library(did)
+library(qte)
 
 ```
 
@@ -75,14 +75,16 @@ library(rio)
 
 #setwd("C:/Users/garci/Desktop/chile_data")
 
-# xls files downloaded from CONAF
 #projects
-awarded_panel <- readRDS("awarded_panel.rds")
-rejected_panel <- readRDS("rejected_panel.rds")
+awarded_panel <- readRDS("awarded_panel.rds")%>%
+  mutate(area_ha = ifelse(is.na(rptpre_superficie_predial), SUPERFICIE, rptpre_superficie_predial))
+rejected_panel_b <- readRDS("rejected_panel_2.rds")%>%
+  bind_rows(readRDS("rejected_panel.rds"))%>%
+  distinct(Year, ID, .keep_all = TRUE)
 
 full_panel_2006 <- awarded_panel %>%
   bind_rows(rejected_panel)%>%
-  filter(Year >= 2006 & Year < 2019) %>%
+  filter( Year < 2019 ) %>%#Year >= 2006&
   mutate(smallholder = ifelse(rptpro_tipo_concurso=="Otros Interesados", 0, 1))
 ```
 
@@ -92,31 +94,10 @@ library(gridExtra)
 
 
 full_panel <- full_panel_2006 %>%
-  filter(rptpre_superficie_predial >= 0)
-
+  mutate(treat = ifelse(rptpro_ano ==2019, 0, treat))
+full_panel$ID <- as.numeric(full_panel$ID)
 ```
 
-<!-- ``` {r full did, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE} -->
-<!-- did <- mp.spatt(NDVI ~ treat, data= full_panel, -->
-<!--                 xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial + lat + long + smallholder +  -->
-<!--                   as.factor(rptpro_objetivo_manejo), -->
-<!--                  panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year", -->
-<!--                  method = "logit", # activate to use logit, probit, lpm for propensity score matching -->
-<!--                  bstrap=TRUE, se=TRUE, cband=FALSE -->
-<!--                 , cluster = "ID" -->
-<!--                 ) -->
-
-<!-- #summary(did) -->
-<!-- #summary(did$aggte) -->
-<!-- ``` -->
-
-<!-- ``` {r did full plots, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE} -->
-
-<!-- #ggdid(did) -->
-<!-- ggdid(did, type = "dynamic") -->
-
-
-<!-- ``` -->
 
 ## comparing performance of larger properties ("other interested parties") vs. smallholders
 
@@ -125,17 +106,64 @@ While the average NDVI of both other interested party and smallholder landowners
 
 ``` {r did otros interesados, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 
+aw_otros <- full_panel %>%
+  filter(rptpro_tipo_concurso == "Otros Interesados" &
+           treat==1)%>%
+  filter(plantacion==1|`plantacion-suplementaria`==1|regeneracion==1)
+
+
 otros_panel <- full_panel %>%
-  filter(rptpro_tipo_concurso == "Otros Interesados" )#& rptpre_region != "Región de Ñuble") 
+  filter(rptpro_tipo_concurso == "Otros Interesados" )%>%
+  #filter(plantacion==1|`plantacion-suplementaria`==1|regeneracion==1)%>%
+  mutate(rptpro_monto_total = ifelse(is.na(rptpro_monto_total), 0, rptpro_monto_total)
+         )%>%
+  distinct(ID, Year, .keep_all = TRUE)#%>%
+  # filter( (rptpro_puntaje > quantile(aw_otros$rptpro_puntaje, 0.25) &
+  #           rptpro_puntaje < quantile(aw_otros$rptpro_puntaje, .5))
+  #         | treat ==0)
 
-did_otros <- mp.spatt(NDVI ~ treat, data= otros_panel,
-                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial + lat + long  + as.factor(rptpro_objetivo_manejo),
-                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
-                 #method = "logit", # activate to use logit for propensity score matching
-                 bstrap=TRUE, se=TRUE, cband=TRUE
-                , cluster = "ID"
-                )
+# did_otros <- mp.spatt(NDVI ~ treat, data= otros_panel,
+#                 xformla=~ rptpro_monto_total + lat + rptpre_superficie_bonificada + area_ha,
+#                  panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year", bstrap=TRUE, se=TRUE, cband=TRUE, cluster = "ID"
+#                 )
+# 
+# summary(did_otros)
+first_awarded$prop_ID <- as.character(first_awarded$prop_ID)
+otros_panel <- first_awarded %>%
+  rename(ID = prop_ID)%>%
+  bind_rows(rejected_panel)%>%
+  filter(rptpro_tipo_concurso == "Otros Interesados")
+otros_panel$ID <- as.numeric(otros_panel$ID)
+did.att.gt <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="ID",
+                     gname="first.treat",
+                     #xformla=~  lat+long+rptpro_monto_total,
+                     data=otros_panel, clustervars = "ID"
+                     #,panel=TRUE, bstrap = TRUE, cband = TRUE
+                     )
+summary(did.att.gt)
 
+did.es <- aggte(did.att.gt, type="dynamic", na.rm = TRUE)#, min_e=-5, max_e = 9)
+did.simple <- aggte(did.att.gt, type = "simple", na.rm=TRUE)
+# plot the event study
+ggdid(did.es)
+summary(did.simple)
+
+```
+
+``` {r qte test, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+qte_df <- otros_panel %>%
+  filter(first.treat==2009|first.treat==0)%>%
+  mutate(treat = ifelse(is.na(treat), 0, treat))
+
+
+c1 <- CiC(NDVI ~ treat, t=2015, tmin1=2008, tname="Year",
+ xformla=~lat+long+rptpro_monto_total,
+ data=qte_df, idname="ID", se=TRUE,
+ probs=seq(0.05, 0.95, 0.05))
+summary(c1)
+ggqte(c1)
 ```
 
 ### other interested parties
@@ -143,8 +171,16 @@ did_otros <- mp.spatt(NDVI ~ treat, data= otros_panel,
 We see that other interested parties perform relatively well. Pre-trends largely seem to hold based on individual cohorts. The vast majority are not statistically different from zero, and there is no clear trend indicating that land use changes in trend prior to receiving the subsidy. We fail to reject the null that all pre-trend estimates are statistically different from zero. It is also reassuring that several different cohorts exhibit positive treatment effects through time, indicating that the effect is not overly driven by a few observations or a single  cohort. 
 ``` {r did otros interesados plots, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 ggdid(did_otros)
+ggsave(plot = ggdid(did_otros),
+       path = "figs",
+  filename = "otros_cohorts.png",
+  width = 8,
+  units = "in",
+  dpi = 500)
+
 ggdid(did_otros, type = "dynamic")
-#summary(did_otros)#$aggte)
+
+ggsave(path = "figs", filename = "otros_dynamic.png", dpi = 500)
 
 ```
 
@@ -159,154 +195,93 @@ smallholder_panel <- full_panel %>%
   filter(rptpro_tipo_concurso != "Otros Interesados")
 
 did_sh <- mp.spatt(NDVI ~ treat, data= smallholder_panel,
-                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial +lat+long + as.factor(rptpro_objetivo_manejo),
-                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year",
-                 method = "logit", # activate to use logit for propensity score matching
-                 bstrap=TRUE, se=TRUE, cband=TRUE
-                , cluster = "ID"
+                xformla=~ rptpro_monto_total + lat + rptpre_superficie_bonificada + area_ha ,
+                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year", bstrap=TRUE, se=TRUE, cband=TRUE, cluster = "ID"
                 )
 
 
-summary(did_sh)#$aggte, type="dynamic")
+summary(did_sh$aggte, type="dynamic")
 ```
 
 ``` {r did smallholders plots, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 ggdid(did_sh)
+ggsave(plot = ggdid(did_sh),
+       path = "figs",
+  filename = "sh_cohorts.png",
+  width = 8,
+  units = "in",
+  dpi = 500)
 ggdid(did_sh, type = "dynamic")
+ggsave(path = "figs", filename = "sh_dynamic.png", dpi = 500)
 
+```
+
+\clearpage
+
+## Exploring other potentially important sub-stories
+
+### reforestation specific projects
+``` {r did reforestation, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+# reforestation_panel <- awarded_panel %>%
+#   filter(plantacion == 1 | `plantacion-suplementaria`==1 | `corta-regeneracion` ==1|regeneracion==1|enriquecimiento==1)%>%
+#   bind_rows(rejected_panel)%>%
+#   filter( Year < 2019 ) %>%#Year >= 2006&
+#   mutate(smallholder = ifelse(rptpro_tipo_concurso=="Otros Interesados", 0, 1))
+
+reforestation_panel <- full_panel %>%
+  filter(plantacion == 1 | `plantacion-suplementaria`==1 | `corta-regeneracion` ==1|regeneracion==1|enriquecimiento==1)
+
+ref_otros_panel <- reforestation_panel %>%
+  filter(smallholder == 0)
+ref_sh_panel <- reforestation_panel %>%
+  filter(smallholder == 1)
+
+
+
+did_ref <- mp.spatt(NDVI ~ treat, data= reforestation_panel,
+                xformla=~ rptpro_monto_total + lat + rptpre_superficie_bonificada + area_ha ,
+                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year", bstrap=TRUE, se=TRUE, cband=TRUE, cluster = "ID"
+                )
+
+did_ref_otros <- mp.spatt(NDVI ~ treat, data= ref_otros_panel,
+                xformla=~ rptpro_monto_total + lat + rptpre_superficie_bonificada + area_ha,
+                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year", bstrap=TRUE, se=TRUE, cband=TRUE, cluster = "ID"
+                )
+
+did_ref_sh <- mp.spatt(NDVI ~ treat, data= ref_sh_panel,
+                xformla=~ rptpro_monto_total + lat + rptpre_superficie_bonificada + area_ha,
+                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year", bstrap=TRUE, se=TRUE, cband=TRUE, cluster = "ID"
+                )
+```
+
+``` {r did reforestation plots, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+ggdid(did_ref_otros)
+ggsave(plot = ggdid(did_ref_sh),
+       path = "figs",
+  filename = "sh_ref_cohorts.png",
+  width = 8,
+  units = "in",
+  dpi = 500)
+
+ggsave(plot = ggdid(did_ref_otros),
+       path = "figs",
+  filename = "otros_ref_cohorts.png",
+  width = 8,
+  units = "in",
+  dpi = 500)
+      
+ggdid(did_ref_otros, type = "dynamic")
+ggsave(path = "figs", filename = "otros_reforest_dynamic.png", dpi = 500)
+
+ggdid(did_ref_sh, type = "dynamic")
+ggsave(path = "figs", filename = "sh_reforest_dynamic.png", dpi = 500)
 
 ```
 
 
 
 
-<!-- \clearpage -->
-<!-- ## Additional subsets -->
-
-<!-- ### Other Interested Parties -->
-
-<!-- #### other interested timber production -->
-
-<!-- There is a sustained effect for other interested parties undertaking timber production projects. -->
-
-<!-- ``` {r did timber other, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE} -->
-
-<!-- timber_panel <- full_panel %>% -->
-<!--   filter(rptpro_objetivo_manejo == "PRODUCCION MADERERA" & rptpro_tipo_concurso == "Otros Interesados") -->
-
-<!-- did <- mp.spatt(NDVI ~ treat, data= timber_panel, -->
-<!--                 xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial+lat+long, -->
-<!--                  panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year", -->
-<!--                  method = "logit", # activate to use logit for propensity score matching -->
-<!--                  bstrap=TRUE, se=TRUE, cband=FALSE -->
-<!--                 , cluster = "ID" -->
-<!--                 ) -->
-
-<!-- #summary(did) -->
-<!-- ``` -->
-
-
-<!-- ``` {r did timber other plots, echo = FALSE} -->
-
-<!-- #ggdid(did) -->
-<!-- ggdid(did, type = "dynamic") -->
-
-
-<!-- ``` -->
-
-<!-- #### other interested non-timber production -->
-
-<!-- Similar to timber production, other interested parties sustain a positive treatment effect though time. -->
-
-<!-- ``` {r did non timber others 1, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE} -->
-
-<!-- nontimber_panel <- full_panel %>% -->
-<!--   filter(rptpro_objetivo_manejo == "PRODUCCION NO MADERERA" & rptpro_tipo_concurso == "Otros Interesados") -->
-
-<!-- did <- mp.spatt(NDVI ~ treat, data= nontimber_panel, -->
-<!--                 xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial +lat +long -->
-<!--                 , -->
-<!--                  panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year", -->
-<!--                  method = "logit", # activate to use logit for propensity score matching -->
-<!--                  bstrap=TRUE, se=TRUE, cband=FALSE -->
-<!--                 , cluster = "ID" -->
-<!--                 ) -->
-
-
-
-<!-- #summary(did$aggte, type="dynamic") -->
-<!-- ``` -->
-
-<!-- ``` {r did non timber others plots 1, echo = FALSE} -->
-
-<!-- #ggdid(did) -->
-
-<!-- ggdid(did, type = "dynamic") -->
-
-
-<!-- ``` -->
-<!-- \clearpage -->
-
-<!-- ### Smallholders -->
-
-<!-- #### smallholder timber production -->
-
-<!-- There is no clear effect for smallholders. -->
-
-<!-- ``` {r did timber small, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE} -->
-
-<!-- timber_panel <- full_panel %>% -->
-<!--   filter(rptpro_objetivo_manejo == "PRODUCCION MADERERA" & rptpro_tipo_concurso != "Otros Interesados") -->
-
-<!-- did <- mp.spatt(NDVI ~ treat, data= timber_panel, -->
-<!--                 xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial+lat+long, -->
-<!--                  panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year", -->
-<!--                  method = "logit", # activate to use logit for propensity score matching -->
-<!--                  bstrap=TRUE, se=TRUE, cband=FALSE -->
-<!--                 , cluster = "ID" -->
-<!--                 ) -->
-
-<!-- #summary(did) -->
-<!-- ``` -->
-
-<!-- ``` {r did timber small plots, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE} -->
-
-<!-- #ggdid(did) -->
-<!-- ggdid(did, type = "dynamic") -->
-
-
-<!-- ``` -->
-
-<!-- #### smallholder non-timber production -->
-
-<!-- This is the one case in which we do see smallholders with a positive treatment effect, although not at the magnitude of the larger property winners.  -->
-<!-- ``` {r did non timber small, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE} -->
-
-<!-- nontimber_panel <- full_panel %>% -->
-<!--   filter(rptpro_objetivo_manejo == "PRODUCCION NO MADERERA" & rptpro_tipo_concurso != "Otros Interesados") -->
-
-<!-- did <- mp.spatt(NDVI ~ treat, data= nontimber_panel, -->
-<!--                 xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial #+lat+long -->
-<!--                 , -->
-<!--                  panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year", -->
-<!--                  method = "logit", # activate to use logit for propensity score matching -->
-<!--                  bstrap=TRUE, se=TRUE, cband=FALSE -->
-<!--                 , cluster = "ID" -->
-<!--                 ) -->
-
-
-<!-- #summary(did$aggte, type="dynamic") -->
-<!-- ``` -->
-
-<!-- ``` {r did non timber small plots, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE} -->
-
-<!-- #ggdid(did) -->
-<!-- ggdid(did, type = "dynamic") -->
-
-
-<!-- ``` -->
-
-\clearpage
 # Accounting for limited treatment anticipation
 
 Although not the preferred specification, I now check to see how robust these results are when accounting for one-period of possible anticipation. For all estimates, I drop the period immediately prior to treatment, so that the treatment effect estimates are based on the t-2 period (where t is the year of treatment).
@@ -314,48 +289,9 @@ Although not the preferred specification, I now check to see how robust these re
 
 ``` {r anticipation dataframe, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 
-
-ant_panel <- awarded_panel %>%
-  mutate(year_drop = first.treat-1,
-         year_na = ifelse(Year == year_drop, NA, Year)
-         )%>%
-  drop_na(year_na)%>%
-  mutate(year_adjusted = ifelse(Year < year_drop, Year+1, Year)
-         )%>%
-  bind_rows(rejected_panel)%>%
-  filter(year_adjusted >= 2006 & year_adjusted < 2019 & first.treat < 2019) %>%
-  mutate(smallholder = ifelse(rptpro_tipo_concurso=="Otros Interesados", 0, 1))
+ant_panel <- full_panel %>%
+  mutate(first.treat = ifelse(first.treat >0, as.numeric(first.treat) - 1, 0))
 ```
-
-
-
-<!-- ``` {r did full, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE} -->
-<!-- library(gridExtra) -->
-
-
-<!-- ant_panel <- ant_panel %>% -->
-<!--   filter(rptpre_superficie_predial > 0) -->
-
-<!-- did <- mp.spatt(NDVI ~ treat, data= ant_panel, -->
-<!--                 xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial + lat + long + smallholder  +as.factor(rptpro_objetivo_manejo) -->
-<!--                 , -->
-<!--                  panel=TRUE, first.treat.name="first.treat", idname="ID", tname="year_adjusted", -->
-<!--                  method = "logit", # activate to use logit, probit, lpm for propensity score matching -->
-<!--                  bstrap=TRUE, se=TRUE, cband=FALSE -->
-<!--                 , cluster = "ID" -->
-<!--                 ) -->
-
-<!-- summary(did) -->
-<!-- summary(did$aggte) -->
-<!-- ``` -->
-
-<!-- ``` {r did full plots, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE} -->
-
-<!-- # ggdid(did) -->
-<!-- # ggdid(did, type = "dynamic") -->
-
-
-<!-- ``` -->
 
 ## comparing performance of larger properties ("other interested parties") vs. smallholders
 
@@ -364,12 +300,9 @@ ant_panel <- awarded_panel %>%
 otros_ant_panel <- ant_panel %>%
   filter(rptpro_tipo_concurso == "Otros Interesados" )
 
-did_otros <- mp.spatt(NDVI ~ treat, data= otros_ant_panel,
-                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial + lat + long  + as.factor(rptpro_objetivo_manejo),
-                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="year_adjusted",
-                 #method = "logit", # activate to use logit for propensity score matching
-                 bstrap=TRUE, se=TRUE, cband=FALSE
-                , cluster = "ID"
+did_otros_ant <- mp.spatt(NDVI ~ treat, data= otros_ant_panel,
+                xformla=~ rptpro_monto_total + lat + rptpre_superficie_bonificada + area_ha, 
+                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year", bstrap=TRUE, se=TRUE, cband=TRUE, cluster = "ID"
                 )
 
 ```
@@ -378,8 +311,9 @@ did_otros <- mp.spatt(NDVI ~ treat, data= otros_ant_panel,
 
 
 ``` {r did otros interesados plots ant, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-#summary(did_otros$aggte)
-ggdid(did_otros, type = "dynamic")
+
+ggdid(did_otros_ant, type = "dynamic")
+ggsave(path = "figs", filename = "anticipation_otros_dynamic.png", dpi = 500)
 ```
 
 
@@ -390,64 +324,19 @@ Here, we see that smallholders see no statistically significant treatment effect
 ``` {r did smallholders ant, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 
 smallholder_ant_panel <- ant_panel %>%
-  filter(rptpro_tipo_concurso != "Otros Interesados")#& rptpro_objetivo_manejo != "PRODUCCION MADERERA")
+  filter(rptpro_tipo_concurso != "Otros Interesados")
 
-did_sh <- mp.spatt(NDVI ~ treat, data= smallholder_ant_panel,
-                xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial +lat+long  +as.factor(rptpro_objetivo_manejo)
-                ,
-                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="year_adjusted",
-                 method = "logit", # activate to use logit for propensity score matching
-                 bstrap=TRUE, se=TRUE, cband=FALSE
-                , cluster = "ID"
+did_sh_ant <- mp.spatt(NDVI ~ treat, data= smallholder_ant_panel,
+                xformla=~ rptpro_monto_total + lat + rptpre_superficie_bonificada + area_ha, 
+                 panel=TRUE, first.treat.name="first.treat", idname="ID", tname="Year", bstrap=TRUE, se=TRUE, cband=TRUE, cluster = "ID"
                 )
 
-
-
-#summary(did_sh$aggte, type="dynamic")
 ```
 
 ``` {r did smallholders plots ant, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
-#summary(did_sh$aggte)
-ggdid(did_sh, type = "dynamic")
+ggdid(did_sh_ant, type = "dynamic")
+ggsave(path = "figs", filename = "anticipation_sh_dynamic.png", dpi = 500)
 
 ```
-
-
-<!-- ## Otros timber -->
-<!-- ``` {r did otros interesados timber, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE} -->
-
-<!-- otros_ant_panel <- ant_panel %>% -->
-<!--   filter(rptpro_tipo_concurso == "Otros Interesados" & rptpro_objetivo_manejo == "PRODUCCION MADERERA") -->
-
-<!-- did_otros <- mp.spatt(NDVI ~ treat, data= otros_ant_panel, -->
-<!--                 xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial + lat + long, -->
-<!--                  panel=TRUE, first.treat.name="first.treat", idname="ID", tname="year_adjusted", -->
-<!--                  #method = "logit", # activate to use logit for propensity score matching -->
-<!--                  bstrap=TRUE, se=TRUE, cband=FALSE -->
-<!--                 , cluster = "ID" -->
-<!--                 ) -->
-
-<!-- ggdid(did_otros, type = "dynamic") -->
-
-<!-- ``` -->
-
-<!-- ## OTros nontimber -->
-
-<!-- ``` {r did otros interesados nontimber, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE} -->
-
-<!-- otros_ant_panel <- ant_panel %>% -->
-<!--   filter(rptpro_tipo_concurso == "Otros Interesados" & rptpro_objetivo_manejo != "PRODUCCION MADERERA") -->
-
-<!-- did_otros <- mp.spatt(NDVI ~ treat, data= otros_ant_panel, -->
-<!--                 xformla=~ rptpro_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial + lat + long, -->
-<!--                  panel=TRUE, first.treat.name="first.treat", idname="ID", tname="year_adjusted", -->
-<!--                  #method = "logit", # activate to use logit for propensity score matching -->
-<!--                  bstrap=TRUE, se=TRUE, cband=FALSE -->
-<!--                 , cluster = "ID" -->
-<!--                 ) -->
-
-<!-- ggdid(did_otros, type = "dynamic") -->
-
-<!-- ``` -->
 

@@ -1,0 +1,81 @@
+---
+title: "building native forest law impact dataframes"
+#author: "Albert Garcia"
+output:
+  pdf_document:
+    number_sections: yes
+    toc: no
+fontsize: 11pt    
+documentclass: article
+geometry: margin=1in
+header-includes: 
+  \usepackage{sectsty}
+  \usepackage{enumitem}
+  \usepackage{comment}
+  \usepackage{multirow,array}
+  \usepackage{makecell}
+  \usepackage{dcolumn}
+---
+
+```{r geoms, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+setwd("C:/Users/garci/Desktop/chile_data/lu_2001")
+library(raster)
+library(stars)
+library(nngeo)
+
+lu2001_rast <- read_stars("lu_2001.tif")
+st_crs(lu2001_rast)
+```
+
+```{r}
+rolarea.sf <- st_read(
+  "rolarea_geoms.shp"
+  ) %>%
+  st_transform(st_crs(lu2001_rast))
+
+
+lu_cropped <- st_crop(lu2001_rast , rolarea.sf)
+plot(lu_cropped)
+
+# wrapper fuction to use raster:extract on stars objects
+raster_extract = function(x, y, fun = NULL, na.rm = FALSE) {
+  x = as(x, "Raster")
+  y = as(y, "Spatial")
+  raster::extract(x = x, y = y, fun = fun, na.rm = na.rm)
+}
+
+# memory.size(max = FALSE)
+# memory.limit(size = NA)
+
+gc()
+memory.limit(size=50000)
+
+test <- raster_extract(x = lu_cropped , y = rolarea.sf, fun = NULL, na.rm = FALSE)
+
+```
+
+
+```{r}
+
+elevation.chl <- getData('alt', country='CHL')[[1]] 
+
+slope <- terrain(elevation.chl, opt=c('slope', 'aspect'), unit='degrees')
+
+rolarea.sf <- st_read(
+  "rolarea_geoms.shp"
+  ) %>%
+  st_transform(st_crs(slope))
+
+elevation <- st_as_stars(crop(elevation.chl , rolarea.sf))
+
+
+elev <- raster_extract(elevation, rolarea.sf, fun=mean, na.rm=TRUE)
+e <- raster_extract(slope, rolarea.sf, fun=mean, na.rm=TRUE)
+
+dem.vals_df <- data.frame(rolarea.sf$prop_ID, e, ex)
+
+# # Use list apply to calculate mean for each polygon
+# dem.vals_df$elev.mean <- lapply(ex, FUN=mean)
+
+```
+

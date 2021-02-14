@@ -490,4 +490,7 @@ st_write(id_distinct[2476:2500,], dsn = "id_poly_ay2.json", driver = "GeoJSON")
 
 ```
 
+```{r geoms, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+# here i load the CIREN shapefiles and reduce the size by subsetting provinces
 
+````

@@ -1,0 +1,54 @@
+---
+title: "matching"
+#author: "Albert Garcia"
+output:
+  pdf_document:
+    number_sections: yes
+    toc: no
+fontsize: 11pt    
+documentclass: article
+geometry: margin=1in
+header-includes: 
+  \usepackage{sectsty}
+  \usepackage{enumitem}
+  \usepackage{comment}
+  \usepackage{multirow,array}
+  \usepackage{makecell}
+  \usepackage{dcolumn}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(out.height='300px', dpi=200)
+
+### loads packages
+library(latex2exp)
+library(tidyverse)
+library(ggplot2)
+library(sf)
+library(stringi)
+library(data.table)
+
+```
+
+
+
+``` {r biobio_ciren_ndvi, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+#setting working directory
+
+setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/match/biobio")
+
+# load biobio ndvi time series forr all ciren properties
+temp = list.files(pattern="*.csv")
+biobio_ndvi = bind_rows(lapply(temp, read_csv))%>%
+  #filter(objectid == 59515) %>%
+  select(objectid, year, mean) %>%
+  distinct(objectid, year, .keep_all = TRUE) %>%
+  spread(key = "year", value = "mean")# cast ndvi into wide format
+
+
+```
+
+
+
+
+

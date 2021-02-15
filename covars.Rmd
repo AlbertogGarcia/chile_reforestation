@@ -1,0 +1,183 @@
+---
+title: "building native forest law impact dataframes"
+#author: "Albert Garcia"
+output:
+  pdf_document:
+    number_sections: yes
+    toc: no
+fontsize: 11pt    
+documentclass: article
+geometry: margin=1in
+header-includes: 
+  \usepackage{sectsty}
+  \usepackage{enumitem}
+  \usepackage{comment}
+  \usepackage{multirow,array}
+  \usepackage{makecell}
+  \usepackage{dcolumn}
+---
+
+```{r geoms, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+#setwd("C:/Users/garci/Desktop/chile_data/lu_2001")
+library(raster)
+library(stars)
+library(doParallel)
+library(sp)
+library(sf)
+library(snow)
+library(tidyverse)
+library(tictoc)
+library(data.table)
+library(exactextractr)
+
+
+lu2001_rast <- read_stars("input_data/lu_2001/lu_2001.tif")
+st_crs(lu2001_rast)
+
+
+```
+
+```{r rolarea}
+
+rolarea.sf <- st_read(
+  "rolarea_geoms.shp"
+  ) %>%
+  st_transform(st_crs(lu2001_rast))
+
+sf.object <- rolarea.sf
+stars.object <- lu2001_rast
+rast <- as(stars.object, "Raster")
+spatial.object <- as(sf.object, "Spatial")
+
+num_cores <- 15
+
+#--- number of polygons in a group ---#
+num_in_group <- floor(nrow(sf.object)/num_cores)
+
+#--- assign group id to polygons ---#
+polys <- sf.object %>%  
+  mutate(
+    #--- create grid id ---#
+    grid_id = 1:nrow(.),
+    #--- assign group id  ---#
+    group_id = grid_id %/% num_in_group + 1
+  )
+
+
+extract_by_group_reduced <- function(i){
+  
+  temp <- exact_extract(
+    rast, 
+    filter(polys, group_id == i)
+  ) %>% 
+    #--- combine the list of data.frames into one with polygon id ---#
+    rbindlist(idcol = "id_within_group") %>% 
+    group_by(id_within_group, value) %>%
+    summarize(class_coverage = sum(coverage_fraction)) %>%
+    group_by(id_within_group) %>%
+    mutate(poly_total = sum(class_coverage),
+           class_proportion = class_coverage/poly_total)
+    
+  temp_return <- as.data.frame(filter(polys, group_id == i))%>%
+    mutate(id_within_group = (grid_id - min(grid_id) + 1)) %>%
+    inner_join(temp, by = c("id_within_group"))
+  
+  return(temp_return)
+}
+
+tic()
+#--- parallelized processing by group ---#
+tempor <- mclapply(
+  1:length(unique(polys$group_id)), 
+  function(i) extract_by_group_reduced(i),
+  mc.cores = num_cores
+)    
+toc()
+
+class <- tempor %>%
+  rbindlist(idcol = TRUE) 
+
+class$value <- paste0("c_", class$value)
+
+rolarea_class <- class %>%
+  select(prop_ID, value, class_proportion) %>%
+  spread(key = "value", value = "class_proportion")
+
+length(unique(rolarea_class$prop_ID))
+
+### start to get elevation and slope data
+elevation <- 
+terr <- terrain(elevation, opt=c('slope'), unit='degrees')
+elev <- extract(elevation, spatial.object, fun=mean, na.rm=TRUE)
+slope <- extract(terr, spatial.object, fun = mean, na.rm = TRUE)
+dem <- as.data.frame(rolarea.sf$prop_ID, elev, slope)
+```
+
+```{r}
+
+biobio.sf <- st_read(
+  "input_data/PROPIEDADES_RURALES/LOS_RÍOS_CIREN_2018.shp"
+  ) %>%
+  st_transform(st_crs(lu2001_rast))
+
+sf.object <- biobio.sf
+stars.object <- lu2001_rast
+rast <- as(stars.object, "Raster")
+
+num_cores <- 15
+
+#--- number of polygons in a group ---#
+num_in_group <- floor(nrow(sf.object)/num_cores)
+
+#--- assign group id to polygons ---#
+polys <- sf.object %>%  
+  mutate(
+    #--- create grid id ---#
+    grid_id = 1:nrow(.),
+    #--- assign group id  ---#
+    group_id = grid_id %/% num_in_group + 1
+  )
+
+
+extract_by_group_reduced <- function(i){
+  
+  temp <- exact_extract(
+    rast, 
+    filter(polys, group_id == i)
+  ) %>% 
+    #--- combine the list of data.frames into one with polygon id ---#
+    rbindlist(idcol = "id_within_group") %>% 
+    group_by(id_within_group, value) %>%
+    summarize(class_coverage = sum(coverage_fraction)) %>%
+    group_by(id_within_group) %>%
+    mutate(poly_total = sum(class_coverage),
+           class_proportion = class_coverage/poly_total)
+    
+  temp_return <- as.data.frame(filter(polys, group_id == i))%>%
+    mutate(id_within_group = (grid_id - min(grid_id) + 1)) %>%
+    inner_join(temp, by = c("id_within_group"))
+  
+  return(temp_return)
+}
+
+tic()
+#--- parallelized processing by group ---#
+tempor <- mclapply(
+  1:length(unique(polys$group_id)), 
+  function(i) extract_by_group_reduced(i),
+  mc.cores = num_cores
+)    
+toc()
+
+class <- tempor %>%
+  rbindlist(idcol = TRUE) 
+
+class$value <- paste0("c_", class$value)
+
+biobio_class <- class %>%
+  select(objectid, rol, desccomu, value, class_proportion) %>%
+  spread(key = "value", value = "class_proportion")
+
+length(unique(class$objectid))
+
+```

@@ -18,64 +18,167 @@ header-includes:
 ---
 
 ```{r geoms, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
-setwd("C:/Users/garci/Desktop/chile_data/lu_2001")
+#setwd("C:/Users/garci/Desktop/chile_data/lu_2001")
 library(raster)
 library(stars)
-library(nngeo)
+library(doParallel)
+library(sp)
+library(sf)
+library(snow)
+library(tidyverse)
+library(tictoc)
+library(data.table)
+library(exactextractr)
 
-lu2001_rast <- read_stars("lu_2001.tif")
+
+lu2001_rast <- read_stars("input_data/lu_2001/lu_2001.tif")
 st_crs(lu2001_rast)
+
+
 ```
 
-```{r}
+```{r rolarea}
+
 rolarea.sf <- st_read(
   "rolarea_geoms.shp"
   ) %>%
   st_transform(st_crs(lu2001_rast))
 
+sf.object <- rolarea.sf
+stars.object <- lu2001_rast
+rast <- as(stars.object, "Raster")
+spatial.object <- as(sf.object, "Spatial")
 
-lu_cropped <- st_crop(lu2001_rast , rolarea.sf)
-plot(lu_cropped)
+num_cores <- 15
 
-# wrapper fuction to use raster:extract on stars objects
-raster_extract = function(x, y, fun = NULL, na.rm = FALSE) {
-  x = as(x, "Raster")
-  y = as(y, "Spatial")
-  raster::extract(x = x, y = y, fun = fun, na.rm = na.rm)
+#--- number of polygons in a group ---#
+num_in_group <- floor(nrow(sf.object)/num_cores)
+
+#--- assign group id to polygons ---#
+polys <- sf.object %>%  
+  mutate(
+    #--- create grid id ---#
+    grid_id = 1:nrow(.),
+    #--- assign group id  ---#
+    group_id = grid_id %/% num_in_group + 1
+  )
+
+
+extract_by_group_reduced <- function(i){
+  
+  temp <- exact_extract(
+    rast, 
+    filter(polys, group_id == i)
+  ) %>% 
+    #--- combine the list of data.frames into one with polygon id ---#
+    rbindlist(idcol = "id_within_group") %>% 
+    group_by(id_within_group, value) %>%
+    summarize(class_coverage = sum(coverage_fraction)) %>%
+    group_by(id_within_group) %>%
+    mutate(poly_total = sum(class_coverage),
+           class_proportion = class_coverage/poly_total)
+    
+  temp_return <- as.data.frame(filter(polys, group_id == i))%>%
+    mutate(id_within_group = (grid_id - min(grid_id) + 1)) %>%
+    inner_join(temp, by = c("id_within_group"))
+  
+  return(temp_return)
 }
 
-# memory.size(max = FALSE)
-# memory.limit(size = NA)
+tic()
+#--- parallelized processing by group ---#
+tempor <- mclapply(
+  1:length(unique(polys$group_id)), 
+  function(i) extract_by_group_reduced(i),
+  mc.cores = num_cores
+)    
+toc()
 
-gc()
-memory.limit(size=50000)
+class <- tempor %>%
+  rbindlist(idcol = TRUE) 
 
-test <- raster_extract(x = lu_cropped , y = rolarea.sf, fun = NULL, na.rm = FALSE)
+class$value <- paste0("c_", class$value)
 
+rolarea_class <- class %>%
+  select(prop_ID, value, class_proportion) %>%
+  spread(key = "value", value = "class_proportion")
+
+length(unique(rolarea_class$prop_ID))
+
+### start to get elevation and slope data
+elevation <- 
+terr <- terrain(elevation, opt=c('slope'), unit='degrees')
+elev <- extract(elevation, spatial.object, fun=mean, na.rm=TRUE)
+slope <- extract(terr, spatial.object, fun = mean, na.rm = TRUE)
+dem <- as.data.frame(rolarea.sf$prop_ID, elev, slope)
 ```
-
 
 ```{r}
 
-elevation.chl <- getData('alt', country='CHL')[[1]] 
-
-slope <- terrain(elevation.chl, opt=c('slope', 'aspect'), unit='degrees')
-
-rolarea.sf <- st_read(
-  "rolarea_geoms.shp"
+biobio.sf <- st_read(
+  "input_data/PROPIEDADES_RURALES/LOS_RÍOS_CIREN_2018.shp"
   ) %>%
-  st_transform(st_crs(slope))
+  st_transform(st_crs(lu2001_rast))
 
-elevation <- st_as_stars(crop(elevation.chl , rolarea.sf))
+sf.object <- biobio.sf
+stars.object <- lu2001_rast
+rast <- as(stars.object, "Raster")
+
+num_cores <- 15
+
+#--- number of polygons in a group ---#
+num_in_group <- floor(nrow(sf.object)/num_cores)
+
+#--- assign group id to polygons ---#
+polys <- sf.object %>%  
+  mutate(
+    #--- create grid id ---#
+    grid_id = 1:nrow(.),
+    #--- assign group id  ---#
+    group_id = grid_id %/% num_in_group + 1
+  )
 
 
-elev <- raster_extract(elevation, rolarea.sf, fun=mean, na.rm=TRUE)
-e <- raster_extract(slope, rolarea.sf, fun=mean, na.rm=TRUE)
+extract_by_group_reduced <- function(i){
+  
+  temp <- exact_extract(
+    rast, 
+    filter(polys, group_id == i)
+  ) %>% 
+    #--- combine the list of data.frames into one with polygon id ---#
+    rbindlist(idcol = "id_within_group") %>% 
+    group_by(id_within_group, value) %>%
+    summarize(class_coverage = sum(coverage_fraction)) %>%
+    group_by(id_within_group) %>%
+    mutate(poly_total = sum(class_coverage),
+           class_proportion = class_coverage/poly_total)
+    
+  temp_return <- as.data.frame(filter(polys, group_id == i))%>%
+    mutate(id_within_group = (grid_id - min(grid_id) + 1)) %>%
+    inner_join(temp, by = c("id_within_group"))
+  
+  return(temp_return)
+}
 
-dem.vals_df <- data.frame(rolarea.sf$prop_ID, e, ex)
+tic()
+#--- parallelized processing by group ---#
+tempor <- mclapply(
+  1:length(unique(polys$group_id)), 
+  function(i) extract_by_group_reduced(i),
+  mc.cores = num_cores
+)    
+toc()
 
-# # Use list apply to calculate mean for each polygon
-# dem.vals_df$elev.mean <- lapply(ex, FUN=mean)
+class <- tempor %>%
+  rbindlist(idcol = TRUE) 
+
+class$value <- paste0("c_", class$value)
+
+biobio_class <- class %>%
+  select(objectid, rol, desccomu, value, class_proportion) %>%
+  spread(key = "value", value = "class_proportion")
+
+length(unique(class$objectid))
 
 ```
 

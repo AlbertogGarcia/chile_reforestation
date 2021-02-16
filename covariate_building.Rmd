@@ -116,8 +116,9 @@ rolarea_class <- class %>%
 return_covs <- sf.object %>%
   mutate(road_dist = st_nn(., roads.sf, k = 1, returnDist = T, parallel = 15)[[2]],
          elev = unlist(exact_extract(elevation, ., 'mean')),
-         slope = unlist(exact_extract(terr, ., 'mean')),
-         area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
+         slope = unlist(exact_extract(terr, ., 'mean'))
+         #, area_ha = as.numeric(units::set_units(st_area(.), ha))
+         )%>%
   st_centroid()%>%
   mutate(lat = unlist(geometry)[1],
          long = unlist(geometry)[2])%>%
@@ -189,16 +190,130 @@ losrios_class <- class %>%
   mutate_all(~replace(., is.na(.), 0))
 
 return_covs_losrios <- sf.object %>%
-  mutate(road_dist = st_nn(., roads.sf, k = 1, returnDist = T, parallel = 15)[[2]],
+  mutate(road_dist = st_nn(., roads.sf, k = 1, returnDist = T, parallel = 20)[[2]],
          elev = unlist(exact_extract(elevation, ., 'mean')),
          slope = unlist(exact_extract(terr, ., 'mean')),
          area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
   st_centroid()%>%
   mutate(lat = unlist(geometry)[1],
          long = unlist(geometry)[2])%>%
-  left_join(rolarea_class, by = c("objectid", "rol", "desccomu"))
+  left_join(losrios_class, by = c("objectid", "rol", "desccomu"))
 
 export(return_covs_losrios, "losrios_CIREN_covars.rds")
+
+
+
+```
+
+```{r}
+# biobio and nuble
+biobionuble.sf <- st_read(
+  "input_data/PROPIEDADES_RURALES/BIOBÍO_CIREN_2016.shp"
+  ) %>%
+  st_transform(st_crs(lu2001_rast))
+
+sf.object <- biobionuble.sf
+
+#--- number of polygons in a group ---#
+num_in_group <- floor(nrow(sf.object)/num_cores)
+
+#--- assign group id to polygons ---#
+polys <- sf.object %>%  
+  mutate(
+    #--- create grid id ---#
+    grid_id = 1:nrow(.),
+    #--- assign group id  ---#
+    group_id = grid_id %/% num_in_group + 1
+  )
+
+
+tic()
+#--- parallelized processing by group ---#
+tempor <- mclapply(
+  1:length(unique(polys$group_id)), 
+  function(i) extract_by_group_reduced(i),
+  mc.cores = num_cores
+)    
+toc()
+
+class <- tempor %>%
+  rbindlist(idcol = TRUE) 
+
+class$value <- paste0("c_", class$value)
+
+biobionuble_class <- class %>%
+  select(objectid, rol, desccomu, value, class_proportion) %>%
+  spread(key = "value", value = "class_proportion")%>%
+  mutate_all(~replace(., is.na(.), 0))
+
+return_covs_biobionuble <- sf.object %>%
+  mutate(road_dist = st_nn(., roads.sf, k = 1, returnDist = T, parallel = 20)[[2]],
+         elev = unlist(exact_extract(elevation, ., 'mean')),
+         slope = unlist(exact_extract(terr, ., 'mean')),
+         area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
+  st_centroid()%>%
+  mutate(lat = unlist(geometry)[1],
+         long = unlist(geometry)[2])%>%
+  left_join(biobionuble_class, by = c("objectid", "rol", "desccomu"))
+
+export(return_covs_biobionuble, "biobionuble_CIREN_covars.rds")
+
+
+
+```
+
+```{r maule}
+
+maule.sf <- st_read(
+  "input_data/PROPIEDADES_RURALES/MAULE_CIREN_2014.shp"
+  ) %>%
+  st_transform(st_crs(lu2001_rast))
+
+sf.object <- maule.sf
+
+#--- number of polygons in a group ---#
+num_in_group <- floor(nrow(sf.object)/num_cores)
+
+#--- assign group id to polygons ---#
+polys <- sf.object %>%  
+  mutate(
+    #--- create grid id ---#
+    grid_id = 1:nrow(.),
+    #--- assign group id  ---#
+    group_id = grid_id %/% num_in_group + 1
+  )
+
+
+tic()
+#--- parallelized processing by group ---#
+tempor <- mclapply(
+  1:length(unique(polys$group_id)), 
+  function(i) extract_by_group_reduced(i),
+  mc.cores = num_cores
+)    
+toc()
+
+class <- tempor %>%
+  rbindlist(idcol = TRUE) 
+
+class$value <- paste0("c_", class$value)
+
+maule_class <- class %>%
+  select(objectid, rol, desccomu, value, class_proportion) %>%
+  spread(key = "value", value = "class_proportion")%>%
+  mutate_all(~replace(., is.na(.), 0))
+
+return_covs_maule <- sf.object %>%
+  mutate(road_dist = st_nn(., roads.sf, k = 1, returnDist = T, parallel = 20)[[2]],
+         elev = unlist(exact_extract(elevation, ., 'mean')),
+         slope = unlist(exact_extract(terr, ., 'mean')),
+         area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
+  st_centroid()%>%
+  mutate(lat = unlist(geometry)[1],
+         long = unlist(geometry)[2])%>%
+  left_join(maule_class, by = c("objectid", "rol", "desccomu"))
+
+export(return_covs_maule, "maule_CIREN_covars.rds")
 
 
 

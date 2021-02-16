@@ -27,28 +27,82 @@ library(ggplot2)
 library(sf)
 library(stringi)
 library(data.table)
+library(fuzzyjoin)
+
+```
+
+``` {r enrolled, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+rolarea_covars <- readRDS("rolarea_covars.rds")
+rolarea_ndvi <- read_csv("rolarea_ndvi.csv")
+rolarea_df <- readRDS("rolarea_df.rds")
 
 ```
 
 
-
-``` {r biobio_ciren_ndvi, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+``` {r los rios match pool, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 #setting working directory
 
-setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/match/biobio")
+losrios_CIREN_covars <- readRDS("losrios_CIREN_covars.rds")
 
-# load biobio ndvi time series forr all ciren properties
+#setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/match/losrios")
+
+# load los rios ndvi time series for all ciren properties
 temp = list.files(pattern="*.csv")
-biobio_ndvi = bind_rows(lapply(temp, read_csv))%>%
+losrios_ndvi = bind_rows(lapply(temp, read_csv))%>%
   #filter(objectid == 59515) %>%
   select(objectid, year, mean) %>%
   distinct(objectid, year, .keep_all = TRUE) %>%
   spread(key = "year", value = "mean")# cast ndvi into wide format
 
+# to make sure I'm not selecting treated properties
+# join los Rios CIREN properties with property df based on rol
+losrios_matchpool <-  st_read(
+  "input_data/PROPIEDADES_RURALES/LOS_RÍOS_CIREN_2018.shp"
+  ) %>%
+  rename(rptpre_rol = rol)
+  stringdist_left_join(rolarea_df, by = c("rol"), maxdist = 1)%>%
+    mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl"),
+           treat = 0) %>%# compute stringd between comuna names
+    filter(comuna_stringd > 1 | is.na(rptpro_id)) %>%# drop anything with a string d less than or equal to 1
+    inner_join(losrios_CIREN_covars, by = c("objectid", "rol", "desccomu"))%>%
+    inner_join(losrios_ndvi, by = "objectid")
+    
+               
+
+
+```
+
+``` {r biobio match pool, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+#setting working directory
+
+biobio_CIREN_covars <- readRDS("biobio_CIREN_covars.rds")
+
+# load biobio ndvi time series forr all ciren properties
+temp = list.files(pattern="*.csv")
+biobio_ndvi = bind_rows(lapply(temp, read_csv))%>%
+  select(objectid, year, mean) %>%
+  distinct(objectid, year, .keep_all = TRUE) %>%
+  spread(key = "year", value = "mean")# cast ndvi into wide format
+
+# to make sure I'm not selecting treated properties
+# join los Rios CIREN properties with property df based on rol
+biobio_matchpool <-  st_read(
+  "input_data/PROPIEDADES_RURALES/BIOBÍO_CIREN_2016.shp"
+  ) %>%
+  rename(rptpre_rol = rol)
+  stringdist_left_join(rolarea_df, by = c("rol"), maxdist = 1)%>%
+    mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl"),
+           treat = 0) %>%# compute stringd between comuna names
+    filter(comuna_stringd > 1 | is.na(rptpro_id)) # drop anything with a string d less than or equal to 1
+
 
 ```
 
 
+``` {r cohort 2009, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+cohort_2009 <- enrolled_df %>%
+  filter(first.treat == 2009)
 
-
+```
 

@@ -36,29 +36,27 @@ knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, messages = FALSE, out.widt
 
 # Introduction
 
-In order to achieve the warming targets set by the IPCC, both emissions reductions and removals of carbon from the atmosphere will be necessary [ref-XX]. Reforestation has been lauded as a potentially near term, large scale and low-cost option to achieve carbon removals [@busch2019, @bastin2020], however, there is limited evidence documenting the effectiveness of policies seeking to encourage reforestation at large scales. One policy that is expected to play an important role in helping countries meet their reforestation commitments is a system in which private landowners are paid to engage in reforestation [@gichuki]. While similar payment for ecosystem services programs have garnered widespread scientific interest [@boerner], empirical studies documenting the impacts of reforestation programs are critical to guide the effective design of policies as more countries adopt this model. 
+In order to achieve the warming targets set by the IPCC, both emissions reductions and removals of carbon from the atmosphere will be necessary [ref-XX]. Reforestation has been lauded as a potentially near term, large scale and low-cost option to achieve these carbon removals [@busch2019, @bastin2020], however, there is limited evidence documenting the effectiveness of policies seeking to encourage reforestation at large scales. One policy that is expected to play an important role in helping countries meet their reforestation commitments is a system in which private landowners are paid to engage in reforestation [@gichuki]. While similar payment for ecosystem services (PES) programs have garnered widespread scientific interest [@boerner], empirical studies documenting the impacts of reforestation programs are critical to guide the effective design of policies as more countries adopt this model. 
 
 Problem paragraph- discuss PES concerns and social safeguards
 
 In this paper, we evaluate the land cover impacts of Chile’s Native Forest Law. A key concern with evaluations of PES is that apparent effectiveness may be driven by unobservable differences in participation costs, meaning that performance may be attributed to these omitted characteristics rather than participation in the program [@Alix-Garcia-2015]. From a pool of over one million untreated properties, we construct a set of counterfactual properties based on landowner and property characteristics in order to alleviate concerns surrounding selection. We evaluate land cover impacts for eleven cohorts (2009–2019) using annual data from 2005–2020 and regressions that are robust to general treatment effect heterogeneity. 
 
-We then analyze the Native Forest Law’s program design to understand whether improved environmental impacts could have been achieved without sacrificing social development goals such as the involvement of smallholders and indigenous peoples. 
+We then analyze the Native Forest Law’s program design to understand whether improved environmental impacts could have been achieved and whether doing so would sacrifice social development goals such as the involvement of smallholders and indigenous peoples. 
 
 These results make three main contributions to the literature. We advance the literature that addresses whether reforestation may be a viable large-scale method for removing and storing CO2  and add to the limited existing evidence on the environmental effectiveness of large-scale reforestation programs. Few other studies address the ex-post carbon impacts of large-scale reforestation or afforestation policies. Between 2009 and 2019, the National Forest Corporation (CONAF) allocated approximately US $58 million to enroll more than 235 hectares of land in the program, making it one of the largest native forest reforestation programs in the world. As other countries begin to contemplate reforestation policies, Chile’s experience provides a valuable case study from which to draw. 
 
-Our second contribution is to investigate whether heterogeneity in program impacts implies tradeoffs between environmental efficacy and achievement of social safeguards. In our paper, we show that larger landowners see clear and sustained gains in forest cover relative to comparable unawarded properties. On the other hand, smallholders see no positive or statistically significant impacts on vegetation. This demonstrates the challenges of meeting both environmental and social development goals with a single policy instrument. 
+Our second contribution is to investigate whether heterogeneity in program impacts implies tradeoffs between environmental efficacy and achievement of social development goals. In our paper, we show that larger landowners see clear and sustained gains in forest cover relative to comparable unawarded properties. On the other hand, smallholders see no positive or statistically significant impacts on vegetation. Further affecting the environmental impacts of the policy is the fact that larger landowners do not recieve payouts at the same rate as the smaller, lower performing property owners. These findings demonstrate the challenges of meeting both environmental and social development goals with a single policy instrument. 
 
-Lastly, this paper contributes to the literature on targeting in PES programs. Alix-Garcia et al. (2015) find that, in theory, Mexico's ... program could not have achieved improved environmental impact without sacrificing poverty alleviation. Chile's Native Forest Law allocates funding based on a score that judges assign the project according to a pre-determined set of criteria. We are thus able to examine whether the scores predicted program impact in practice, revealing the effectiveness of the law's targeting approach. 
+Lastly, I'm hoping for this paper to contribute to the literature on optimal program design in PES programs. 
 
-The remainder of the paper is organized as follows. Section 2 provides program background on Chile’s Native Forest Law. and our data sources.  Section 3 presents our data sources and program evaluation methods. Section 4 presents our impact evaluation results. Section 5 analyzes the program’s targeting mechanism as it pertains to environmental performance and social development goals. Section 6 concludes. 
+The remainder of the paper is organized as follows. Section 2 provides program background on Chile’s Native Forest Law and our data sources. Section 3 explores the program design and descriptive statistics surrounding the applicants and enrollees. Section 4 provides discussion on our program evaluation methods. Section 5 presents our impact evaluation results. Section 6 proposes next steps and areas in which feedback may be particularly helpful. 
 
 # Chile as a case study
 
 Chile’s extreme latitudinal and climatic gradient have yielded dramatic variation in its forest types – varying from open canopy, sclerophyllous forests near Santiago to the temperate rainforests of Northern Patagonia which are some of the most carbon-dense forests in the world [44, 45]. Chile has also experienced diverse and widespread tree cover expansion [46]. Such tree cover expansion includes extensive afforestation of pine and eucalyptus plantations [47, 48], natural forest regeneration in the wake of disturbance [49, 50], and active native reforestation and restoration [51]. 
 
 Second, Chile’s long history of public policies supporting tree cover expansion provides an incredibly useful natural experiment in which to measure the impacts of payments for reforestation. DL701 longest operating laws, but promoted even-aged mococulture plantations of eucalyptus and pine. In an attempt to encourage more reforestation of native forests, Chile passed the Ley de Recuperación del Bosque Nativo y Fomento Forestal (Native Forest Law) in 2008. In addition to protections for native forests, the law established an annual competition for grants to support private landowners in their efforts to restore or reforest their land using native species. Since 2009, more than $58 million have been allocated through these competitions to reforest 235 thousand hectares, with a particular emphasis placed upon supporting smallholders and indigenous peoples. Landowners are able to claim larger subsidies for species that are endangered and in regions or ecosystems in more urgent need of native forest restoration. 
-
-# Data
 
 ## administrative data
 
@@ -72,18 +70,14 @@ Second, Chile’s long history of public policies supporting tree cover expansio
 
 # Understanding the contest and its applicants
 
-## the scoring mechanism
+## the scoring mechanism and rejected applicants
 
-## rejected applicants
-
-### what changed between applications? 
+In order to understand whether the enrolled set of properties differs from the full set of applicants, I compare the two groups based on a set of covariates below. 
 
 ## the cohorts
 
-## participation of indigenous groups and women
-
 ## follow through and payments
-
+revegetation and planting, enriched ecological foundation, establishing connections between areas of high ecological xerophytic formations, the payment application must be presented between the second and fourth year. All other activities must see the payment application submitted within a two-year period. 
 # A check in with the reader
 
 A major point of tension in this paper is the lens through which it should be viewed as I move forward. I think this stems from the fact that there is a lot going on here, so I need to narrow in. I see two main paths forward: 
@@ -101,17 +95,18 @@ I discuss possible pathways to move forward with option \#2 in this section. In 
 
 ## targeting for follow through (screening for option value?)
 
-
 # Program evaluation
 
 ## Matching
 
-### covariate balance and rejected influence
+The covariates used for matching include property size, slope, elevation, distance to road, latitude, longitude, and proportion of the property under each of the following land-uses in 2001: native forest, plantation, pasture, shrubland, water, and bare soil. I also include 4 years of pre-trends to build confidence in the common trends identification assumption that I make in the next section. I present the post-matching covariate balance tables below. 
 
 ## DID
 
+In order to estimate the program impact, I use a difference-in-differences event study that is robust to general treatment effect heterogeneity. 
+
+## The ITT vs. the ATT
+
 ## Results
 
-### The ITT vs. the ATT
-
-# Conclusion
+# Moving forward

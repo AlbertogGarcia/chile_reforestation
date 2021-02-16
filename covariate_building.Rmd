@@ -29,16 +29,25 @@ library(tidyverse)
 library(tictoc)
 library(data.table)
 library(exactextractr)
+library(nngeo)
+library(rio)
 
 
 lu2001_rast <- read_stars("input_data/lu_2001/lu_2001.tif")
 st_crs(lu2001_rast)
 
+roads.sf <- st_read(
+  "input_data/CHL_rds/CHL_roads.shp"
+  ) %>%
+  st_transform(st_crs(lu2001_rast))%>%
+  filter(RTT_DESCRI == "Primary Route" | RTT_DESCRI == "Secondary Route")
 
+### start to get elevation and slope data
+elevation <- getData('alt', country='CHL')[[1]]
+terr <- terrain(elevation, opt=c('slope'), unit='degrees')
 ```
 
 ```{r rolarea}
-
 rolarea.sf <- st_read(
   "rolarea_geoms.shp"
   ) %>%
@@ -101,30 +110,31 @@ class$value <- paste0("c_", class$value)
 
 rolarea_class <- class %>%
   select(prop_ID, value, class_proportion) %>%
-  spread(key = "value", value = "class_proportion")
+  spread(key = "value", value = "class_proportion")%>%
+  mutate_all(~replace(., is.na(.), 0))
 
-length(unique(rolarea_class$prop_ID))
+return_covs <- sf.object %>%
+  mutate(road_dist = st_nn(., roads.sf, k = 1, returnDist = T, parallel = 15)[[2]],
+         elev = unlist(exact_extract(elevation, ., 'mean')),
+         slope = unlist(exact_extract(terr, ., 'mean')),
+         area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
+  st_centroid()%>%
+  mutate(lat = unlist(geometry)[1],
+         long = unlist(geometry)[2])%>%
+  left_join(rolarea_class, by = "prop_ID")
 
-### start to get elevation and slope data
-elevation <- 
-terr <- terrain(elevation, opt=c('slope'), unit='degrees')
-elev <- extract(elevation, spatial.object, fun=mean, na.rm=TRUE)
-slope <- extract(terr, spatial.object, fun = mean, na.rm = TRUE)
-dem <- as.data.frame(rolarea.sf$prop_ID, elev, slope)
+export(return_covs, "rolarea_covars.rds")
+  
 ```
 
 ```{r}
 
-biobio.sf <- st_read(
+losrios.sf <- st_read(
   "input_data/PROPIEDADES_RURALES/LOS_RÍOS_CIREN_2018.shp"
   ) %>%
   st_transform(st_crs(lu2001_rast))
 
-sf.object <- biobio.sf
-stars.object <- lu2001_rast
-rast <- as(stars.object, "Raster")
-
-num_cores <- 15
+sf.object <- losrios.sf
 
 #--- number of polygons in a group ---#
 num_in_group <- floor(nrow(sf.object)/num_cores)
@@ -137,7 +147,6 @@ polys <- sf.object %>%
     #--- assign group id  ---#
     group_id = grid_id %/% num_in_group + 1
   )
-
 
 extract_by_group_reduced <- function(i){
   
@@ -174,11 +183,22 @@ class <- tempor %>%
 
 class$value <- paste0("c_", class$value)
 
-biobio_class <- class %>%
+losrios_class <- class %>%
   select(objectid, rol, desccomu, value, class_proportion) %>%
-  spread(key = "value", value = "class_proportion")
+  spread(key = "value", value = "class_proportion")%>%
+  mutate_all(~replace(., is.na(.), 0))
 
-length(unique(class$objectid))
+return_covs_losrios <- sf.object %>%
+  mutate(road_dist = st_nn(., roads.sf, k = 1, returnDist = T, parallel = 15)[[2]],
+         elev = unlist(exact_extract(elevation, ., 'mean')),
+         slope = unlist(exact_extract(terr, ., 'mean')),
+         area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
+  st_centroid()%>%
+  mutate(lat = unlist(geometry)[1],
+         long = unlist(geometry)[2])%>%
+  left_join(rolarea_class, by = c("objectid", "rol", "desccomu"))
+
+export(return_covs_losrios, "losrios_CIREN_covars.rds")
 
 
 

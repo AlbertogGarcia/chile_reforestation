@@ -179,6 +179,10 @@ check_paid <- soc_paid %>%
   bind_rows(ind_paid) %>%
   select(prop_ID, apellidos.x, apellidos.y, rptprop_razon_social.x, rptprop_razon_social.y, rptprop_nombre, Nombres.del.beneficiario, rptpro_ano, name_ranks, Acto.por.el.cual.se.otorgó, namestringd, meets_string1, meets_string2, meets_string3, meets_string4)
 
+paid_ids <- check_paid %>%
+  select(prop_ID)%>%
+  mutate(paid = 1)
+
 length(unique(payments_df$unique_ID))/length(unique(property_df$prop_ID))#0.4496585
 length(unique(check_paid$prop_ID))/length(unique(rolarea_df$prop_ID))
 #0.3845561 rolarea

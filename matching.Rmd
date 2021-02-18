@@ -38,8 +38,6 @@ rolarea_df <- readRDS("rolarea_df.rds")
 property_df <- readRDS("property_df.rds")
 rolarea_covars <- data.frame(readRDS("rolarea_covars.rds"))
 
-test <- rolarea_covars %>%
-  drop_na(c_1)
 ```
 
 ```{r}
@@ -146,6 +144,32 @@ maule_matchpool <-  st_read(
     
 ```
 
+``` {r araucania, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+
+setwd("/home/agarcia/chile_reforestation/input_data/new_CIREN_ndvi/match/araucania")
+# load araucania ndvi time series for all ciren properties
+temp = list.files( pattern="*.csv")
+araucania_ndvi = bind_rows(lapply(temp, read_csv))%>%
+  select(objectid, year, mean) %>%
+  distinct(objectid, year, .keep_all = TRUE) %>%
+  mutate(year = paste0("y_", year))%>%
+  spread(key = "year", value = "mean")# cast ndvi into wide format
+
+# to make sure I'm not selecting treated properties
+# join los Rios CIREN properties with property df based on rol
+araucania_matchpool <-  st_read(
+  "/home/agarcia/chile_reforestation/input_data/PROPIEDADES_RURALES/ARAUCANÍA_CIREN_2013.shp"
+  ) %>%
+  mutate(desccomu = tolower(desccomu))%>%
+  #anti_join(property_df, by = c(rol = "rptpre_rol", desccomu = "rptpre_comuna"))%>%
+  stringdist_anti_join(property_df, by = c(rol = "rptpre_rol", desccomu = "rptpre_comuna"), method = "lv", max_dist = 1)%>%
+  select("objectid", "rol")%>%
+  left_join(data.frame(readRDS("/home/agarcia/chile_reforestation/araucania_CIREN_covars.rds")), by = c("objectid", "rol"))%>%
+  inner_join(araucania_ndvi, by = "objectid")
+    
+```
+
 ```{r}
 # combining regional matchpools and treatedmatches
 
@@ -156,25 +180,24 @@ enrollees <- enrolled_df %>%
          baresoil = c_10+c_12,
          pasture = c_9,
          water = c_15,
-         urban = c_16)%>%
-  select(rptpro_puntaje, rptpro_tipo_concurso, rptpre_monto_total, rptpre_region, rptprop_sexo, prop_ID, first.treat, treated.later, rptprop_etnia, rptpro_objetivo_manejo.x, area_ha, reforestation2, reforestation, reffirst.treat, ref2first.treat, area_prop, road_dist, lat, long, slope, elev, treat, forest, plantation, water, baresoil, pasture, urban, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014, y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)
+         urban = c_16,
+         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1))%>%
+  select(rptpro_puntaje, smallholder, rptpro_tipo_concurso, rptpre_monto_total, rptpre_region, rptprop_sexo, prop_ID, first.treat, treated.later, rptprop_etnia, rptpro_objetivo_manejo.x, area_ha, reforestation2, reforestation, reffirst.treat, ref2first.treat, area_prop, road_dist, lat, long, slope, elev, treat, forest, plantation, water, baresoil, pasture, urban, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014, y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)
 
 all_matchpool <- data.frame(losrios_matchpool) %>%
-  #bind_rows(maule_matchpool)%>%
-  #bind_rows(araucania_matchpool)%>%
-  #bind_rows(biobionuble_matchpool)%>%
+  bind_rows(maule_matchpool)%>%
+  bind_rows(araucania_matchpool)%>%
+  bind_rows(biobionuble_matchpool)%>%
   mutate(treat=0,
          first.treat = 0,
          forest = c_1,
          plantation = c_3,
-         baresoil = c_12,#+c_10,
+         baresoil = c_12,+c_10,
          pasture = c_9,
          water = c_15,
          urban = c_16)%>%
-  select(objectid, treat, area_ha, road_dist, lat, long, slope, elev, treat, forest, plantation, water, baresoil, pasture, urban, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014, y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)
+  select(objectid, treat, first.treat, area_ha, road_dist, lat, long, slope, elev, treat, forest, plantation, water, baresoil, pasture, urban, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014, y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)
 
-class(enrollees$y_2007)
-class(all_matchpool$y_2007)
 
 df <- data.frame(enrollees)%>%
   bind_rows(all_matchpool)%>%
@@ -191,7 +214,10 @@ df <- data.frame(enrollees)%>%
          trend0908 = y_2009 - y_2008,
          trend0807 = y_2008 - y_2007,
          trend0706 = y_2007 - y_2006,
-         trend0605 = y_2006 - y_2005)
+         trend0605 = y_2006 - y_2005,
+         road_dist = unlist(road_dist))
+library(rio)
+export(df, "matching_df.rds")
 
 
 ```
@@ -199,13 +225,112 @@ df <- data.frame(enrollees)%>%
 ```{r}
 library(MatchIt)
 # create matched dataframes
-matched_2009 <- matchit(treat ~ trend0807 + trend0706 + trend0605 + y_2008 + y_2007 + y_2006 + 
-                          forest + plantation + baresoil + pasture + water + urban + slope + elev + road_dist + area_ha + lat, 
+
+df <- df %>%
+  drop_na(elev, slope)
+  
+
+matched_2009 <- matchit(treat ~ trend0807 + trend0706 + trend0605 + y_2007 +
+                          forest + plantation + baresoil + pasture + urban +water + slope + elev  + area_ha + road_dist, 
                    data = subset(df, first.treat == 0 | first.treat == 2009),
-                 method = "nearest", replace = TRUE, distance = "mahalanobis")
+                 method = "nearest")
+# 
+# summary(matched_2009, un = FALSE)
+# 
+#love.plot(matched_2009, thresholds = c(m = .25))
+
+
+
+matched_2010 <- matchit(treat ~ trend0908 + trend0807 + trend0706 + trend0605 + y_2008+ 
+                          forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist, 
+                   data = subset(df, first.treat == 0 | first.treat == 2010),
+                 method = "nearest")
+
+matched_2011 <- matchit(treat ~ trend1009 + trend0908 + trend0807 + trend0706 + y_2009 + 
+                          forest + plantation + baresoil + pasture  + urban +water+ slope + elev  + area_ha + road_dist, 
+                   data = subset(df, first.treat == 0 | first.treat == 2011),
+                 method = "nearest")
+
+matched_2012 <- matchit(treat ~ trend1110 + trend1009 + trend0908 + trend0807 + y_2010 + 
+                          forest + plantation + baresoil + pasture  + urban +water+ slope + elev  + area_ha + road_dist, 
+                   data = subset(df, first.treat == 0 | first.treat == 2012),
+                 method = "nearest")
+
+matched_2013 <- matchit(treat ~ trend1211 + trend1110 + trend1009 + trend0908 + y_2011+ 
+                          forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist, 
+                   data = subset(df, first.treat == 0 | first.treat == 2013),
+                 method = "nearest")
+
+matched_2014 <- matchit(treat ~ trend1312 + trend1211 + trend1110 + trend1009 + y_2012 + 
+                          forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist, 
+                   data = subset(df, first.treat == 0 | first.treat == 2014),
+                 method = "nearest")
+
+matched_2015 <- matchit(treat ~ trend1413 + trend1312 + trend1211 + trend1110  + y_2013+ 
+                          forest + plantation + baresoil + pasture  + urban +water+ slope + elev  + area_ha + road_dist, 
+                   data = subset(df, first.treat == 0 | first.treat == 2015),
+                 method = "nearest")
+
+matched_2016 <- matchit(treat ~ trend1514 + trend1413 + trend1312 + trend1211 +  y_2014+ 
+                          forest + plantation + baresoil + pasture +urban +water+ slope + elev  + area_ha + road_dist, 
+                   data = subset(df, first.treat == 0 | first.treat == 2016),
+                 method = "nearest")
+
+matched_2017 <- matchit(treat ~ trend1615 + trend1514 + trend1413 + trend1312 +  y_2015+ 
+                          forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist, 
+                   data = subset(df, first.treat == 0 | first.treat == 2017),
+                 method = "nearest")
+
+matched_2018 <- matchit(treat ~ trend1716 + trend1615 + trend1514 + trend1413  +  y_2016+ 
+                          forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist, 
+                   data = subset(df, first.treat == 0 | first.treat == 2018),
+                 method = "nearest")
+
+matched_2019 <- matchit(treat ~ trend1817 + trend1716 + trend1615 + trend1514 +  y_2017+ 
+                          forest + plantation + baresoil + pasture+ urban +water+ slope + elev  + area_ha + road_dist, 
+                   data = subset(df, first.treat == 0 | first.treat == 2019),
+                 method = "nearest")
+
+map_covars <- function(df){
+  return_df <- df %>%
+    group_by(subclass)%>%
+    mutate(smallholder = max(smallholder, na.rm = TRUE),
+         reforestation = max(reforestation, na.rm = TRUE),
+         reforestation2 = max(reforestation2, na.rm = TRUE),
+         area_prop = max(area_prop, na.rm = TRUE),
+         did_group = max(first.treat, na.rm = TRUE)
+         )%>%
+    ungroup()
+ return(return_df)
+}
 
 # group by matched pairs
+matched_wide <- map_covars(match.data(matched_2009, subclass = "subclass"))%>%
+  bind_rows(map_covars(match.data(matched_2010, subclass = "subclass")))%>%
+  bind_rows(map_covars(match.data(matched_2011, subclass = "subclass")))%>%
+  bind_rows(map_covars(match.data(matched_2012, subclass = "subclass")))%>%
+  bind_rows(map_covars(match.data(matched_2013, subclass = "subclass")))%>%
+  bind_rows(map_covars(match.data(matched_2014, subclass = "subclass")))%>%
+  bind_rows(map_covars(match.data(matched_2015, subclass = "subclass")))%>%
+  bind_rows(map_covars(match.data(matched_2016, subclass = "subclass")))%>%
+  bind_rows(map_covars(match.data(matched_2017, subclass = "subclass")))%>%
+  bind_rows(map_covars(match.data(matched_2018, subclass = "subclass")))%>%
+  bind_rows(map_covars(match.data(matched_2019, subclass = "subclass")))%>%
+  mutate(id = 1:nrow(.))
 
+baltest_covs <- subset(matched_wide, select = c("forest" ,"plantation" , "baresoil", "pasture", "urban", "water", "slope", "elev", "area_ha", "road_dist"))
+
+bal.tab(baltest_covs, treat = matched_wide$treat,thresholds = c(m = .25))
+
+matched_long <- gather(matched_wide, "Year", "NDVI", y_2005:y_2020)%>%
+  separate(Year, , into = c(NA, "Year"), sep = "_")
+
+export(matched_long, "enrolled_analysis.rds")
+
+
+
+length(unique(matched_long$id))
+length(unique(df_matched$id))
 
 # covariates to impose on matches: contest type, reforestation, reforestation2, payment, area_diff
 # can use max on all except for contest type which.max(nchar(rptpro_tipo_concurso))

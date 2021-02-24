@@ -31,16 +31,9 @@ library(data.table)
 library(kableExtra)
 library(stringdist)
 library(GADMTools)
-library(rnaturalearth)
 library(lwgeom)
 library(units)
-#library(reshape2)
 
-library(did)
-library(AER)
-library(dynlm)
-library(plm)
-library(stargazer)
 library(Metrics)
 library(DataCombine)
 library(Hmisc)
@@ -110,6 +103,14 @@ accents <- function(x){
 NFL_df <- property_df %>%
   left_join(activity_df, by = c("prop_ID", "rptpre_rol" , "rptpre_comuna" , "rptpro_ano"))%>%
   mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))
+
+property_df <- property_df %>%
+  mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))%>%
+  select(rptpre_comuna, rptpre_rol)
+
+library(rio)
+export(property_df, "property_df.rds")
+  
   
 
 ```
@@ -176,8 +177,8 @@ rolarea_geoms <- rolarea_df %>%
 class(rolarea_geoms)
 
 st_write(rolarea_geoms, dsn = "rolarea_geoms.shp", driver = "ESRI Shapefile")
-#library(rio)
-#export(rolarea_df, "rolarea_df.rds")
+library(rio)
+export(rolarea_df, "rolarea_df.rds")
 
 
 ```

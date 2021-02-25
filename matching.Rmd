@@ -180,10 +180,11 @@ enrollees <- enrolled_df %>%
          plantation = c_3,
          baresoil = c_10+c_12,
          pasture = c_9,
+         shrub = c_5,
          water = c_15,
          urban = c_16,
          smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1))%>%
-  select(rptpro_puntaje, smallholder, rptpre_superficie_bonificada, rptpro_tipo_concurso, rptpre_monto_total, rptpre_region, rptprop_sexo, prop_ID, first.treat, treated.later, rptprop_etnia, rptpro_objetivo_manejo.x, area_ha, reforestation2, reforestation, reffirst.treat, ref2first.treat, area_prop, road_dist, lat, long, slope, elev, treat, forest, plantation, water, baresoil, pasture, urban, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014, y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)%>%
+  select(rptpro_puntaje, smallholder, rptpre_superficie_bonificada, rptpro_tipo_concurso, rptpre_monto_total, rptpre_region, rptprop_sexo, prop_ID, first.treat, treated.later, rptprop_etnia, rptpro_objetivo_manejo.x, area_ha, reforestation2, reforestation, reffirst.treat, ref2first.treat, area_prop, road_dist, lat, long, slope, elev, treat, forest, plantation, water, baresoil, shrub, pasture, urban, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014, y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)%>%
   left_join(propertypaid_id, by = "prop_ID")%>%
   mutate(paid = ifelse(is.na(paid), 0, paid))
 
@@ -199,9 +200,10 @@ all_matchpool <- data.frame(losrios_matchpool) %>%
          plantation = c_3,
          baresoil = c_12,+c_10,
          pasture = c_9,
+         shrub = c_5,
          water = c_15,
          urban = c_16)%>%
-  select(objectid, treat, first.treat, area_ha, road_dist, lat, long, slope, elev, treat, forest, plantation, water, baresoil, pasture, urban, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014, y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)
+  select(objectid, treat, first.treat, area_ha, road_dist, lat, long, slope, elev, treat, forest, plantation, water, shrub, baresoil, pasture, urban, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014, y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)
 
 export(all_matchpool, "all_matchpool.rds")
 

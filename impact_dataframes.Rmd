@@ -87,8 +87,8 @@ activity_df <- property_df %>%
   group_by(prop_ID)%>%
   mutate(reforestation = ifelse(plantacion == 1 | `plantacion-suplementaria`==1 | regeneracion==1 , 1, 0),
          reforestation2 = ifelse(plantacion == 1 | `plantacion-suplementaria`==1 | regeneracion==1 |`corta-regeneracion`==1, 1, 0),
-         ref_indicyr = ifelse(reforestation ==1 | rptpro_objetivo_manejo == "BOSQUE PRESERVACION Y FORMACIONES XEROFITICAS DE ALTO VALOR ECOLOGICO", rptpro_ano, NA),
-         ref2_indicyr = ifelse(reforestation2 ==1 | rptpro_objetivo_manejo == "BOSQUE PRESERVACION Y FORMACIONES XEROFITICAS DE ALTO VALOR ECOLOGICO", rptpro_ano, NA),
+         ref_indicyr = ifelse(reforestation ==1 , rptpro_ano, NA),
+         ref2_indicyr = ifelse(reforestation2 ==1 , rptpro_ano, NA),
          reffirst.treat = ifelse(reforestation ==1, min(ref_indicyr), NA),
          ref2first.treat = ifelse(reforestation2 ==1, min(ref2_indicyr), NA)
          )%>%
@@ -104,12 +104,9 @@ NFL_df <- property_df %>%
   left_join(activity_df, by = c("prop_ID", "rptpre_rol" , "rptpre_comuna" , "rptpro_ano"))%>%
   mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))
 
-property_df <- property_df %>%
-  mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))%>%
-  select(rptpre_comuna, rptpre_rol)
 
 library(rio)
-export(property_df, "property_df.rds")
+ export(NFL_df, "NFL_df.rds")
   
   
 

@@ -16,6 +16,7 @@ header-includes:
   \usepackage{amsmath}
   \usepackage{amssymb}
   \usepackage{sectsty}
+  \usepackage{float}
 ---
 
 \sectionfont{\fontsize{11}{11}\selectfont}
@@ -74,7 +75,7 @@ I use normalized difference vegetation index (NDVI) as a proxy for each property
 
 One concern with my use of NDVI is its propensity to become saturated in high biomass regions. Given Chile's extensive native and plantation forests and the fact that many enrolled properties already have forest cover, this may limit my ability to detect small changes in vegetation/forest cover through time. 
 
-# Descriptive statistics
+# Important descriptive findings that motivate next steps
 ```{r, include = FALSE}
 rolarea_covars <- data.frame(readRDS("rolarea_covars.rds"))
 rolarea_df <- data.frame(readRDS("rolarea_df.rds"))
@@ -89,13 +90,15 @@ enrolled_df <- rolarea_df %>%
          pasture = c_9,
          water = c_15,
          urban = c_16,
+         shrub = c_5,
          timber = ifelse(rptpro_objetivo_manejo.x == "PRODUCCION MADERERA", 1, 0),
          nontimber = ifelse(rptpro_objetivo_manejo.x == "PRODUCCION NO MADERERA", 1, 0),
          ecologio = ifelse(rptpro_objetivo_manejo.x == "BOSQUE PRESERVACION Y FORMACIONES XEROFITICAS DE ALTO VALOR ECOLOGICO", 1, 0),
          reftype = ifelse(ecologio==1|reforestation2==1, 1, 0),
          female = ifelse(rptprop_sexo == "Masculino", 0, 1),
          indigenous = ifelse(rptprop_etnia == "Aymara" | rptprop_etnia == "Mapuche" | rptprop_etnia == "Otra", 1, 0),
-         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1))
+         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1))%>%
+  mutate_at(vars(forest:shrub), ~replace(., is.na(.), 0))
 
 enrolled_df$smallholder <- as.character(enrolled_df$smallholder)
 pd <- position_dodge(0.25)
@@ -115,26 +118,6 @@ Figure XX shows the distribution of rejected applicants by group across differen
 In order to understand whether the enrolled set of properties differs from the full set of applicants, I compare the two groups based on a set of covariates below. 
 
 
-```{r, include = FALSE}
-
-p_payments <- ggplot(summarySE(paid.enrolled, measurevar="paid", groupvars=c("first.treat","smallholder"), na.rm = TRUE), 
-       aes(x=first.treat, y=paid, colour=smallholder)) + 
-    geom_errorbar(aes(ymin=paid-se, ymax=paid+se), width=.1, position=pd) +
-    geom_line(position=pd) +
-    geom_point(size=3, shape=21, fill="white", position=pd)
-
-
-
-p_refpayments <- ggplot(summarySE(paid.enrolled, measurevar="paid", groupvars=c("first.treat","reftype"), na.rm = TRUE), 
-       aes(x=first.treat, y=paid, colour=as.character(reftype))) + 
-    geom_errorbar(aes(ymin=paid-se, ymax=paid+se), width=.1, position=pd) +
-    geom_line(position=pd) +
-    geom_point(size=3, shape=21, fill="white", position=pd)
-
-
-```
-
-
 ## land uses by cohort
 
 In this section, I use high resolution land use maps of Chile in 2001 to explore the land use composition of properties that enrolled in the program. I explore the proportion of each property under each of the following land uses in 2001: native forest, plantation forest, and pasture. Figure XX shows the composition of cohorts' land use with regards to these classes. Panel A shows that early cohorts had higher levels of native forest than later enrollees. Panel B show that the proportion of properties in plantation forestry remained relatively stable over time, however, we learn that roughly 10-12\% of enrolled properties' land use was in platation forest in 2001. Lastly, panel C shows that later cohorts had higher levels of pasture. 
@@ -142,33 +125,42 @@ In this section, I use high resolution land use maps of Chile in 2001 to explore
 These findings raise some interesting questions about the additionality of the policy. If properties with high levels of native forest cover are receiving subsidies through the Native Forest Law contest, it is possible that additionality will be low. On the other hand, these properties may be able to provide native forest cover gains at a lower cost. Properties with plantation forestry may be using funds from to property to substitute toward native forest. While the carbon additionality may be low in this case, co-benefits such as biodiversity gains and habitat connectivity would likely improve. If properties with high amounts of pasture move away from grazing land or even enrich the grasslands that exist on the property, carbon and forest cover additionality could be high. These could conceivably be properties that face higher costs to forest management activities that the landowner does not have much experience with. 
 
 ```{r , include = FALSE}
+enrolled_df$contest <- ifelse(enrolled_df$smallholder==1, "smallholder", "other interested parties")
 
-p_forest <- ggplot(summarySE(enrolled_df, measurevar="forest", groupvars=c("first.treat","smallholder"), na.rm = TRUE), 
-       aes(x=first.treat, y=forest, colour=smallholder)) + 
+p_forest <- ggplot(summarySE(enrolled_df, measurevar="forest", groupvars=c("first.treat","contest"), na.rm = TRUE), 
+       aes(x=first.treat, y=forest, colour=contest)) + 
     geom_errorbar(aes(ymin=forest-se, ymax=forest+se), width=.1, position=pd) +
     geom_line(position=pd) +
     geom_point(position=pd, size=3, shape=21, fill="white")
 
-p_plantation <- ggplot(summarySE(enrolled_df, measurevar="plantation", groupvars=c("first.treat","smallholder"), na.rm = TRUE), 
-       aes(x=first.treat, y=plantation, colour=smallholder)) + 
+p_plantation <- ggplot(summarySE(enrolled_df, measurevar="plantation", groupvars=c("first.treat","contest"), na.rm = TRUE), 
+       aes(x=first.treat, y=plantation, colour=contest)) + 
     geom_errorbar(aes(ymin=plantation-se, ymax=plantation+se), width=.1, position=pd) +
     geom_line(position=pd) +
     geom_point(position=pd, size=3, shape=21, fill="white")
 
-p_pasture <- ggplot(summarySE(enrolled_df, measurevar="pasture", groupvars=c("first.treat","smallholder"), na.rm = TRUE), 
-       aes(x=first.treat, y=pasture, colour=smallholder)) + 
+p_pasture <- ggplot(summarySE(enrolled_df, measurevar="pasture", groupvars=c("first.treat","contest"), na.rm = TRUE), 
+       aes(x=first.treat, y=pasture, colour=contest)) + 
     geom_errorbar(aes(ymin=pasture-se, ymax=pasture+se), width=.1, position=pd) +
     geom_line(position=pd) +
     geom_point(position=pd, size=3, shape=21, fill="white")
 
+p_shrub <- ggplot(summarySE(enrolled_df, measurevar="shrub", groupvars=c("first.treat","contest"), na.rm = TRUE), 
+       aes(x=first.treat, y=shrub, colour=contest)) + 
+    geom_errorbar(aes(ymin=shrub-se, ymax=shrub+se), width=.1, position=pd) +
+    geom_line(position=pd) +
+    geom_point(position=pd, size=3, shape=21, fill="white")
 
-p_ref <- ggplot(summarySE(enrolled_df, measurevar="reforestation2", groupvars=c("first.treat"), na.rm = TRUE), 
+NFL_df <- readRDS("NFL_df.rds")%>%
+  mutate(ecologio = ifelse(rptpro_objetivo_manejo.x == "BOSQUE PRESERVACION Y FORMACIONES XEROFITICAS DE ALTO VALOR ECOLOGICO", 1, 0))
+
+p_ref <- ggplot(summarySE(NFL_df, measurevar="reforestation2", groupvars=c("first.treat"), na.rm = TRUE), 
        aes(x=first.treat, y=reforestation2)) + 
     geom_errorbar(aes(ymin=reforestation2-se, ymax=reforestation2+se), width=.1, position=pd) +
     geom_line(position=pd) +
     geom_point(position=pd, size=3, shape=21, fill="white")
 
-p_eco <- ggplot(summarySE(enrolled_df, measurevar="ecologio", groupvars=c("first.treat"), na.rm = TRUE), 
+p_eco <- ggplot(summarySE(NFL_df, measurevar="ecologio", groupvars=c("first.treat"), na.rm = TRUE), 
        aes(x=first.treat, y=ecologio)) + 
     geom_errorbar(aes(ymin=ecologio-se, ymax=ecologio+se), width=.1, position=pd) +
     geom_line(position=pd) +
@@ -179,42 +171,112 @@ p_eco <- ggplot(summarySE(enrolled_df, measurevar="ecologio", groupvars=c("first
 ```
 
 
-```{r landuse, fig.show="hold", out.width="32%"}
+```{r landuse, fig.show="hold", out.width="49%"}
 p_forest
 p_plantation
 p_pasture
+p_shrub
 ```
 
-## Reforestation and Ecologically valuable activities
+## Reforestation and Ecological enrichment activities
 
-I now show how take up of what conceivable are the projects with the highest carbon removal potential. I refer to these as "planting" and "ecologically valuable" projects. 
-
-It is possible that these two trends correspond to the land use trends that were seen above. 
-
-boxplots of the pasture and forest composition of these properties
+I now show how take up of what conceivably are the projects with the highest carbon removal potential. I refer to these as "planting" and "ecological enrichment" projects. While planting is fairly self-explanatory, ecological enrichment projects involve activities such as enrichment of soils or the ecological foundation, assisting the recovery of post-disturbance ecosystems, or establishing connections between forest areas. Figure XX shows that more recent cohorts may be more likely to pursue "ecological enrichment" projects and less likely to pursue projects that explicitly plant trees. 
 
 ```{r ref-eco-plots, fig.show="hold", out.width="49%"}
 p_ref
 p_eco
 ```
 
-## Contract design, follow through, and payments
 
-In order to receive the payment, landowners must provide proof of activity completion via a certified third party report. In general, this report must be submitted within two years of the start date of the activity. However, for projects involving revegetation, planting, enriched ecological foundation, or establishing connections between forested areas, the report must be presented between the second and fourth year.
+```{r, include = FALSE}
+# eco_df <- subset(enrolled_df, ecologio==1)%>%
+#   select(c_5, forest, plantation, pasture)%>%
+#   mutate(type = "ecological enrichment")
+# 
+# other_df <- subset(enrolled_df, ecologio==0 & reforestation2==0)%>%
+#   select(c_5, forest, plantation, pasture)%>%
+#   mutate(type = "all other projects")
+# 
+# #detach(package:plyr)
+# ecorefor_df <- subset(enrolled_df, reforestation2==1)%>%
+#   select(c_5, forest, plantation,pasture)%>%
+#   mutate(type = "planting")%>%
+#   bind_rows(eco_df)%>%
+#   bind_rows(other_df)%>%
+#   group_by(type)%>%
+#   summarise(shrub = mean(c_5, na.rm = TRUE),
+#             forest = mean(forest, na.rm = TRUE),
+#             pasture = mean(pasture, na.rm = TRUE),
+#             plantation = mean(plantation, na.rm = TRUE))
 
-We see that follow through and payment is relatively low. Amongst ther entire population of projects, only 44.4\% have been paid out. As mentioned in the data section, I am able to match approximately 85\% of payments to the associated property. Figure XX shows how payment varies across cohort years. While payouts seem relatively stable through 2017, recently enrolled properties have not yet completed projects and submitted the payment report. Figure XX also shows that smallholders are generally more likely to be paid than the group of larger properties. 
 
-```{r paid, fig.show="hold", out.width="75%"}
 
-p_payments
 
 ```
 
-We also see that projects that fall under the 2nd and 4th year payout period are less likely to be paid out on. This is partly due to the fact that these properties will simply take longer to be paid. However, early cohort properties fall prey to this pattern as well, implying that these properties are less likely to ever be paid. This may imply somethhing about the profitability of these activities or the capability of these landowners to successfully complete the projects. 
+## Contract design, follow through, and payments
+
+```{r, include = FALSE}
+
+NFL_df <- NFL_df %>%
+  mutate(ecologio = ifelse(rptpro_objetivo_manejo.x=="BOSQUE PRESERVACION Y FORMACIONES XEROFITICAS DE ALTO VALOR ECOLOGICO",1,0),
+         smallholder = as.character(ifelse(rptpro_tipo_concurso=="Otros Interesados", 0, 1)),
+         reftype = ifelse(ecologio ==1|reforestation2==1, 1, 0))
+
+paid_full <- NFL_df %>%
+  left_join(propertypaid_id, by = "prop_ID")%>%
+  mutate(paid = ifelse(is.na(paid), 0, 1))
+
+paid_full$contest <- ifelse(paid_full$smallholder==1, "smallholder", "other interested parties")
+
+p_payments <- ggplot(summarySE(paid_full, measurevar="paid", groupvars=c("first.treat","contest"), na.rm = TRUE), 
+       aes(x=first.treat, y=paid, colour=contest)) + 
+    geom_errorbar(aes(ymin=paid-se, ymax=paid+se), width=.1, position=pd) +
+    geom_line(position=pd) +
+    geom_point(size=3, shape=21, fill="white", position=pd)
+
+paid_full$project <- ifelse(paid_full$reftype==1, "reforestation or enrichment", "other")
+
+p_refpayments <- ggplot(summarySE(paid_full, measurevar="paid", groupvars=c("first.treat","project"), na.rm = TRUE), 
+       aes(x=first.treat, y=paid, colour=project)) + 
+    geom_errorbar(aes(ymin=paid-se, ymax=paid+se), width=.1, position=pd) +
+    geom_line(position=pd) +
+    geom_point(size=3, shape=21, fill="white", position=pd)+
+    scale_color_manual(values=c("firebrick4", "green4"))
+
+NFL_df$contest <- ifelse(NFL_df$rptpro_tipo_concurso=="Otros Interesados", "other interested parties", "smallholder")
+
+NFL_df$reftype <- ifelse(NFL_df$reforestation2==1|NFL_df$ecologio==1, 1,0)
+
+# Error bars represent standard error of the mean
+refor_smallys <- ggplot(summarySE(NFL_df, measurevar="reftype", groupvars=c("contest")), aes(x=contest,  y=reftype, fill=c("firebrick4", "green4"))) + 
+    geom_bar(position=position_dodge(), stat="identity") +
+    geom_errorbar(aes(ymin=reftype-se, ymax=reftype+se),
+                  width=.2,                    # Width of the error bars
+                  position=position_dodge(.9))+
+   theme(legend.position = "none")+
+  ylab("proportion of projects with longer verification period")
+
+```
+
+In order to receive the payment, landowners must provide proof of activity completion via a certified third party report. In general, this report must be submitted within two years of the start date of the activity. However, for projects involving revegetation, planting, enriched ecological foundation, or establishing connections between forested areas, the report must be presented between the second and fourth year.
+
+We see that follow through and payment is relatively low. Amongst ther entire population of projects, only 44.4\% have been paid out. As mentioned in the data section, I am able to match approximately 85\% of payments to the associated property. Figure XX shows how payment varies across cohort years, with smallholders more likely to be paid in all years. While payouts seem relatively stable through 2017, recently enrolled properties have not yet completed projects and submitted the payment report.  
+
+```{r paid, fig.show="hold", out.width="49%"}
+
+p_payments
+
+refor_smallys
+
+```
+
+Figure XX - Panel Athat projects that fall under the longer contract period (payment between year two and four) are less likely to be paid out on. This is partly due to the fact that these properties will simply take longer to be paid. However, early cohort properties fall prey to this pattern as well, implying that these properties are less likely to ever be paid. This may imply something about the profitability of these activities or the capability of these landowners to successfully complete the projects. This pattern may help explain why smallholders are paid out at higher rates. Panel B shows that smallholders are indeed less likely to take on these types of projects. 
 
 ```{r refpaid, fig.show="hold", out.width="75%"}
 
 p_refpayments
+
 
 ```
 
@@ -230,11 +292,19 @@ A major point of tension in this paper is the lens through which it should be vi
 
 # Program evaluation
 
-## Matching
+## Selection, matching, and a convincing counterfactual
 
 The covariates used for matching include property size, slope, elevation, distance to road, and proportion of the property under each of the following land-uses in 2001: native forest, plantation, pasture, shrubland, water, and bare soil. I also include 4 years of pre-trends to build confidence in the common trends identification assumption that I make in the next section. Matches are made with replacement based on nearest neighbor propensity scores from a logit regression. Table XX displays covariate balance after matching relative to the full population of unawarded properties. My preferred process matches each program enrollee with one control property, however, I also include estimates based on matching each enrolled property with two nearest neighbors as a robustness check.  
 
-```{r covar-bal, fig.cap = "Covarate balance between treated and untreated groups with and without matching. I follow ... and ... and consider the distributions to be matched if the normalized difference is less than 0.25.  "}
+
+As is the problem with many PES impact evaluations, enrollment is non-random. Landowners choose to enroll in the program and in theory, have an opportunity cost lower than program enrollment [XX]. 
+
+The covariates included should allow me to match properties with similar opportunity costs to enrollment. Of particular value is the ability to match on land use prior to the existence of the program. Landowners with similar levels of forest plantation, native forest, and other land uses on the property should face a similar decision about whether to enroll. Slope and elevation tend to be highly correlated with the productive potential of the land [], and distance to road provides a proxy of a property's remoteness.
+
+One concern may be my decision to exclude rejected applicants from the control group. Given that these properties have revealed their intention to enroll in the program, it seems that they may have opportinity costs similar to program enrollees. However, the composition of the rejected applicants differs between smallholders and other interested parties depending on year, and many rejected applicants are able to reapply and be awarded in later years. This means that the composition of the rejected applicant group is relatively unstable through time and differs between smallholders and other interested parties. 
+
+
+```{r covar-bal, fig.pos = "!H", fig.cap = "Covarate balance between treated and untreated groups with and without matching. I follow ... and ... and consider the distributions to be matched if the normalized difference is less than 0.25."}
 
 covar_bal <- readRDS("covariate_balance.rds")[-11,]
 covar_bal[9, 1] <- "area (ha)"
@@ -247,14 +317,6 @@ kable(covar_bal, format = "latex", row.names = FALSE, booktabs = T,
   kable_classic()
 
 ```
-
-## Selection and a convincing counterfactual
-
-As is the problem with many PES impact evaluations, enrollment is non-random. Landowners choose to enroll in the program and in theory, have an opportunity cost lower than program enrollment [XX]. 
-
-The covariates included should allow me to match properties with similar opportunity costs to enrollment. Of particular value is the ability to match on land use prior to the existence of the program. Landowners with similar levels of forest plantation, native forest, and other land uses on the property should face a similar decision about whether to enroll. Slope and elevation tend to be highly correlated with the productive potential of the land [], and distance to road provides a proxy of a property's remoteness.
-
-One concern may be my decision to exclude rejected applicants from the control group. Given that these properties have revealed their intention to enroll in the program, it seems that they may have opportinity costs similar to program enrollees. However, the composition of the rejected applicants differs between smallholders and other interested parties depending on year, and many rejected applicants are able to reapply and be awarded in later years. This means that the composition of the rejected applicant group is relatively unstable through time and differs between smallholders and other interested parties. 
 
 ## DID
 
@@ -280,7 +342,7 @@ Figure \@ref(fig:enrolled-dynamic) also allows us to examine the plausibility of
 
 Columsn 3 and 4 of Table XX show that smallholders, while still seeing a positive effect, on average do not see treatment effects as high as the larger parties. 
 
-## tree planting projects
+## Longer follow-through projects
 
 Reforestation ... Enrichment of ... Actual tree planting... Columns 5 through 7 of Table XX show that these types of projects led to lower treatment effects. 
 

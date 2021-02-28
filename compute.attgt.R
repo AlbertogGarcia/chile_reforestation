@@ -1,14 +1,12 @@
 library(tidyverse)
 
-dta <- otros_panel %>%
-  rename(G = first.treat,
-         id = ID,
+dta <- subset(enrolled_analysis_2r, reforestation2 ==0) %>%
+  mutate(G = first.treat,
          period = Year,
          Y = NDVI)
+dta$geometry.x <- NULL
 
 compute.attgt <- function(dta) {
-  
-  
   
   
   # pick up all groups
@@ -65,6 +63,8 @@ compute.attgt <- function(dta) {
       
       # get group g and untreated group
       this.data <- subset(dta, G==g | G==0)
+      #this.data <- subset(dta, G = did_group)
+      
       
       # get current period and base period data
       this.data <- subset(this.data, period==tp | period==base.period) %>%
@@ -81,16 +81,31 @@ compute.attgt <- function(dta) {
       # like the DRDID package as it will work for more complicated
       # cases as well)
       
-      attgt <- DRDID::drdid(yname="Y", tname = "period", idname = "id", dname = "treat",
-                            xformla =  ~rptpro_monto_total +lat + rptpre_superficie_bonificada + area_ha
-                            ,
-                            data = this.data,
-                            panel = TRUE
-                            )$ATT
+      # attgt <- DRDID::drdid(yname="Y", tname = "period", idname = "id", dname = "treat",
+      #                       xformla =  ~lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist
+      #                       ,
+      #                       data = this.data,
+      #                       panel = TRUE
+      #                       )$ATT
       
+      
+      this.data$geometry.x <- NULL
+
+       mod <- glm(treat ~ lat + forest + plantation + baresoil+smallholder + pasture + urban +water+ slope + elev  + area_ha + road_dist,
+                  data = this.data, family = "binomial")
+
+       this.data <- this.data %>%
+         mutate(propglm = predict(mod, type = "response"),
+                psweights = 1 / propglm * treat +
+                  1 / (1 - propglm) * (1 - treat))
+
       #### simple did to estimate interaction terms
-      # attgt <- lm(Y ~  treat*post, 
-      #              data   = this.data)$coefficients
+      attgt <- tail(lm(Y ~  treat*post*plantation +lat + forest +smallholder+ plantation + baresoil + pasture + urban +water +slope+ elev  + area_ha + road_dist
+                       ,
+                   data   = this.data
+                   , weights = psweights
+                   )$coefficients, n=4)[1]
+
       
       # save results
       attgt.list[[counter]] <- list(att=attgt, group=g, time.period=tp)
@@ -115,6 +130,12 @@ compute.attgt <- function(dta) {
   # merge in group sizes
   ngroup.mat <- cbind(groups, n.group)
   attgt.results <- merge(attgt.results, ngroup.mat, by.x = "group", by.y = "groups")
+  
+  
+  simple_df <- subset(attgt.results, e >=0)%>%
+    mutate(weight= n.group / sum(n.group))
+  simple.att <- sum(simple_df$att * simple_df$weight)
+  
   
   # event times to calculate dynamic effects
   eseq <- unique(attgt.results$e) 
@@ -164,17 +185,21 @@ compute.attgt <- function(dta) {
     counter <- counter+1
   }
   
+  dynamic.ovr.att <- mean(subset(dyn.results, e >= 0)$att.e )
+  
   # store dynamic effects results
   cohort.results <- cbind.data.frame(g = gseq, att.g = att.g)
   
   n.group_df <- as.data.frame(ngroup.mat)%>%
-    rename(g = groups)
+    dplyr::rename(g = groups)
+  
   ovr.result_df <- cohort.results %>%
     inner_join(n.group_df, by = "g") %>%
     mutate(weight = n.group / sum(n.group))
   
-  att.ovr <- sum(ovr.result_df$att * ovr.result_df$weight)
   
+  att.ovr <- sum(ovr.result_df$att * ovr.result_df$weight)
+ 
   # return group-time average treatment effects and dynamic effects
   
   
@@ -182,51 +207,11 @@ compute.attgt <- function(dta) {
   
   return(list(attgt.results=attgt.results[,c("group","att","time.period")],
               dyn.results=dyn.results,
+              dyn.ovr =  dynamic.ovr.att,
+              simple.att = simple.att,
               att.ovr = att.ovr,
               cohort.results = cohort.results))
 }
-
-
-otros_results <- compute.attgt(dta)
-
-# the number of bootstrap iterations
-biters <- 100
-
-# list to store bootstrap results
-boot.res <- list()
-
-# loop for each nonparametric bootstrap iteration
-for (b in 1:biters) {
-  # draw a bootstrap sample; here, we'll call an outside function
-  bdata <- BMisc::blockBootSample(dta, "id")
-  
-  # call our function for estimating dynamic effects on the
-  # bootstrapped data
-  boot.res[[b]] <- otros_results$dyn.results$att.e
-  print(b)
-}
-
-# use the bootstrapped results to compute standard errors
-boot.res <- t(simplify2array(boot.res))
-boot.se <- apply(boot.res, 2, sd)
-
-# add the standard errors to the main results
-dyn.results <- compute.aggte(otros_panel)$dyn.results
-dyn.results$att.se <- boot.se
-
-dyn.results <- dyn.results %>%
-  filter(e >= -5)
-p <- ggplot(data=dyn.results, aes(x=e, y=att.e)) +
-  geom_line() +
-  geom_point() +
-  #geom_errorbar(aes(ymin=(att.e-1.96*att.se), ymax=(att.e+1.96*att.se)), width=0.1) +
-  theme_bw()
-
-p <- p + geom_line(data=truth, aes(x=e, y=att.e), inherit.aes=FALSE, color="blue")
-p <- p + geom_point(data=truth, aes(x=e, y=att.e), inherit.aes=FALSE, color="blue")
-p
-
-
 
 
 

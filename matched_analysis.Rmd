@@ -1,0 +1,436 @@
+---
+title: "matched data impact evaluation"
+author: "Albert Garcia"
+date: "Feb 17, 2021"
+output:
+  pdf_document:
+    number_sections: yes
+    toc: no
+fontsize: 11pt    
+documentclass: article
+geometry: margin=1in
+header-includes: 
+  \usepackage{sectsty}
+  \usepackage{enumitem}
+  \usepackage{comment}
+  \usepackage{multirow,array}
+  \usepackage{makecell}
+  \usepackage{dcolumn}
+  \usepackage{booktabs}
+  \usepackage[margin=1in]{geometry}
+---
+
+# Methods
+
+
+## Why aggregate to property level?
+
+## Why aggregate group-time treatment effects ex-post?
+
+I use the difference-in-differences estimator proposed by Callaway and Santa'ana (2019) to mitigate concerns over issues surrounding the use of TWFE models in the presence of heterogeneous treatment effects. This amounts to first using a generalized propensity score method to better compare treatment and control units based on a set of covariates. Then, for each cohort, I compute the standard DID event study, before aggregating the group-time treatment effects with weights corresponding to each group's representativeness in the sample. This ensures that the weights for each group-time treatment effect are not negative, and therefore, do not risk reversing the sign of the treatment effect estimate.
+
+# Results from matched data
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(out.height='300px', dpi=200)
+
+### loads tidyverse packages, defines helper functions
+library(latex2exp)
+library(tinytex)
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+library(sf)
+library(stringi)
+library(data.table)
+library(rio)
+
+library(did)
+
+
+
+```
+
+
+``` {r did , echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+enrolled_analysis_2r <- readRDS("enrolled_analysis_ratio2unique.rds")
+enrolled_analysis_2r$Year <- as.numeric(enrolled_analysis_2r$Year)
+enrolled_analysis_2r$id <- as.numeric(enrolled_analysis_2r$id)
+
+did.enrolled_2r <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~  lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=enrolled_analysis_2r, clustervars = "id"
+                     , panel=TRUE, bstrap = TRUE
+                     )
+
+did.es <- aggte(did.enrolled_2r, type="dynamic", na.rm = TRUE)#, min_e=-6, max_e = 10)
+ggdid(did.es)
+did.ovr <- aggte(did.enrolled_2r, na.rm=TRUE, type = "simple")
+
+ATT.overall <- data.frame("reg" = "all", "att.ovr" = did.ovr$overall.att, "se.ovr" = did.ovr$overall.se, "obs" = length(unique(enrolled_analysis_2r$id)), "nearest neighbors" = 2)
+
+# plot the event study
+
+dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$egt, "crit.val" = did.es$crit.val.egt)%>%
+  mutate(period = ifelse(e >= 0 , "post", "pre"))
+
+plot_2r <- ggplot(data=dyn.es, aes(x=e, y=att, color = period)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), width=0.1) +
+  ggtitle("Event time treatment effects for all enrolled properties") +
+  xlab("years since property enrollment") + ylab("NDVI")
+plot_2r
+
+#######
+# 1 nearest neighbor dataset
+enrolled_analysis_1r <- readRDS("enrolled_analysis_ratio1unique.rds")
+enrolled_analysis_1r$Year <- as.numeric(enrolled_analysis_1r$Year)
+enrolled_analysis_1r$id <- as.numeric(enrolled_analysis_1r$id)
+
+did.enrolled_1r <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~  lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=enrolled_analysis_1r, clustervars = "id"
+                     , panel=TRUE, bstrap = TRUE
+                     )
+
+did.es <- aggte(did.enrolled_1r, type="dynamic", na.rm = TRUE)#, min_e=-6, max_e = 10)
+did.ovr <- aggte(did.enrolled_1r, na.rm=TRUE)
+
+ATT.overall <- ATT.overall %>%
+  rbind(data.frame("reg" = "all", "att.ovr" = did.ovr$overall.att, "se.ovr" = did.ovr$overall.se, "obs" = length(unique(enrolled_analysis_1r$id)), "nearest neighbors" = 1))
+
+# plot the event study
+
+dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$egt, "crit.val" = did.es$crit.val.egt)%>%
+  mutate(period = ifelse(e >= 0 , "post", "pre"))
+
+plot_1r <- ggplot(data=dyn.es, aes(x=e, y=att, color = period)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), width=0.1) +
+  ggtitle("Event time treatment effects for all enrolled properties") +
+  xlab("years since property enrollment") + ylab("NDVI")
+plot_1r
+
+
+ggsave(plot = plot_1r,
+       path = "figs",
+  filename = "enrolled_dynamic_1r.png",
+  width = 10,
+  units = "in",
+  dpi = 500)
+
+
+```
+
+``` {r did all enrolled smallholders, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+did.enrolled_sh2 <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~ forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=subset(enrolled_analysis_2r,smallholder == 1),
+                     clustervars = "id"
+                     ,panel=TRUE, bstrap = TRUE#, cband = TRUE
+                     )
+
+# did.enrolled_sh.es <- aggte(did.enrolled_sh, type="dynamic", na.rm = TRUE, min_e=-5, max_e = 10)
+did.enrolled_sh.ovr <- aggte(did.enrolled_sh2)#, type = "simple", na.rm=TRUE)
+
+ATT.overall_sh <- data.frame("reg" = "smallholders", "att.ovr" = did.enrolled_sh.ovr$overall.att, "se.ovr" = did.enrolled_sh.ovr$overall.se, "obs" = length(unique(subset(enrolled_analysis_2r,smallholder == 1)$id)), "nearest neighbors" = 2)
+
+did.enrolled_sh1 <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~ forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=subset(enrolled_analysis_1r,smallholder == 1),
+                     clustervars = "id"
+                     ,panel=TRUE, bstrap = TRUE#, cband = TRUE
+                     )
+# 
+# did.enrolled_sh.es <- aggte(did.enrolled_sh, type="dynamic", na.rm = TRUE, min_e=-5, max_e = 10)
+did.enrolled_sh.ovr <- aggte(did.enrolled_sh1)
+
+ATT.overall_sh <- ATT.overall_sh %>%
+  rbind(data.frame("reg" = "smallholders", "att.ovr" = did.enrolled_sh.ovr$overall.att, "se.ovr" = did.enrolled_sh.ovr$overall.se, "obs" = length(unique(subset(enrolled_analysis_1r,smallholder == 1)$id)), "nearest neighbors" = 1))
+
+```
+
+``` {r did all enrolled bigguys, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+
+did.enrolled_oi2 <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~ forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=subset(enrolled_analysis_2r,smallholder == 0),
+                     clustervars = "id"
+                     ,panel=TRUE, bstrap = TRUE#, cband = TRUE
+                     )
+
+# did.enrolled_sh.es <- aggte(did.enrolled_sh, type="dynamic", na.rm = TRUE, min_e=-5, max_e = 10)
+did.enrolled_oi.ovr <- aggte(did.enrolled_oi2)#, type = "simple", na.rm=TRUE)
+
+ATT.overall_oi <- data.frame("reg" = "other", "att.ovr" = did.enrolled_oi.ovr$overall.att, "se.ovr" = did.enrolled_oi.ovr$overall.se, "obs" = length(unique(subset(enrolled_analysis_2r,smallholder == 0)$id)), "nearest neighbors" = 2)
+
+did.enrolled_oi1 <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~ forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=subset(enrolled_analysis_1r,smallholder == 0),
+                     clustervars = "id"
+                     ,panel=TRUE, bstrap = TRUE#, cband = TRUE
+                     )
+
+# did.enrolled_sh.es <- aggte(did.enrolled_sh, type="dynamic", na.rm = TRUE, min_e=-5, max_e = 10)
+did.enrolled_oi.ovr <- aggte(did.enrolled_oi1)
+
+ATT.overall_oi <- ATT.overall_oi %>%
+  rbind(data.frame("reg" = "other", "att.ovr" = did.enrolled_oi.ovr$overall.att, "se.ovr" = did.enrolled_oi.ovr$overall.se, "obs" = length(unique(subset(enrolled_analysis_1r,smallholder == 0)$id)), "nearest neighbors" = 1))
+
+```
+
+
+``` {r did all enrolled reforest, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+
+did.enrolled_ref2 <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~ forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=subset(enrolled_analysis_2r,
+                                 rptpro_objetivo_manejo.x == "BOSQUE PRESERVACION Y FORMACIONES XEROFITICAS DE ALTO VALOR ECOLOGICO"
+                                 #reforestation2==1
+                                 |treat==0),
+                     clustervars = "id"
+                     ,panel=TRUE, bstrap = TRUE#, cband = TRUE
+                     )
+
+ did.enrolled_ref2.es <- aggte(did.enrolled_ref2, type="dynamic", na.rm = TRUE, min_e=-5, max_e = 10)
+did.enrolled_ref.ovr <- aggte(did.enrolled_ref2,  na.rm=TRUE)#,type = "simple")
+summary(did.enrolled_ref.ovr)
+
+ATT.overall_ref <- data.frame("reg" = "reforestation", "att.ovr" = did.enrolled_ref.ovr$overall.att, "se.ovr" = did.enrolled_ref.ovr$overall.se, "obs" = length(unique(subset(enrolled_analysis_2r,reforestation2 == 1)$id)), "nearest neighbors" = 2)
+
+did.enrolled_ref1 <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~ forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=subset(enrolled_analysis_1r,reforestation2 == 1),
+                     clustervars = "id"
+                     ,panel=TRUE, bstrap = TRUE#, cband = TRUE
+                     )
+
+ did.enrolled_ref1.es <- aggte(did.enrolled_ref1, type="dynamic", na.rm = TRUE, min_e=-5, max_e = 10)
+did.enrolled_ref.ovr <- aggte(did.enrolled_ref1, na.rm = TRUE)
+
+ATT.overall_ref <- ATT.overall_ref %>%
+  rbind(data.frame("reg" = "reforestation", "att.ovr" = did.enrolled_ref.ovr$overall.att, "se.ovr" = did.enrolled_ref.ovr$overall.se, "obs" = length(unique(subset(enrolled_analysis_1r,reforestation2 == 1)$id)), "nearest neighbors" = 1))
+
+```
+
+```{r}
+
+dta <- enrolled_analysis_2r %>%
+  mutate(G = first.treat,
+         period = Year,
+         Y = NDVI)
+dta$geometry.x <- NULL
+
+library(plm)
+# the number of bootstrap iterations
+biters <- 150
+
+# list to store bootstrap results
+boot.res <- list()
+
+# loop for each nonparametric bootstrap iteration
+for (b in 1:biters) {
+  unique_ids <- unique(dta$id)      #unique properties
+
+  sample_props <- sample(unique_ids, size=length(unique_ids), replace=T ) #choose from unique props randomly with replacement
+  bdata <- do.call(rbind, lapply(sample_props, function(x)  dta[dta$id==x,] ))#fetch all years for each randomly picked firm and rbind
+  
+  # call our function for estimating dynamic effects on the
+  # bootstrapped data
+  boot.res[[b]] <- compute.attgt(bdata)$dyn.ovr
+  print(b)
+}
+
+# use the bootstrapped results to compute standard errors
+boot.res <- t(simplify2array(boot.res))
+boot.se <- sd(boot.res, na.rm = TRUE)#apply(boot.res, 1, sd)
+res <- compute.attgt(dta)
+# add the standard errors to the main results
+main.plantation.results <- res$dyn.ovr
+main.plantation.results$att.se <- boot.se
+
+test <- compute.attgt(dta)
+
+```
+
+
+``` {r did , echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+paid_analysis_2r <- readRDS("paid_analysis_ratio2unique.rds")
+paid_analysis_2r$Year <- as.numeric(paid_analysis_2r$Year)
+paid_analysis_2r$id <- as.numeric(paid_analysis_2r$id)
+
+did.paid_2r <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~  lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=paid_analysis_2r, clustervars = "id"
+                     , panel=TRUE, bstrap = TRUE
+                     )
+
+p.did.es <- aggte(did.paid_2r, type="dynamic", na.rm = TRUE, min_e=-6, max_e = 10)
+p.did.ovr <- aggte(did.paid_2r, na.rm=TRUE, type = "simple")
+
+summary(p.did.es)
+# 1 nearest neighbor dataset
+paid_analysis_1r <- readRDS("paid_analysis_ratio1unique.rds")
+paid_analysis_1r$Year <- as.numeric(paid_analysis_1r$Year)
+paid_analysis_1r$id <- as.numeric(paid_analysis_1r$id)
+
+did.paid_1r <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~  lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=did.paid_1r, clustervars = "id"
+                     , panel=TRUE, bstrap = TRUE
+                     )
+
+did.es <- aggte(did.paid_1r, type="dynamic", na.rm = TRUE, min_e=-6, max_e = 10)
+did.ovr <- aggte(did.paid_1r, na.rm=TRUE)
+
+```
+
+```{r}
+did.paid_ref2 <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~  lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=subset(paid_analysis_2r, rptpro_objetivo_manejo.x == "BOSQUE PRESERVACION Y FORMACIONES XEROFITICAS DE ALTO VALOR ECOLOGICO"
+                                # reforestation2==1
+                                 |treat==0 )
+                     , clustervars = "id"
+                     , panel=TRUE, bstrap = TRUE
+                     )
+
+p.did.es <- aggte(did.paid_ref2, type="dynamic", na.rm = TRUE)#, min_e=-6, max_e = 10)
+
+```
+
+```{r}
+# setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/treatment")
+# # load los rios ndvi time series for all ciren properties
+# temp = list.files(pattern="*.csv")
+# rolarea_ndvi = bind_rows(lapply(temp, read_csv))%>%
+#   select(prop_ID, year, mean) %>%
+#   distinct(prop_ID, year, .keep_all = TRUE) %>%
+#   mutate(year = paste0("y_", year))%>%
+#   spread(key = "year", value = "mean")# cast ndvi into wide format
+
+```
+
+```{r}
+rolarea_covars <- data.frame(readRDS("rolarea_covars.rds"))
+rolarea_df <- readRDS("rolarea_df.rds")
+
+enrolled_df <- rolarea_df %>%
+  inner_join(rolarea_covars, by ="prop_ID")%>%
+  mutate(forest = c_1,
+         plantation = c_3,
+         baresoil = c_12,+c_10,
+         pasture = c_9,
+         water = c_15,
+         urban = c_16,
+         timber = ifelse(rptpro_objetivo_manejo.x == "PRODUCCION MADERERA", 1, 0),
+         nontimber = ifelse(rptpro_objetivo_manejo.x == "PRODUCCION NO MADERERA", 1, 0),
+         ecologio = ifelse(rptpro_objetivo_manejo.x == "BOSQUE PRESERVACION Y FORMACIONES XEROFITICAS DE ALTO VALOR ECOLOGICO", 1, 0),
+         female = ifelse(rptprop_sexo == "Masculino", 0, 1),
+         indigenous = ifelse(rptprop_etnia == "Aymara" | rptprop_etnia == "Mapuche" | rptprop_etnia == "Otra", 1, 0),
+         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1))
+
+
+library(gplots)
+plotmeans(plantation ~ first.treat, data = enrolled_df, n.label = FALSE)
+
+plotmeans(`rptpro_monto_total` ~ first.treat, data = enrolled_df)
+
+plotmeans(rptpro_objetivo_manejo.x ~ first.treat, data = enrolled_df)
+
+plotmeans(pasture ~ first.treat, data = enrolled_df)
+
+plotmeans(reforestation2 ~ first.treat, data = enrolled_df)
+
+plotmeans(forest ~ first.treat, data = enrolled_df)
+
+enrolled_df$smallholder <- as.character(enrolled_df$smallholder)
+pd <- position_dodge(0.2)
+
+
+ggplot(summarySE(enrolled_df, measurevar="pasture", groupvars=c("first.treat","smallholder"), na.rm = TRUE), 
+       aes(x=first.treat, y=pasture, colour=smallholder)) + 
+    geom_errorbar(aes(ymin=pasture-se, ymax=pasture+se), width=.1) +
+    geom_line() +
+    geom_point()
+
+ggplot(summarySE(enrolled_df, measurevar="ecologio", groupvars=c("first.treat","smallholder"), na.rm = TRUE), 
+       aes(x=first.treat, y=ecologio, colour=smallholder)) + 
+    geom_errorbar(aes(ymin=ecologio-se, ymax=ecologio+se), width=.1) +
+    geom_line() +
+    geom_point()
+
+
+```
+
+```{r}
+propertypaid_id
+paid.enrolled <- enrolled_df %>%
+  left_join(propertypaid_id) %>%
+  mutate(paid = ifelse(is.na(paid), 0, paid))
+
+summary(paid.enrolled$paid)
+
+proppaid <- property_df %>%
+  #filter(first.treat == rptpro_ano)%>%
+  distinct(prop_ID, .keep_all = TRUE)%>%
+  left_join(propertypaid_id, by = "prop_ID")%>%
+  mutate(paid = ifelse(is.na(paid), 0, paid))
+
+plotmeans(paid ~ first.treat, data = paid.enrolled)
+
+plotmeans(paid ~ first.treat, data = proppaid)
+
+plotmeans(paid ~ as.numeric(yr_paid), data = propertypaid_id)
+class(propertypaid_id$yr_paid)
+
+paid.enrolled$smallholder <- as.character(paid.enrolled$smallholder)
+paid.enrolled$reforestation2 <- as.character(paid.enrolled$reforestation2)
+
+ggplot(summarySE(subset(paid.enrolled, first.treat < 2018), measurevar="paid", groupvars=c("first.treat","ecologio"), na.rm = TRUE), 
+       aes(x=first.treat, y=paid, colour=ecologio)) + 
+    geom_errorbar(aes(ymin=paid-se, ymax=paid+se), width=.1) +
+    geom_line() +
+    geom_point()
+
+```
+
+

@@ -27,6 +27,7 @@ library(knitr)
 library(ggplot2)
 library(kableExtra)
 library(tidyverse)
+library(stargazer)
 
 source('summarySE.R')
 
@@ -313,6 +314,33 @@ Figure XX - Panel A shows that projects that fall under the longer contract peri
 p_refpayments
 
 ```
+
+
+I also explore whether pre-program land uses can help predict follow-through. 
+```{r, include = FALSE}
+paid_covs <- paid.enrolled %>%
+  filter(first.treat < 2017)
+
+score <- t.test(rptpro_puntaje ~ paid, data = paid.enrolled)
+payment <- t.test(rptpre_monto_total ~ paid, data = paid.enrolled)
+area <- t.test(rptpre_superficie_bonificada ~ paid, data = paid.enrolled)
+forest <- t.test(forest ~ paid, data = paid.enrolled)
+plantation <- t.test(plantation ~ paid, data = paid.enrolled)
+pasture <- t.test(pasture ~ paid, data = paid.enrolled)
+
+covar <- c("score", "award", "bonus area", "forest", "plantation", "pasture")
+paid <- c(score$estimate[2], payment$estimate[2], area$estimate[2], forest$estimate[2], plantation$estimate[2], pasture$estimate[2])
+unpaid <- c(score$estimate[1], payment$estimate[1],  area$estimate[1],  forest$estimate[1], plantation$estimate[1], pasture$estimate[1])
+p_value <-  c(score$p.value, payment$p.value, area$p.value, forest$p.value, plantation$p.value, pasture$p.value)
+
+paid_covars_df <- data.frame(covar, paid, unpaid, p_value)  
+
+```
+
+```{r}
+kable(paid_covars_df)
+```
+
 
 ## rejected applicants
 

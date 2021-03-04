@@ -62,7 +62,7 @@ did.enrolled_2r <- att_gt(yname="NDVI",
                      tname="Year",
                      idname="id",
                      gname="first.treat",
-                     xformla=~  lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     xformla=~  bonused_area + lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
                      data=enrolled_analysis_2r, clustervars = "id"
                      , panel=TRUE, bstrap = TRUE
                      )
@@ -128,6 +128,56 @@ ggsave(plot = plot_1r,
 
 
 ```
+
+```{r}
+
+score_q1.did <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla= ~  lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=subset(enrolled_analysis_2r, quartile ==1)
+                     , clustervars = "id"
+                     , panel=TRUE, bstrap = TRUE
+                     )
+q1_es <- aggte(score_q1.did, type="dynamic", na.rm = TRUE)
+
+score_q2.did <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~  lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=subset(enrolled_analysis_2r, quartile ==2)
+                     , clustervars = "id"
+                     , panel=TRUE, bstrap = TRUE
+                     )
+q2_es <- aggte(score_q2.did, type="dynamic", na.rm = TRUE)
+
+score_q3.did <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~  lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=subset(enrolled_analysis_2r, quartile ==3)
+                     , clustervars = "id"
+                     , panel=TRUE, bstrap = TRUE
+                     )
+q3_es <- aggte(score_q3.did, type="dynamic", na.rm = TRUE)
+
+score_q4.did <- att_gt(yname="NDVI",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     xformla=~  lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     data=subset(enrolled_analysis_2r, quartile ==4)
+                     , clustervars = "id"
+                     , panel=TRUE, bstrap = TRUE
+                     )
+q4_es <- aggte(score_q4.did, type="dynamic", na.rm = TRUE)
+
+```
+
+
 
 ``` {r did all enrolled smallholders, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
@@ -251,7 +301,7 @@ dta$geometry.x <- NULL
 
 library(plm)
 # the number of bootstrap iterations
-biters <- 150
+biters <- 30
 
 # list to store bootstrap results
 boot.res <- list()
@@ -274,8 +324,8 @@ boot.res <- t(simplify2array(boot.res))
 boot.se <- sd(boot.res, na.rm = TRUE)#apply(boot.res, 1, sd)
 res <- compute.attgt(dta)
 # add the standard errors to the main results
-main.plantation.results <- res$dyn.ovr
-main.plantation.results$att.se <- boot.se
+main.small.results <- res$dyn.ovr
+main.small.results$att.se <- boot.se
 
 test <- compute.attgt(dta)
 

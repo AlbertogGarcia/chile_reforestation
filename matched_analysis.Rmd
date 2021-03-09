@@ -62,12 +62,12 @@ did.enrolled_2r <- att_gt(yname="NDVI",
                      tname="Year",
                      idname="id",
                      gname="first.treat",
-                     xformla=~  bonused_area + lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     xformla=~   lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
                      data=enrolled_analysis_2r, clustervars = "id"
                      , panel=TRUE, bstrap = TRUE
                      )
 
-did.es <- aggte(did.enrolled_2r, type="dynamic", na.rm = TRUE)#, min_e=-6, max_e = 10)
+did.es <- aggte(did.enrolled_2r, type="dynamic", na.rm = TRUE, min_e=-12)#, max_e = 10)
 ggdid(did.es)
 did.ovr <- aggte(did.enrolled_2r, na.rm=TRUE, type = "simple")
 
@@ -81,8 +81,9 @@ dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$
 plot_2r <- ggplot(data=dyn.es, aes(x=e, y=att, color = period)) +
   geom_point() +
   geom_errorbar(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), width=0.1) +
-  ggtitle("Event time treatment effects for all enrolled properties") +
-  xlab("years since property enrollment") + ylab("NDVI")
+  ggtitle("Event time treatment effects for all enrolled properties (r=2)") +
+  xlab("years since property enrollment") + ylab("NDVI")+
+  geom_hline(yintercept=0, linetype = "dashed")
 plot_2r
 
 #######
@@ -100,7 +101,7 @@ did.enrolled_1r <- att_gt(yname="NDVI",
                      , panel=TRUE, bstrap = TRUE
                      )
 
-did.es <- aggte(did.enrolled_1r, type="dynamic", na.rm = TRUE)#, min_e=-6, max_e = 10)
+did.es <- aggte(did.enrolled_1r, type="dynamic", na.rm = TRUE), min_e=-10)#, max_e = 10)
 did.ovr <- aggte(did.enrolled_1r, na.rm=TRUE)
 
 ATT.overall <- ATT.overall %>%
@@ -114,19 +115,19 @@ dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$
 plot_1r <- ggplot(data=dyn.es, aes(x=e, y=att, color = period)) +
   geom_point() +
   geom_errorbar(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), width=0.1) +
-  ggtitle("Event time treatment effects for all enrolled properties") +
+  ggtitle("Event time treatment effects for all enrolled properties (r=1)") +
   xlab("years since property enrollment") + ylab("NDVI")
 plot_1r
 
 
-ggsave(plot = plot_1r,
+ggsave(plot = plot_2r,
        path = "figs",
-  filename = "enrolled_dynamic_1r.png",
+  filename = "enrolled_dynamic_2r.png",
   width = 10,
   units = "in",
   dpi = 500)
-
-
+plot_1r
+plot_2r
 ```
 
 ```{r}
@@ -221,13 +222,14 @@ did.enrolled_oi2 <- att_gt(yname="NDVI",
                      tname="Year",
                      idname="id",
                      gname="first.treat",
-                     xformla=~ forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     xformla=~ lat+forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
                      data=subset(enrolled_analysis_2r,smallholder == 0),
                      clustervars = "id"
                      ,panel=TRUE, bstrap = TRUE#, cband = TRUE
                      )
 
-# did.enrolled_sh.es <- aggte(did.enrolled_sh, type="dynamic", na.rm = TRUE, min_e=-5, max_e = 10)
+did.enrolled_oi2.es <- aggte(did.enrolled_oi2, type="dynamic", na.rm = TRUE)#, min_e=-5, max_e = 10)
+ggdid(did.enrolled_oi2.es)
 did.enrolled_oi.ovr <- aggte(did.enrolled_oi2)#, type = "simple", na.rm=TRUE)
 
 ATT.overall_oi <- data.frame("reg" = "other", "att.ovr" = did.enrolled_oi.ovr$overall.att, "se.ovr" = did.enrolled_oi.ovr$overall.se, "obs" = length(unique(subset(enrolled_analysis_2r,smallholder == 0)$id)), "nearest neighbors" = 2)
@@ -236,7 +238,7 @@ did.enrolled_oi1 <- att_gt(yname="NDVI",
                      tname="Year",
                      idname="id",
                      gname="first.treat",
-                     xformla=~ forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     xformla=~ lat+forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
                      data=subset(enrolled_analysis_1r,smallholder == 0),
                      clustervars = "id"
                      ,panel=TRUE, bstrap = TRUE#, cband = TRUE

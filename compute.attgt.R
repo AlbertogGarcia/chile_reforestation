@@ -91,7 +91,8 @@ compute.attgt <- function(dta) {
       
       this.data$geometry.x <- NULL
 
-       mod <- glm(treat ~ lat + forest + plantation + baresoil+smallholder + pasture + urban +water+ slope + elev  + area_ha + road_dist,
+       mod <- glm(treat ~ lat +smallholder + slope + elev  + area_ha + road_dist+ pasture + urban ++water+ forest + plantation + baresoil
+                  ,
                   data = this.data, family = "binomial")
 
        this.data <- this.data %>%
@@ -100,11 +101,12 @@ compute.attgt <- function(dta) {
                   1 / (1 - propglm) * (1 - treat))
 
       #### simple did to estimate interaction terms
-      attgt <- tail(lm(Y ~  treat*post*plantation +lat + forest +smallholder+ plantation + baresoil + pasture + urban +water +slope+ elev  + area_ha + road_dist
+      attgt <- tail(lm(Y ~  treat*post*smallholder +lat + smallholder +slope+ elev  + area_ha + road_dist+ pasture + urban ++water+ forest + plantation + baresoil
                        ,
                    data   = this.data
                    , weights = psweights
-                   )$coefficients, n=4)[1]
+                   )$coefficients
+                   , n=1)#[1]
 
       
       # save results

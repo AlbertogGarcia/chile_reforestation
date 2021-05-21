@@ -33,7 +33,7 @@ library(stringdist)
 library(GADMTools)
 library(lwgeom)
 library(units)
-
+library(fuzzyjoin)
 library(Metrics)
 library(DataCombine)
 library(Hmisc)
@@ -67,13 +67,20 @@ property_df <- proyecto_df %>%
   mutate(prop_ID = group_indices(., rptpre_rol, rptpre_comuna, rptpro_numero_region))%>%
   group_by(prop_ID) %>%
   arrange(rptpro_ano, .by_group = TRUE)%>%
-  distinct(rptpro_id, .keep_all = TRUE) %>%
-  mutate(cum_bonusarea = cumsum(rptpro_superficie),
-         cum_monto = cumsum(rptpro_monto_total),
+  #distinct(rptpro_id, .keep_all = TRUE) %>%
+  mutate(#cum_bonusarea = cumsum(rptpro_superficie),
+         #cum_monto = cumsum(rptpro_monto_total),
          first.treat = min(rptpro_ano),
          latest.treat = max(rptpro_ano))%>%
   ungroup() %>%
   mutate(treated.later = ifelse( first.treat != latest.treat, 1, 0))
+
+full_df <- property_df %>%
+  left_join(rodal_df, by = "rptpre_id") %>%
+  left_join(actividades_df, by = "rptro_id")
+
+submitted_plan <- full_df %>%
+  filter(rptpro_tiene_bonificacion_saff == "Si" | rptpro_tiene_bonificacion_saff=="Si" )
 
 # 9078 unique properties
 
@@ -104,6 +111,15 @@ NFL_df <- property_df %>%
   left_join(activity_df, by = c("prop_ID", "rptpre_rol" , "rptpre_comuna" , "rptpro_ano"))%>%
   mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))
 
+submitted_mp <- property_df %>%
+  filter(rptpro_tiene_plan_saff == "Si" | rptpro_tiene_bonificacion_saff == "Si")%>%
+  left_join(activity_df, by = c("prop_ID", "rptpre_rol" , "rptpre_comuna" , "rptpro_ano"))%>%
+  mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))%>%
+  separate(rptpre_rol, into = c("rol1", "rol2"), sep = "-", remove=FALSE)%>%
+  mutate(rol1 = str_remove(rol1, "^0+"),
+         rol2 = str_remove(rol2, "^0+"))%>%
+  unite("rptpre_rol", rol1, rol2, sep="-")
+
 
 library(rio)
  export(NFL_df, "NFL_df.rds")
@@ -128,31 +144,34 @@ class(propiedadesrurales)
 ```
 
 ```{r original CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
-setwd("C:/Users/garci/Desktop/chile_data/prop_rural")
+# setwd("C:/Users/garci/Desktop/chile_data/prop_rural")
+
+# fcn to remove accents
 
 prop_rural <- st_read(
-  "C:/Users/garci/Desktop/chile_data/prop_rural/prop_rural.shp"
+  "C:/Users/garci/Desktop/UCSB/chile_data/prop_rural/prop_rural.shp"
   )%>%
   rename(rptpre_rol = ROL, desccomu = DESCCOMU)%>%
   st_transform(crs = st_crs(propiedadesrurales))%>%
-  mutate(area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
-  select(desccomu, rptpre_rol, area_ha)%>%
+  mutate(area_ha = as.numeric(units::set_units(st_area(.), ha)),
+         desccomu = tolower(accents(desccomu)))
+  
+prop_rural1 <- prop_rural %>%
+  separate(rptpre_rol, into = c("rol1", "rol2"), sep = "-", remove=FALSE)%>%
+  mutate(rol1 = str_remove(rol1, "^0+"),
+         rol2 = str_remove(rol2, "^0+"))%>%
+  unite("rptpre_rol", rol1, rol2, sep="-")
+
+all_rural_props <- prop_rural1 %>%  
+  select(desccomu, rptpre_rol, area_ha) %>%
   rbind(propiedadesrurales)%>%
   mutate(desccomu = tolower(accents(desccomu)))
-
-class(prop_rural)
-
-#prop_rural$area_ha <- as.numeric(units::set_units(st_area(prop_rural), ha))
-
-# prop_rural.sf <- prop_rural %>%
-#   bind_rows(propiedadesrurales)
 
 ```
 
 ```{r CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 
-
-rolarea_df <- prop_rural %>%
+rolarea_df <- all_rural_props %>%
   merge(NFL_df, by = "rptpre_rol", all = TRUE) %>%
   mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl")) %>%
   filter(comuna_stringd <= 1) %>%
@@ -162,7 +181,7 @@ rolarea_df <- prop_rural %>%
          area_prop = area_diff/rptpre_superficie_predial,
          treat = 1) %>%
   ungroup()%>%
-  filter(good_ranks ==1 & area_prop < 1/3)
+  filter(good_ranks ==1 )#& area_prop < 1/3)
 #%>%st_sf(sf_column_name = 'geometry')
   
 class(rolarea_df)
@@ -173,11 +192,77 @@ rolarea_geoms <- rolarea_df %>%
 
 class(rolarea_geoms)
 
-st_write(rolarea_geoms, dsn = "rolarea_geoms.shp", driver = "ESRI Shapefile")
+#st_write(rolarea_geoms, dsn = "rolarea_geoms.shp", driver = "ESRI Shapefile")
 library(rio)
 export(rolarea_df, "rolarea_df.rds")
 
+submitted_rol <- all_rural_props %>%
+  merge(submitted_mp, by = "rptpre_rol", all = TRUE) %>%
+  mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl")) %>%
+  filter(comuna_stringd <= 1) %>%
+  group_by(prop_ID) %>%
+  mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
+         good_ranks = order(order(area_diff, decreasing=FALSE)),
+         area_prop = area_diff/rptpre_superficie_predial,
+         treat = 1) %>%
+  ungroup()%>%
+  filter(good_ranks ==1 )
 
+missed_submitted <- submitted_mp %>%
+  anti_join(submitted_rol, by = c("prop_ID")) %>%
+  mutate(desccomu = rptpre_comuna)
+
+missed_regions <- missed_submitted %>%
+  select(rptpre_region, rptpro_numero_region)%>%
+  distinct()
+
+examine_missed_submitted <- prop_rural %>%
+  left_join(missed_regions, by = c(region = "rptpro_numero_region"))%>%
+  right_join(missed_submitted, by = c("desccomu", "rptpre_region"))%>%
+  separate(rptpre_rol.y, into = c("rol_left.y", "rol_right.y"), sep = "-")%>%
+  separate(rptpre_rol.x, into = c("rol_left.x", "rol_right.x"), sep = "-")%>%
+  group_by(prop_ID)%>%
+  mutate(rol_distance = stringdist(rptpre_rol.y, rptpre_rol.x),
+         area_diff = abs(area_ha-rptpre_superficie_predial),
+         area_prop = area_diff/rptpre_superficie_predial,
+         rol_left.y=str_remove(rol_left.y, "^0+") ,
+         rol_left.x=str_remove(rol_left.x, "^0+") ,
+         rol_right.y=str_remove(rol_left.y, "^0+") ,
+         rol_right.x=str_remove(rol_left.x, "^0+") ,
+         rol_left = stringdist(rol_left.y, rol_left.x),
+         rol_right = stringdist(rol_right.y, rol_right.x)
+         )%>%
+  filter((rol_distance <=1&area_prop <=1/4)|(rol_left==0&rol_right==0))%>%
+  select(prop_ID, rol_distance, area_ha, rptpre_superficie_predial, rol_left, rol_right, rptpre_rol.y, rptpre_rol.x, rptpre_nombre, NOM_PREDIO, rptprop_nombre, PROPIETARI)
+
+submitted_geoms <- submitted_rol %>%
+  select(prop_ID)
+
+submitted_geoms1 <- submitted_rol %>%
+  filter(rptpre_region == "Región del Maule"|
+         rptpre_region == "Región de Ñuble"|
+         rptpre_region == "Región del Bío-Bío"|
+         rptpre_region == "Región de Los Lagos"|
+         rptpre_region == "Región de Los Ríos"|
+         rptpre_region == "Región de La Araucanía"
+         )%>%
+  select(prop_ID)
+
+submitted_geoms2 <- submitted_rol %>%
+  filter(rptpre_region != "Región del Maule"&
+         rptpre_region != "Región de Ñuble"&
+         rptpre_region != "Región del Bío-Bío"&
+         rptpre_region != "Región de Los Lagos"&
+         rptpre_region != "Región de Los Ríos"&
+         rptpre_region != "Región de La Araucanía"
+         )%>%
+  select(prop_ID)
+
+table(submitted_rol$rptpre_region)
+st_write(submitted_geoms1, dsn = "submitted_geoms1.shp", driver = "ESRI Shapefile")
+st_write(submitted_geoms2, dsn = "submitted_geoms2.shp", driver = "ESRI Shapefile")
+
+export(submitted_rol, "submitted_rol.rds")
 ```
 
 

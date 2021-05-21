@@ -32,148 +32,18 @@ library(stringdist)
 
 ```
 
-``` {r enrolled, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
-
-rolarea_df <- readRDS("rolarea_df.rds")
-property_df <- readRDS("property_df.rds")
-rolarea_covars <- data.frame(readRDS("rolarea_covars.rds"))
-
-```
 
 ```{r}
-setwd("/home/agarcia/chile_reforestation/input_data/new_CIREN_ndvi/treatment")
 
-# load los rios ndvi time series for all ciren properties
-temp = list.files(pattern="*.csv")
-rolarea_ndvi = bind_rows(lapply(temp, read_csv))%>%
-  select(prop_ID, year, mean) %>%
-  distinct(prop_ID, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("y_", year))%>%
-  spread(key = "year", value = "mean")# cast ndvi into wide format
+enrolled_df <- readRDS("enrolled_df.rds")
+all_matchpool <- readRDS("all_matchpool.rds")
 
-enrolled_df <- rolarea_df %>%
-  inner_join(rolarea_covars, by ="prop_ID")%>%
-  inner_join(rolarea_ndvi, by = "prop_ID")
-
-```
-
-``` {r los rios match pool, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
-setwd("/home/agarcia/chile_reforestation/input_data/new_CIREN_ndvi/match/losrios")
-# load los rios ndvi time series for all ciren properties
-temp = list.files(pattern="*.csv")
-losrios_ndvi = bind_rows(lapply(temp, read_csv))%>%
-  select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("y_", year))%>%
-  spread(key = "year", value = "mean")# cast ndvi into wide format
-
-# to make sure I'm not selecting treated properties
-# join los Rios CIREN properties with property df based on rol
-losrios_matchpool <-  st_read(
-  "/home/agarcia/chile_reforestation/input_data/PROPIEDADES_RURALES/LOS_RÍOS_CIREN_2018.shp"
-  ) %>%
-  mutate(desccomu = tolower(desccomu))%>%
-  #anti_join(property_df, by = c(rol = "rptpre_rol", desccomu = "rptpre_comuna"))%>%
-  stringdist_anti_join(property_df, by = c(rol = "rptpre_rol", desccomu = "rptpre_comuna"), method = "lv", max_dist = 1)%>%
-  select("objectid", "rol")%>%
-  inner_join(data.frame(readRDS("/home/agarcia/chile_reforestation/losrios_CIREN_covars.rds")), by = c("objectid", "rol"))%>%
-  inner_join(losrios_ndvi, by = "objectid")
-    
-```
-
-``` {r biobio ndvi, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
-setwd("/home/agarcia/chile_reforestation/input_data/new_CIREN_ndvi/match/biobio")
-# load biobio ndvi time series for all ciren properties
-temp = list.files( pattern="*.csv")
-biobio_ndvi = bind_rows(lapply(temp, read_csv))%>%
-  #filter(objectid == 59515) %>%
-  select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("y_", year))%>%
-  spread(key = "year", value = "mean")# cast ndvi into wide format
-
-```
-
-```{r}
-setwd("/home/agarcia/chile_reforestation/input_data/new_CIREN_ndvi/match/nuble")
-# add nuble ndvi time series for all ciren properties
-temp = list.files(pattern="*.csv")
-biobionuble_ndvi = bind_rows(lapply(temp, read_csv))%>%
-  select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("y_", year))%>%
-  spread(key = "year", value = "mean")%>%# cast ndvi into wide format%>%
-bind_rows(biobio_ndvi)
-
-# to make sure I'm not selecting treated properties
-# join los Rios CIREN properties with property df based on rol
-biobionuble_matchpool <-  st_read(
-  "/home/agarcia/chile_reforestation/input_data/PROPIEDADES_RURALES/BIOBÍO_CIREN_2016.shp"
-  ) %>%
-  mutate(desccomu = tolower(desccomu))%>%
-  #anti_join(property_df, by = c(rol = "rptpre_rol", desccomu = "rptpre_comuna"))%>%
-  stringdist_anti_join(property_df, by = c(rol = "rptpre_rol", desccomu = "rptpre_comuna"), method = "lv", max_dist = 1)%>%
-  select("objectid", "rol")%>%
-  inner_join(data.frame(readRDS("/home/agarcia/chile_reforestation/biobionuble_CIREN_covars.rds")), by = c("objectid", "rol"))%>%
-  inner_join(biobionuble_ndvi, by = "objectid")
-    
-```
-
-``` {r maule, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
-setwd("/home/agarcia/chile_reforestation/input_data/new_CIREN_ndvi/match/maule")
-# load maule ndvi time series for all ciren properties
-temp = list.files( pattern="*.csv")
-maule_ndvi = bind_rows(lapply(temp, read_csv))%>%
-  #filter(objectid == 59515) %>%
-  select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("y_", year))%>%
-  spread(key = "year", value = "mean")# cast ndvi into wide format
-
-# to make sure I'm not selecting treated properties
-# join los Rios CIREN properties with property df based on rol
-maule_matchpool <-  st_read(
-  "/home/agarcia/chile_reforestation/input_data/PROPIEDADES_RURALES/MAULE_CIREN_2014.shp"
-  ) %>%
-  mutate(desccomu = tolower(desccomu))%>%
-  #anti_join(property_df, by = c(rol = "rptpre_rol", desccomu = "rptpre_comuna"))%>%
-  stringdist_anti_join(property_df, by = c(rol = "rptpre_rol", desccomu = "rptpre_comuna"), method = "lv", max_dist = 1)%>%
-  select("objectid", "rol")%>%
-  left_join(data.frame(readRDS("/home/agarcia/chile_reforestation/maule_CIREN_covars.rds")), by = c("objectid", "rol"))%>%
-  inner_join(maule_ndvi, by = "objectid")
-    
-```
-
-``` {r araucania, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
-
-
-setwd("/home/agarcia/chile_reforestation/input_data/new_CIREN_ndvi/match/araucania")
-# load araucania ndvi time series for all ciren properties
-temp = list.files( pattern="*.csv")
-araucania_ndvi = bind_rows(lapply(temp, read_csv))%>%
-  select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("y_", year))%>%
-  spread(key = "year", value = "mean")# cast ndvi into wide format
-
-# to make sure I'm not selecting treated properties
-# join los Rios CIREN properties with property df based on rol
-araucania_matchpool <-  st_read(
-  "/home/agarcia/chile_reforestation/input_data/PROPIEDADES_RURALES/ARAUCANÍA_CIREN_2013.shp"
-  ) %>%
-  mutate(desccomu = tolower(desccomu))%>%
-  #anti_join(property_df, by = c(rol = "rptpre_rol", desccomu = "rptpre_comuna"))%>%
-  stringdist_anti_join(property_df, by = c(rol = "rptpre_rol", desccomu = "rptpre_comuna"), method = "lv", max_dist = 1)%>%
-  select("objectid", "rol")%>%
-  left_join(data.frame(readRDS("/home/agarcia/chile_reforestation/araucania_CIREN_covars.rds")), by = c("objectid", "rol"))%>%
-  inner_join(araucania_ndvi, by = "objectid")
-    
 ```
 
 ```{r}
 # combining regional matchpools and treatedmatches
-propertypaid_id <- readRDS("propertypaid_id.rds")
-
+# propertypaid_id <- readRDS("propertypaid_id.rds")
+# 
 enrollees <- enrolled_df %>%
   mutate(treat = 1,
          forest = c_1,
@@ -183,29 +53,13 @@ enrollees <- enrolled_df %>%
          shrub = c_5,
          water = c_15,
          urban = c_16,
-         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1))%>%
-  select(rptpro_puntaje, smallholder, rptpre_superficie_bonificada, rptpro_tipo_concurso, rptpre_monto_total, rptpre_region, rptprop_sexo, prop_ID, first.treat, treated.later, rptprop_etnia, rptpro_objetivo_manejo.x, area_ha, reforestation2, reforestation, reffirst.treat, ref2first.treat, area_prop, road_dist, lat, long, slope, elev, treat, forest, plantation, water, baresoil, shrub, pasture, urban, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014, y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)%>%
-  left_join(propertypaid_id, by = "prop_ID")%>%
-  mutate(paid = ifelse(is.na(paid), 0, paid))
+         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1))#%>%
+#   select(rptpro_puntaje, smallholder, rptpre_superficie_bonificada, rptpro_tipo_concurso, rptpre_monto_total, rptpre_region, desccomu, rptprop_sexo, prop_ID, first.treat, treated.later, rptprop_etnia, rptpro_objetivo_manejo.x, area_ha, reforestation2, reforestation, reffirst.treat, ref2first.treat, area_prop, road_dist, lat, long, slope, elev, treat, forest, plantation, water, baresoil, shrub, pasture, urban, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014, y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)%>%
+#   left_join(propertypaid_id, by = "prop_ID")%>%
+#   mutate(paid = ifelse(is.na(paid), 0, paid))
 
-summary(enrollees$paid)
+# summary(enrollees$paid)
 
-all_matchpool <- data.frame(losrios_matchpool) %>%
-  bind_rows(maule_matchpool)%>%
-  bind_rows(araucania_matchpool)%>%
-  bind_rows(biobionuble_matchpool)%>%
-  mutate(treat=0,
-         first.treat = 0,
-         forest = c_1,
-         plantation = c_3,
-         baresoil = c_12,+c_10,
-         pasture = c_9,
-         shrub = c_5,
-         water = c_15,
-         urban = c_16)%>%
-  select(objectid, treat, first.treat, area_ha, road_dist, lat, long, slope, elev, treat, forest, plantation, water, shrub, baresoil, pasture, urban, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014, y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)
-
-export(all_matchpool, "all_matchpool.rds")
 
 df <- data.frame(enrollees)%>%
   bind_rows(all_matchpool)%>%
@@ -343,8 +197,8 @@ baltest_covs <- subset(matched_wide, select = c("forest" ,"plantation" , "bareso
 library(cobalt)
 bal_match <- bal.tab(baltest_covs, treat = matched_wide$treat,thresholds = c(m = .25))[[1]][,2:3]
 
+baltestun_covs <- subset(df, select = c("forest" ,"plantation" , "baresoil", "pasture", "urban", "water", "slope", "elev", "area_ha", "road_dist", "y_2007"))
 
-# baltestun_covs <- subset(df, select = c("forest" ,"plantation" , "baresoil", "pasture", "urban", "water", "slope", "elev", "area_ha", "road_dist", "y_2007"))
 # bal_test.tbl <- cbind(bal_match, bal.tab(baltestun_covs, treat = df$treat,thresholds = c(m = .25))[[1]][,2:3])%>%
 #   rownames_to_column(var = "covariate")%>%
 #   rename(unmatched = 4,
@@ -358,11 +212,11 @@ library(kableExtra)
 matched_long <- gather(matched_wide, "Year", "NDVI", y_2005:y_2020)%>%
   separate(Year, , into = c(NA, "Year"), sep = "_")
 
-export(matched_long, "enrolled_analysis_ratio1unique.rds")
+#export(matched_long, "enrolled_analysis_ratio1unique.rds")
 
 ```
 
-```{r paid and unpaid}
+```{r ratio 2}
 library(MatchIt)
 # create matched dataframes
 df <- readRDS("matching_df.rds")
@@ -478,25 +332,79 @@ bal_match2 <- bal.tab(baltest_covs2, treat = matched_wide_2$treat,thresholds = c
 
 baltestun_covs <- subset(df, select = c("forest" ,"plantation" , "baresoil", "pasture", "urban", "water", "slope", "elev", "area_ha", "road_dist", "y_2007"))
 
-bal_test.tbl <- bal_match %>%
-  cbind(
-    cbind(bal_match2, bal.tab(baltestun_covs, treat = df$treat,thresholds = c(m = .25))[[1]][,2:3])
-    )%>%
-  rownames_to_column(var = "covariate")%>%
-  rename(unmatched = 6,
-         matched_2 = 4,
-         matched =2)
+# bal_test.tbl <- bal_match %>%
+#   cbind(
+#     cbind(bal_match2, bal.tab(baltestun_covs, treat = df$treat,thresholds = c(m = .25))[[1]][,2:3])
+#     )%>%
+#   rownames_to_column(var = "covariate")%>%
+#   rename(unmatched = 6,
+#          matched_2 = 4,
+#          matched =2)
 
-export(bal_test.tbl, "covariate_balance.rds")
+#export(bal_test.tbl, "covariate_balance.rds")
 
 library(kableExtra)
 
 
 matched_long_2 <- gather(matched_wide_2, "Year", "NDVI", y_2005:y_2020)%>%
-  separate(Year, , into = c(NA, "Year"), sep = "_")
+  separate(Year, into = c(NA, "Year"), sep = "_")
 
-export(matched_long_2, "enrolled_analysis_ratio2unique.rds")
+#export(matched_long_2, "enrolled_analysis_ratio2unique.rds")
 
+
+```
+
+
+```{r}
+
+mytheme <- theme(legend.position = "none", plot.title = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
+
+bottom_theme <- theme(legend.position="bottom",plot.title = element_blank(), legend.title = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
+
+
+# density plots for matched data
+den_m_plantation <- bal.plot(baltest_covs2, treat = matched_wide_2$treat, var.name = "plantation", sample.names = "matched (r=2)" )+mytheme
+den_m_forest <- bal.plot(baltest_covs2, treat = matched_wide_2$treat, var.name = "forest", sample.names = "matched (r=2)" )+mytheme
+den_m_pasture <- bal.plot(baltest_covs2, treat = matched_wide_2$treat, var.name = "pasture", sample.names = "matched (r=2)" )+mytheme
+den_m_road <- bal.plot(baltest_covs2, treat = matched_wide_2$treat, var.name = "road_dist", sample.names = "matched (r=2)" )+xlab("distance to road")+mytheme
+den_m_slope <- bal.plot(baltest_covs2, treat = matched_wide_2$treat, var.name = "slope", sample.names = "matched (r=2)" )+mytheme
+den_m_elev <- bal.plot(baltest_covs2, treat = matched_wide_2$treat, var.name = "elev", sample.names = "matched (r=2)" )+xlab("elevation")+mytheme
+den_m_ndvi <- bal.plot(baltest_covs2, treat = matched_wide_2$treat, var.name = "y_2007", sample.names = "matched (r=2)" )+xlab("2007 NDVI")+bottom_theme+scale_fill_discrete( labels = c("non-enrollees", "enrollees"))
+
+# density plots for unmatched data
+den_un_plantation <- bal.plot(baltestun_covs, treat = df$treat, var.name = "plantation", sample.names = "unmatched" )+mytheme
+den_un_forest <- bal.plot(baltestun_covs, treat = df$treat, var.name = "forest", sample.names = "unmatched" )+mytheme
+den_un_pasture <- bal.plot(baltestun_covs, treat = df$treat, var.name = "pasture", sample.names = "unmatched" )+mytheme
+den_un_road <- bal.plot(baltestun_covs, treat = df$treat, var.name = "road_dist", sample.names = "unmatched" )+xlab("distance to road")+mytheme
+den_un_slope <- bal.plot(baltestun_covs, treat = df$treat, var.name = "slope", sample.names = "unmatched")+mytheme
+den_un_elev <- bal.plot(baltestun_covs, treat = df$treat, var.name = "elev", sample.names = "unmatched" )+xlab("elevationI")+mytheme
+den_un_ndvi <- bal.plot(baltestun_covs, treat = df$treat, var.name = "y_2007", sample.names = "unmatched" )+xlab("2007 NDVI")+bottom_theme+scale_fill_discrete( labels = c("non-enrollees", "enrollees"))
+
+blankPlot <- ggplot()+geom_blank(aes(1,1))+
+  theme(
+    plot.background = element_blank(), 
+   panel.grid.major = element_blank(),
+   panel.grid.minor = element_blank(), 
+   panel.border = element_blank(),
+   panel.background = element_blank(),
+   axis.title.x = element_blank(),
+   axis.title.y = element_blank(),
+   axis.text.x = element_blank(), 
+   axis.text.y = element_blank(),
+   axis.ticks = element_blank(),
+   axis.line = element_blank()
+     )
+
+library(gridExtra)
+grid.arrange(den_un_plantation, den_m_plantation,
+             den_un_forest, den_m_forest,
+             den_un_pasture, den_m_pasture,
+             den_un_road, den_m_road,
+             den_un_slope, den_m_slope,
+            # den_un_elev, den_m_elev,
+             den_un_ndvi, den_m_ndvi,
+             #plot_grid(grid.draw(legend), ncol=1),blankPlot,
+             ncol=2, heights=c(9,9,9,9,9,13))
 
 ```
 
@@ -506,63 +414,63 @@ library(MatchIt)
 
 df_paid <- df %>%
   drop_na(elev, slope)%>%
-  filter(paid == 1 | is.na(paid))
+  filter(rptpro_tiene_plan_saff != "No" |is.na(rptpro_tiene_plan_saff))
   
 
 pmatched_2009 <- matchit(treat ~ trend0807 + trend0706 + trend0605 + y_2007 +
                           forest + plantation + baresoil + pasture + urban +water + slope + elev  + area_ha + road_dist, 
                    data = subset(df_paid, first.treat == 0 | first.treat == 2009),
-                 method = "nearest")
+                 method = "nearest", ratio = 2)
 
-pmatched_2010 <- matchit(treat ~ trend0908 + trend0807 + trend0706 + trend0605  y_2007+ 
+pmatched_2010 <- matchit(treat ~ trend0908 + trend0807 + trend0706 + trend0605 + y_2007+ 
                           forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist, 
                    data = subset(df_paid, first.treat == 0 | first.treat == 2010),
-                 method = "nearest")
+                 method = "nearest", ratio = 2)
 
 pmatched_2011 <- matchit(treat ~ trend1009 + trend0908 + trend0807 + trend0706 +trend0605 + y_2007 + 
                           forest + plantation + baresoil + pasture  + urban +water+ slope + elev  + area_ha + road_dist, 
                    data = subset(df_paid, first.treat == 0 | first.treat == 2011),
-                 method = "nearest")
+                 method = "nearest", ratio = 2)
 
 pmatched_2012 <- matchit(treat ~ trend1110 + trend1009 + trend0908 + trend0807+ trend0706 + y_2007 + 
                           forest + plantation + baresoil + pasture  + urban +water+ slope + elev  + area_ha + road_dist, 
                    data = subset(df_paid, first.treat == 0 | first.treat == 2012),
-                 method = "nearest")
+                 method = "nearest", ratio = 2)
 
 pmatched_2013 <- matchit(treat ~ trend1211 + trend1110 + trend1009 + trend0908 +trend0807+ y_2007+ 
                           forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist, 
                    data = subset(df_paid, first.treat == 0 | first.treat == 2013),
-                 method = "nearest")
+                 method = "nearest", ratio = 2)
 
 pmatched_2014 <- matchit(treat ~ trend1312 + trend1211 + trend1110 + trend1009 + trend0908+ y_2007 + 
                           forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist, 
                    data = subset(df_paid, first.treat == 0 | first.treat == 2014),
-                 method = "nearest")
+                 method = "nearest", ratio = 2)
 
 pmatched_2015 <- matchit(treat ~ trend1413 + trend1312 + trend1211 + trend1110 + trend1009 + y_2007+ 
                           forest + plantation + baresoil + pasture  + urban +water+ slope + elev  + area_ha + road_dist, 
                    data = subset(df_paid, first.treat == 0 | first.treat == 2015),
-                 method = "nearest")
+                 method = "nearest", ratio = 2)
 
 pmatched_2016 <- matchit(treat ~ trend1514 + trend1413 + trend1312 + trend1211 + trend1110+  y_2007+ 
                           forest + plantation + baresoil + pasture +urban +water+ slope + elev  + area_ha + road_dist, 
                    data = subset(df_paid, first.treat == 0 | first.treat == 2016),
-                 method = "nearest")
+                 method = "nearest", ratio = 2)
 
 pmatched_2017 <- matchit(treat ~ trend1615 + trend1514 + trend1413 + trend1312 + trend1211+  y_2007+ 
                           forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist, 
                    data = subset(df_paid, first.treat == 0 | first.treat == 2017),
-                 method = "nearest")
+                 method = "nearest", ratio = 2)
 
 pmatched_2018 <- matchit(treat ~ trend1716 + trend1615 + trend1514 + trend1413 + trend1312 +  y_2007+ 
                           forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist, 
                    data = subset(df_paid, first.treat == 0 | first.treat == 2018),
-                 method = "nearest")
+                 method = "nearest", ratio = 2)
 
 pmatched_2019 <- matchit(treat ~ trend1817 + trend1716 + trend1615 + trend1514 + trend1413 + y_2007+ 
                           forest + plantation + baresoil + pasture+ urban +water+ slope + elev  + area_ha + road_dist, 
                    data = subset(df_paid, first.treat == 0 | first.treat == 2019),
-                 method = "nearest")
+                 method = "nearest", ratio = 2)
 
 map_covars <- function(df){
   return_df <- df %>%
@@ -597,6 +505,9 @@ bal.tab(baltest_covs, treat = pmatched_wide$treat,thresholds = c(m = .25))
 
 pmatched_long <- gather(pmatched_wide, "Year", "NDVI", y_2005:y_2020)%>%
   separate(Year, , into = c(NA, "Year"), sep = "_")
+
+pmatched_long$Year <- as.numeric(pmatched_long$Year)
+pmatched_long$id <- as.numeric(pmatched_long$id)
 
 export(pmatched_long, "paid_analysis.rds")
 

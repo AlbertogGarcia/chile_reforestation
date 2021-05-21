@@ -1,11 +1,5 @@
 library(tidyverse)
 
-dta <- subset(enrolled_analysis_2r, reforestation2 ==0) %>%
-  mutate(G = first.treat,
-         period = Year,
-         Y = NDVI)
-dta$geometry.x <- NULL
-
 compute.attgt <- function(dta) {
   
   
@@ -81,19 +75,18 @@ compute.attgt <- function(dta) {
       # like the DRDID package as it will work for more complicated
       # cases as well)
       
-      # attgt <- DRDID::drdid(yname="Y", tname = "period", idname = "id", dname = "treat",
-      #                       xformla =  ~lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist
-      #                       ,
-      #                       data = this.data,
-      #                       panel = TRUE
-      #                       )$ATT
+      attgt <- DRDID::drdid(yname="Y", tname = "period", idname = "id", dname = "treat",
+                            xformla =  ~lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist
+                            ,
+                            data = this.data,
+                            panel = TRUE
+                            )$ATT
       
       
       this.data$geometry.x <- NULL
 
-       mod <- glm(treat ~ lat +smallholder + slope + elev  + area_ha + road_dist+ pasture + urban ++water+ forest + plantation + baresoil
-                  ,
-                  data = this.data, family = "binomial")
+       mod <- glm(treat ~ lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist
+                  , data = this.data, family = "binomial")
 
        this.data <- this.data %>%
          mutate(propglm = predict(mod, type = "response"),
@@ -101,12 +94,16 @@ compute.attgt <- function(dta) {
                   1 / (1 - propglm) * (1 - treat))
 
       #### simple did to estimate interaction terms
-      attgt <- tail(lm(Y ~  treat*post*smallholder +lat + smallholder +slope+ elev  + area_ha + road_dist+ pasture + urban ++water+ forest + plantation + baresoil
-                       ,
-                   data   = this.data
-                   , weights = psweights
-                   )$coefficients
-                   , n=1)#[1]
+      # attgt <- tail(lm(Y ~  treat*post*forest*smallholder + smallholder + lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist
+      #                  , data   = this.data
+      #              , weights = psweights
+      #              )$coefficients
+      #              , n=11)[11]
+       attgt <- tail(lm(Y ~  treat*post + lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist
+                        , data   = this.data
+                        , weights = psweights
+       )$coefficients
+       , n=1)
 
       
       # save results

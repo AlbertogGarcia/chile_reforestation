@@ -57,12 +57,21 @@ library(did)
 enrolled_analysis_2r <- readRDS("enrolled_analysis_ratio2unique.rds")
 enrolled_analysis_2r$Year <- as.numeric(enrolled_analysis_2r$Year)
 enrolled_analysis_2r$id <- as.numeric(enrolled_analysis_2r$id)
+# enrolled_analysis_2r <- enrolled_analysis_2r %>%
+#   mutate(pct_forest = forest*100,
+#          pct_plantation = plantation*100,
+#          pct_baresoil = baresoil*100,
+#          pct_pasture = pasture*100,
+#          pct_urban = urban*100,
+#          pct_water = water*100)
 
 did.enrolled_2r <- att_gt(yname="NDVI",
                      tname="Year",
                      idname="id",
                      gname="first.treat",
-                     xformla=~   lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
+                     #control_group = "notyettreated",
+                     #est_method = my_did_panel,
+                     xformla=~  forest + plantation + baresoil + pasture + urban +water+ slope +lat+  elev  + area_ha  +road_dist,
                      data=enrolled_analysis_2r, clustervars = "id"
                      , panel=TRUE, bstrap = TRUE
                      )
@@ -262,14 +271,14 @@ did.enrolled_ref2 <- att_gt(yname="NDVI",
                      gname="first.treat",
                      xformla=~ forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist ,
                      data=subset(enrolled_analysis_2r,
-                                 rptpro_objetivo_manejo.x == "BOSQUE PRESERVACION Y FORMACIONES XEROFITICAS DE ALTO VALOR ECOLOGICO"
+                                 rptpro_objetivo_manejo.x == "BOSQUE PRESERVACION Y FORMACIONES XEROFITICAS DE ALTO VALOR ECOLOGICO"|reforestation2==1
                                  #reforestation2==1
                                  |treat==0),
                      clustervars = "id"
                      ,panel=TRUE, bstrap = TRUE#, cband = TRUE
                      )
 
- did.enrolled_ref2.es <- aggte(did.enrolled_ref2, type="dynamic", na.rm = TRUE, min_e=-5, max_e = 10)
+ did.enrolled_ref2.es <- aggte(did.enrolled_ref2, type="dynamic", na.rm = TRUE)#, min_e=-5, max_e = 10)
 did.enrolled_ref.ovr <- aggte(did.enrolled_ref2,  na.rm=TRUE)#,type = "simple")
 summary(did.enrolled_ref.ovr)
 
@@ -303,13 +312,16 @@ dta$geometry.x <- NULL
 
 library(plm)
 # the number of bootstrap iterations
-biters <- 30
+biters <- 50
 
 # list to store bootstrap results
 boot.res <- list()
 
 # loop for each nonparametric bootstrap iteration
 for (b in 1:biters) {
+  
+  # bdata <- BMisc::blockBootSample(dta, "id")
+  
   unique_ids <- unique(dta$id)      #unique properties
 
   sample_props <- sample(unique_ids, size=length(unique_ids), replace=T ) #choose from unique props randomly with replacement
@@ -325,11 +337,22 @@ for (b in 1:biters) {
 boot.res <- t(simplify2array(boot.res))
 boot.se <- sd(boot.res, na.rm = TRUE)#apply(boot.res, 1, sd)
 res <- compute.attgt(dta)
-# add the standard errors to the main results
-main.small.results <- res$dyn.ovr
-main.small.results$att.se <- boot.se
 
-test <- compute.attgt(dta)
+# add the standard errors to the main results
+# treatpost.results <- res$dyn.ovr
+# treatpost.results$att.se <- boot.se
+# treatpostplant.results <- res$dyn.ovr
+# treatpostplant.results$att.se <- boot.se
+# treatpostsmall.results <- res$dyn.ovr
+# treatpostsmall.results$att.se <- boot.se
+
+treatpostsmallplant.results <- res$dyn.ovr
+treatpostsmallplant.results$att.se <- boot.se
+
+# treatpost <- compute.attgt(dta)
+# treatpostplant <- compute.attgt(dta)
+#treatpostsmall <- compute.attgt(dta)
+#treatpostsmallplant <- compute.attgt(dta)
 
 ```
 

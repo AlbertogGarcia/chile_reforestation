@@ -1,5 +1,5 @@
 ---
-title: "building native forest law impact dataframes"
+title: "land use and other covariates"
 #author: "Albert Garcia"
 output:
   pdf_document:
@@ -18,7 +18,10 @@ header-includes:
 ---
 
 ```{r geoms, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
-#setwd("C:/Users/garci/Desktop/chile_data/lu_2001")
+############################################################################
+## THE FILE PATHS IN THIS SCRIPT RELATE TO THE BREN CLUSTER ################
+############################################################################
+
 library(raster)
 library(stars)
 library(doParallel)
@@ -315,8 +318,6 @@ return_covs_maule <- sf.object %>%
 
 export(return_covs_maule, "maule_CIREN_covars.rds")
 
-
-
 ```
 
 ```{r araucania}
@@ -371,6 +372,315 @@ return_covs_araucania <- sf.object %>%
   left_join(araucania_class, by = c("objectid", "rol", "desccomu"))
 
 export(return_covs_araucania, "araucania_CIREN_covars.rds")
+
+
+
+```
+
+```{r los lagos}
+
+num_cores <- 15
+
+loslagos.sf <- st_read(
+  "input_data/PROPIEDADES_RURALES/LOS_LAGOS_CIREN_2016.shp"
+  ) %>%
+  st_transform(st_crs(lu2001_rast))
+
+
+
+sf.object <- loslagos.sf
+
+# stars.object <- lu2001_rast
+rast <- as(stars.object, "Raster")
+spatial.object <- as(sf.object, "Spatial")
+
+#--- number of polygons in a group ---#
+num_in_group <- floor(nrow(sf.object)/num_cores)
+
+#--- assign group id to polygons ---#
+polys <- sf.object %>%  
+  mutate(
+    #--- create grid id ---#
+    grid_id = 1:nrow(.),
+    #--- assign group id  ---#
+    group_id = grid_id %/% num_in_group + 1
+  )
+
+
+tic()
+#--- parallelized processing by group ---#
+tempor <- mclapply(
+  1:length(unique(polys$group_id)), 
+  function(i) extract_by_group_reduced(i),
+  mc.cores = num_cores
+)    
+toc()
+
+class <- tempor %>%
+  rbindlist(idcol = TRUE) 
+
+class$value <- paste0("c_", class$value)
+
+loslagos_class <- class %>%
+  select(objectid, rol, desccomu, value, class_proportion) %>%
+  spread(key = "value", value = "class_proportion")%>%
+  mutate_all(~replace(., is.na(.), 0))
+
+return_covs_loslagos <- sf.object %>%
+  mutate(road_dist = st_nn(., roads.sf, k = 1, returnDist = T, parallel = 20)[[2]],
+         elev = unlist(exact_extract(elevation, ., 'mean')),
+         slope = unlist(exact_extract(terr, ., 'mean')),
+         area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
+  st_centroid()%>%
+  mutate(lat = unlist(geometry)[1],
+         long = unlist(geometry)[2])%>%
+  left_join(loslagos_class, by = c("objectid", "rol", "desccomu"))
+
+export(return_covs_loslagos, "loslagos_CIREN_covars.rds")
+
+
+
+```
+
+```{r ohiggins}
+
+ohiggins.sf <- st_read(
+  "input_data/PROPIEDADES_RURALES/LIBERTADOR_GENERAL_BERNARDO_O_HIGGINS_CIREN_2013.shp"
+  ) %>%
+  st_transform(st_crs(lu2001_rast))
+
+sf.object <- ohiggins.sf
+
+stars.object <- lu2001_rast
+rast <- as(stars.object, "Raster")
+spatial.object <- as(sf.object, "Spatial")
+
+#--- number of polygons in a group ---#
+num_in_group <- floor(nrow(sf.object)/num_cores)
+
+#--- assign group id to polygons ---#
+polys <- sf.object %>%  
+  mutate(
+    #--- create grid id ---#
+    grid_id = 1:nrow(.),
+    #--- assign group id  ---#
+    group_id = grid_id %/% num_in_group + 1
+  )
+
+
+tic()
+#--- parallelized processing by group ---#
+tempor <- mclapply(
+  1:length(unique(polys$group_id)), 
+  function(i) extract_by_group_reduced(i),
+  mc.cores = num_cores
+)    
+toc()
+
+class <- tempor %>%
+  rbindlist(idcol = TRUE) 
+
+class$value <- paste0("c_", class$value)
+
+ohiggins_class <- class %>%
+  select(objectid, rol, desccomu, value, class_proportion) %>%
+  spread(key = "value", value = "class_proportion")%>%
+  mutate_all(~replace(., is.na(.), 0))
+
+return_covs_ohiggins <- sf.object %>%
+  mutate(road_dist = st_nn(., roads.sf, k = 1, returnDist = T, parallel = 20)[[2]],
+         elev = unlist(exact_extract(elevation, ., 'mean')),
+         slope = unlist(exact_extract(terr, ., 'mean')),
+         area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
+  st_centroid()%>%
+  mutate(lat = unlist(geometry)[1],
+         long = unlist(geometry)[2])%>%
+  left_join(ohiggins_class, by = c("objectid", "rol", "desccomu"))
+
+export(return_covs_ohiggins, "ohiggins_CIREN_covars.rds")
+
+
+
+```
+
+```{r aysen}
+
+aysen.sf <- st_read(
+  "input_data/PROPIEDADES_RURALES/AYSÉN_DEL_GENERAL_CARLOS_IBAÑEZ_DEL_CAMPO_CIREN_2004.shp"
+  ) %>%
+  st_transform(st_crs(lu2001_rast))
+
+sf.object <- aysen.sf
+
+stars.object <- lu2001_rast
+rast <- as(stars.object, "Raster")
+spatial.object <- as(sf.object, "Spatial")
+
+#--- number of polygons in a group ---#
+num_in_group <- floor(nrow(sf.object)/num_cores)
+
+#--- assign group id to polygons ---#
+polys <- sf.object %>%  
+  mutate(
+    #--- create grid id ---#
+    grid_id = 1:nrow(.),
+    #--- assign group id  ---#
+    group_id = grid_id %/% num_in_group + 1
+  )
+
+
+tic()
+#--- parallelized processing by group ---#
+tempor <- mclapply(
+  1:length(unique(polys$group_id)), 
+  function(i) extract_by_group_reduced(i),
+  mc.cores = num_cores
+)    
+toc()
+
+class <- tempor %>%
+  rbindlist(idcol = TRUE) 
+
+class$value <- paste0("c_", class$value)
+
+aysen_class <- class %>%
+  select(objectid, rol, desccomu, value, class_proportion) %>%
+  spread(key = "value", value = "class_proportion")%>%
+  mutate_all(~replace(., is.na(.), 0))
+
+return_covs_aysen <- sf.object %>%
+  mutate(road_dist = st_nn(., roads.sf, k = 1, returnDist = T, parallel = 20)[[2]],
+         elev = unlist(exact_extract(elevation, ., 'mean')),
+         slope = unlist(exact_extract(terr, ., 'mean')),
+         area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
+  st_centroid()%>%
+  mutate(lat = unlist(geometry)[1],
+         long = unlist(geometry)[2])%>%
+  left_join(aysen_class, by = c("objectid", "rol", "desccomu"))
+
+export(return_covs_aysen, "aysen_CIREN_covars.rds")
+
+
+
+```
+
+```{r valparaiso}
+
+valparaiso.sf <- st_read(
+  "input_data/PROPIEDADES_RURALES/VALPARAÍSO_CIREN_2014.shp"
+  ) %>%
+  st_transform(st_crs(lu2001_rast))
+
+sf.object <- valparaiso.sf
+
+stars.object <- lu2001_rast
+rast <- as(stars.object, "Raster")
+spatial.object <- as(sf.object, "Spatial")
+
+#--- number of polygons in a group ---#
+num_in_group <- floor(nrow(sf.object)/num_cores)
+
+#--- assign group id to polygons ---#
+polys <- sf.object %>%  
+  mutate(
+    #--- create grid id ---#
+    grid_id = 1:nrow(.),
+    #--- assign group id  ---#
+    group_id = grid_id %/% num_in_group + 1
+  )
+
+
+tic()
+#--- parallelized processing by group ---#
+tempor <- mclapply(
+  1:length(unique(polys$group_id)), 
+  function(i) extract_by_group_reduced(i),
+  mc.cores = num_cores
+)    
+toc()
+
+class <- tempor %>%
+  rbindlist(idcol = TRUE) 
+
+class$value <- paste0("c_", class$value)
+
+valparaiso_class <- class %>%
+  select(objectid, rol, desccomu, value, class_proportion) %>%
+  spread(key = "value", value = "class_proportion")%>%
+  mutate_all(~replace(., is.na(.), 0))
+
+return_covs_valparaiso <- sf.object %>%
+  mutate(road_dist = st_nn(., roads.sf, k = 1, returnDist = T, parallel = 20)[[2]],
+         elev = unlist(exact_extract(elevation, ., 'mean')),
+         slope = unlist(exact_extract(terr, ., 'mean')),
+         area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
+  st_centroid()%>%
+  mutate(lat = unlist(geometry)[1],
+         long = unlist(geometry)[2])%>%
+  left_join(valparaiso_class, by = c("objectid", "rol", "desccomu"))
+
+export(return_covs_valparaiso, "valparaiso_CIREN_covars.rds")
+
+
+
+```
+
+```{r santiago}
+
+santiago.sf <- st_read(
+  "input_data/PROPIEDADES_RURALES/METROPOLITANA_CIREN_2015.shp"
+  ) %>%
+  st_transform(st_crs(lu2001_rast))
+
+sf.object <- santiago.sf
+
+stars.object <- lu2001_rast
+rast <- as(stars.object, "Raster")
+spatial.object <- as(sf.object, "Spatial")
+
+#--- number of polygons in a group ---#
+num_in_group <- floor(nrow(sf.object)/num_cores)
+
+#--- assign group id to polygons ---#
+polys <- sf.object %>%  
+  mutate(
+    #--- create grid id ---#
+    grid_id = 1:nrow(.),
+    #--- assign group id  ---#
+    group_id = grid_id %/% num_in_group + 1
+  )
+
+
+tic()
+#--- parallelized processing by group ---#
+tempor <- mclapply(
+  1:length(unique(polys$group_id)), 
+  function(i) extract_by_group_reduced(i),
+  mc.cores = num_cores
+)    
+toc()
+
+class <- tempor %>%
+  rbindlist(idcol = TRUE) 
+
+class$value <- paste0("c_", class$value)
+
+santiago_class <- class %>%
+  select(objectid, rol, desccomu, value, class_proportion) %>%
+  spread(key = "value", value = "class_proportion")%>%
+  mutate_all(~replace(., is.na(.), 0))
+
+return_covs_santiago <- sf.object %>%
+  mutate(road_dist = st_nn(., roads.sf, k = 1, returnDist = T, parallel = 20)[[2]],
+         elev = unlist(exact_extract(elevation, ., 'mean')),
+         slope = unlist(exact_extract(terr, ., 'mean')),
+         area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
+  st_centroid()%>%
+  mutate(lat = unlist(geometry)[1],
+         long = unlist(geometry)[2])%>%
+  left_join(santiago_class, by = c("objectid", "rol", "desccomu"))
+
+export(return_covs_santiago, "santiago_CIREN_covars.rds")
 
 
 

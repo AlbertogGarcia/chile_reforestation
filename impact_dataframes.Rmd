@@ -45,35 +45,44 @@ library(Hmisc)
 
 setwd("C:/Users/garci/Dropbox/chile_reforestation/external_data")
 
+library(readxl)
+
 # xls files downloaded from CONAF
 #projects
-proyecto_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_proyecto.csv")
+proyecto2_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_proyecto.csv")
+proyecto_df <- read_xlsx("concurso_conaf/proyecto.xlsx")
+
 #properties and coordinates
-predio_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_predio.csv")
-
+#predio_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_predio.csv")
+predio_df <- read_xlsx("concurso_conaf/predio.xlsx")
 #owners
-propietario_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_propietario.csv")
-
+#propietario_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_propietario.csv")
+propietario_df <- read_xlsx("concurso_conaf/propietario.xlsx")
 #stands
-rodal_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_rodal.csv")
-
+#rodal_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_rodal.csv")
+rodal_df <- read_xlsx("concurso_conaf/rodal.xlsx")
 #activities
-actividades_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_actividad.csv")
+#actividades_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_actividad.csv")
+actividades_df <- read_xlsx("concurso_conaf/actividad.xlsx")
 
+coordinadas_df <- read_xlsx("concurso_conaf/coordinadas_predio.xlsx")
+```
+
+```{r}
 #merging into dataframe of all properties and owners
 property_df <- proyecto_df %>%
   full_join(predio_df, by = "rptpro_id") %>%
   full_join(propietario_df, by = "rptpre_id")%>%
-  mutate(prop_ID = group_indices(., rptpre_rol, rptpre_comuna, rptpro_numero_region))%>%
-  group_by(prop_ID) %>%
-  arrange(rptpro_ano, .by_group = TRUE)%>%
+  #mutate(prop_ID = group_indices(., rptpre_rol, rptpre_comuna, rptpro_numero_region))%>%
+  group_by(rptpre_id) %>%
+  #arrange(rptpro_ano, .by_group = TRUE)%>%
   #distinct(rptpro_id, .keep_all = TRUE) %>%
   mutate(#cum_bonusarea = cumsum(rptpro_superficie),
          #cum_monto = cumsum(rptpro_monto_total),
          first.treat = min(rptpro_ano),
-         latest.treat = max(rptpro_ano))%>%
-  ungroup() %>%
-  mutate(treated.later = ifelse( first.treat != latest.treat, 1, 0))
+         latest.treat = max(rptpro_ano),
+         treated.later = ifelse( first.treat != latest.treat, 1, 0))%>%
+  ungroup()
 
 full_df <- property_df %>%
   left_join(rodal_df, by = "rptpre_id") %>%
@@ -88,10 +97,12 @@ submitted_plan <- full_df %>%
 activity_df <- property_df %>%
   left_join(rodal_df, by = "rptpre_id") %>%
   left_join(actividades_df, by = "rptro_id") %>%
-  dcast(prop_ID +rptpre_rol + rptpro_objetivo_manejo + rptpre_comuna + rptpro_ano
+  dcast(rptpre_id#prop_ID +
+          #rptpre_rol + rptpro_objetivo_manejo + rptpre_comuna 
+        + rptpro_ano
         ~ rptac_tipo, 
         fun.aggregate = function(x){as.integer(length(x) > 0)})%>%
-  group_by(prop_ID)%>%
+  group_by(rptpre_id)%>%
   mutate(reforestation = ifelse(plantacion == 1 | `plantacion-suplementaria`==1 | regeneracion==1 , 1, 0),
          reforestation2 = ifelse(plantacion == 1 | `plantacion-suplementaria`==1 | regeneracion==1 |`corta-regeneracion`==1, 1, 0),
          ref_indicyr = ifelse(reforestation ==1 , rptpro_ano, NA),
@@ -108,12 +119,12 @@ accents <- function(x){
 }
 
 NFL_df <- property_df %>%
-  left_join(activity_df, by = c("prop_ID", "rptpre_rol" , "rptpre_comuna" , "rptpro_ano"))%>%
+  left_join(activity_df, by = c("rptpre_rol" , "rptpre_comuna" , "rptpro_ano"))%>%
   mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))
 
 submitted_mp <- property_df %>%
   filter(rptpro_tiene_plan_saff == "Si" | rptpro_tiene_bonificacion_saff == "Si")%>%
-  left_join(activity_df, by = c("prop_ID", "rptpre_rol" , "rptpre_comuna" , "rptpro_ano"))%>%
+  left_join(activity_df, by = c("rptpre_id", "rptpro_ano"))%>%
   mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))%>%
   separate(rptpre_rol, into = c("rol1", "rol2"), sep = "-", remove=FALSE)%>%
   mutate(rol1 = str_remove(rol1, "^0+"),
@@ -122,7 +133,7 @@ submitted_mp <- property_df %>%
 
 
 library(rio)
- export(NFL_df, "NFL_df.rds")
+ #export(NFL_df, "NFL_df.rds")
   
   
 
@@ -156,13 +167,13 @@ prop_rural <- st_read(
   mutate(area_ha = as.numeric(units::set_units(st_area(.), ha)),
          desccomu = tolower(accents(desccomu)))
   
-prop_rural1 <- prop_rural %>%
-  separate(rptpre_rol, into = c("rol1", "rol2"), sep = "-", remove=FALSE)%>%
-  mutate(rol1 = str_remove(rol1, "^0+"),
-         rol2 = str_remove(rol2, "^0+"))%>%
-  unite("rptpre_rol", rol1, rol2, sep="-")
+# prop_rural1 <- prop_rural %>%
+#   separate(rptpre_rol, into = c("rol1", "rol2"), sep = "-", remove=FALSE)%>%
+#   mutate(rol1 = str_remove(rol1, "^0+"),
+#          rol2 = str_remove(rol2, "^0+"))%>%
+#   unite("rptpre_rol", rol1, rol2, sep="-")
 
-all_rural_props <- prop_rural1 %>%  
+all_rural_props <- prop_rural %>%  
   select(desccomu, rptpre_rol, area_ha) %>%
   rbind(propiedadesrurales)%>%
   mutate(desccomu = tolower(accents(desccomu)))
@@ -171,409 +182,105 @@ all_rural_props <- prop_rural1 %>%
 
 ```{r CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 
-rolarea_df <- all_rural_props %>%
-  merge(NFL_df, by = "rptpre_rol", all = TRUE) %>%
-  mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl")) %>%
-  filter(comuna_stringd <= 1) %>%
-  group_by(prop_ID) %>%
-  mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
-         good_ranks = order(order(area_diff, decreasing=FALSE)),
-         area_prop = area_diff/rptpre_superficie_predial,
-         treat = 1) %>%
-  ungroup()%>%
-  filter(good_ranks ==1 )#& area_prop < 1/3)
-#%>%st_sf(sf_column_name = 'geometry')
-  
-class(rolarea_df)
-
-rolarea_geoms <- rolarea_df %>%
-  select(prop_ID)%>%
-  distinct(prop_ID)
-
-class(rolarea_geoms)
-
-#st_write(rolarea_geoms, dsn = "rolarea_geoms.shp", driver = "ESRI Shapefile")
-library(rio)
-export(rolarea_df, "rolarea_df.rds")
+# rolarea_df <- all_rural_props %>%
+#   merge(NFL_df, by = "rptpre_rol", all = TRUE) %>%
+#   mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl")) %>%
+#   filter(comuna_stringd <= 1) %>%
+#   group_by(prop_ID) %>%
+#   mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
+#          good_ranks = order(order(area_diff, decreasing=FALSE)),
+#          area_prop = area_diff/rptpre_superficie_predial,
+#          treat = 1) %>%
+#   ungroup()%>%
+#   filter(good_ranks ==1 )#& area_prop < 1/3)
+# #%>%st_sf(sf_column_name = 'geometry')
+#   
+# class(rolarea_df)
+# 
+# rolarea_geoms <- rolarea_df %>%
+#   select(prop_ID)%>%
+#   distinct(prop_ID)
+# 
+# class(rolarea_geoms)
+# 
+# #st_write(rolarea_geoms, dsn = "rolarea_geoms.shp", driver = "ESRI Shapefile")
+# library(rio)
+# export(rolarea_df, "rolarea_df.rds")
 
 submitted_rol <- all_rural_props %>%
-  merge(submitted_mp, by = "rptpre_rol", all = TRUE) %>%
+  inner_join(submitted_mp, by = "rptpre_rol")%>%
   mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl")) %>%
   filter(comuna_stringd <= 1) %>%
-  group_by(prop_ID) %>%
+  group_by(rptpre_id) %>%
   mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
-         good_ranks = order(order(area_diff, decreasing=FALSE)),
          area_prop = area_diff/rptpre_superficie_predial,
          treat = 1) %>%
+  filter(area_diff == min(area_diff))%>%
   ungroup()%>%
-  filter(good_ranks ==1 )
+  distinct(.keep_all = TRUE)%>%
+  select(-comuna_stringd)
 
-missed_submitted <- submitted_mp %>%
-  anti_join(submitted_rol, by = c("prop_ID")) %>%
-  mutate(desccomu = rptpre_comuna)
-
-missed_regions <- missed_submitted %>%
-  select(rptpre_region, rptpro_numero_region)%>%
-  distinct()
-
-examine_missed_submitted <- prop_rural %>%
-  left_join(missed_regions, by = c(region = "rptpro_numero_region"))%>%
-  right_join(missed_submitted, by = c("desccomu", "rptpre_region"))%>%
-  separate(rptpre_rol.y, into = c("rol_left.y", "rol_right.y"), sep = "-")%>%
-  separate(rptpre_rol.x, into = c("rol_left.x", "rol_right.x"), sep = "-")%>%
-  group_by(prop_ID)%>%
-  mutate(rol_distance = stringdist(rptpre_rol.y, rptpre_rol.x),
-         area_diff = abs(area_ha-rptpre_superficie_predial),
+submittedmp_rol <- prop_rural %>%
+  merge(submitted_mp, by = "rptpre_rol", all = TRUE) %>%
+  mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl")) %>%
+  filter(between(comuna_stringd, 2, 3)) %>%
+  mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
          area_prop = area_diff/rptpre_superficie_predial,
-         rol_left.y=str_remove(rol_left.y, "^0+") ,
-         rol_left.x=str_remove(rol_left.x, "^0+") ,
-         rol_right.y=str_remove(rol_left.y, "^0+") ,
-         rol_right.x=str_remove(rol_left.x, "^0+") ,
-         rol_left = stringdist(rol_left.y, rol_left.x),
-         rol_right = stringdist(rol_right.y, rol_right.x)
-         )%>%
-  filter((rol_distance <=1&area_prop <=1/4)|(rol_left==0&rol_right==0))%>%
-  select(prop_ID, rol_distance, area_ha, rptpre_superficie_predial, rol_left, rol_right, rptpre_rol.y, rptpre_rol.x, rptpre_nombre, NOM_PREDIO, rptprop_nombre, PROPIETARI)
+         treat = 1)%>%
+  group_by(rptpre_id)%>%
+  filter(area_prop<.5 & area_diff==min(area_diff) &(area_prop <.25 | comuna_stringd <3))%>%
+  ungroup()%>%
+  select(colnames(submitted_rol))%>%
+  rbind(submitted_rol)
 
-submitted_geoms <- submitted_rol %>%
-  select(prop_ID)
-
-submitted_geoms1 <- submitted_rol %>%
-  filter(rptpre_region == "Región del Maule"|
-         rptpre_region == "Región de Ñuble"|
-         rptpre_region == "Región del Bío-Bío"|
-         rptpre_region == "Región de Los Lagos"|
-         rptpre_region == "Región de Los Ríos"|
-         rptpre_region == "Región de La Araucanía"
-         )%>%
-  select(prop_ID)
-
-submitted_geoms2 <- submitted_rol %>%
-  filter(rptpre_region != "Región del Maule"&
-         rptpre_region != "Región de Ñuble"&
-         rptpre_region != "Región del Bío-Bío"&
-         rptpre_region != "Región de Los Lagos"&
-         rptpre_region != "Región de Los Ríos"&
-         rptpre_region != "Región de La Araucanía"
-         )%>%
-  select(prop_ID)
-
-table(submitted_rol$rptpre_region)
-st_write(submitted_geoms1, dsn = "submitted_geoms1.shp", driver = "ESRI Shapefile")
-st_write(submitted_geoms2, dsn = "submitted_geoms2.shp", driver = "ESRI Shapefile")
-
-export(submitted_rol, "submitted_rol.rds")
+# 
+# st_write(submitted_geoms, dsn = "submitted_geoms.shp", driver = "ESRI Shapefile")
+# library(rio)
+# export(submitted_rol, "submitted_rol.rds")
 ```
 
+```{r}
+# missed_submitted <- submitted_mp %>%
+#   anti_join(submittedmp_rol, by = c("rptpre_id")) 
 
+submitted_coordinadas <- submitted_mp %>%
+  left_join(coordinadas_df, by = "rptpre_id")%>%
+  left_join(rodal_df, by = "rptpre_id")%>%
+  mutate(datum = ifelse(is.na(rptro_datum), rptub_datum, rptro_datum),
+         easting = ifelse(is.na(rptro_este), rptub_este, rptro_este),
+         northing = ifelse(is.na(rptro_norte), rptub_norte, rptro_norte),
+         huso = ifelse(is.na(rptro_huso), rptub_huso, rptro_huso))%>%
+  #select(rptpre_id, huso, datum, easting, northing, rptpre_rol, rptpre_comuna, rptpre_nombre, rptprop_nombre, rptpre_superficie_predial)%>%
+  crs_clean_fcn(.)%>%
+  st_transform(crs = st_crs(all_rural_props))
 
+submitted_spatialmatch <- all_rural_props %>%
+  st_join(submitted_coordinadas)%>%
+  #drop_na(area_ha)%>%
+  mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
+         area_prop = area_diff/rptpre_superficie_predial,
+         treat = 1
+         # NOM_PREDIO = tolower(accents(NOM_PREDIO)),
+         # rptpre_nombre = tolower(accents(rptpre_nombre)),
+         # predio_stringd = stringdist(rptpre_nombre, NOM_PREDIO, method = "dl")
+         )%>%
+  group_by(rptpre_id)%>%
+  filter(area_diff==min(area_diff) )%>%
+  rename(rptpre_rol = rptpre_rol.y)%>%
+  select(colnames(submittedmp_rol))
 
+mgmtplan_df <- rbind(submitted_spatialmatch, submittedmp_rol)%>%
+  group_by(rptpre_id)%>%
+  filter(area_diff==min(area_diff) )%>%
+  distinct(rptpre_id, .keep_all = TRUE)%>%
+  group_by(rptpre_rol, rptpre_comuna, rptpre_region)%>%
+  mutate(prop_ID = cur_group_id())
 
-
-```{r geoms, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
-# id_distinct <- rolarea_df %>%
-#   st_sf(sf_column_name = "geometry", crs = "+proj=longlat +datum=WGS84") %>%
-#   select(prop_ID) %>%
-#   distinct(prop_ID, .keep_all = TRUE)
-# st_drivers()
-#st_write(id_distinct, dsn = "rolarea.shp.shp", driver = "ESRI Shapefile")
-#st_write(id_distinct[1:2,], dsn = "test1.json", driver = "GeoJSON")
-
-# id_poly_a <- paste0(id_distinct$prop_ID[2:50], collapse=",")
-# write.csv(id_poly_a, file = "id_poly_a.txt", row.names = FALSE)
-# st_write(id_distinct[2:50,], dsn = "id_poly_a.json", driver = "GeoJSON")
-# 
-# id_poly_b <- paste0(id_distinct$prop_ID[51:100], collapse=",")
-# write.csv(id_poly_b, file = "id_poly_b.txt", row.names = FALSE)
-# st_write(id_distinct[51:100,], dsn = "id_poly_b.json", driver = "GeoJSON")
-# 
-# id_poly_c <- paste0(id_distinct$prop_ID[101:143], collapse=",")
-# write.csv(id_poly_c, file = "id_poly_c.txt", row.names = FALSE)
-# st_write(id_distinct[101:143,], dsn = "id_poly_c.json", driver = "GeoJSON")
-
-# id_poly_d <- paste0(id_distinct$prop_ID[145:154], collapse=",")
-# write.csv(id_poly_d, file = "id_poly_d.txt", row.names = FALSE)
-# st_write(id_distinct[145:154,], dsn = "id_poly_d.json", driver = "GeoJSON")
-# 
-# id_poly_e <- paste0(id_distinct$prop_ID[155:200], collapse=",")
-# write.csv(id_poly_e, file = "id_poly_e.txt", row.names = FALSE)
-# st_write(id_distinct[155:200,], dsn = "id_poly_e.json", driver = "GeoJSON")
-
-# id_poly_f <- paste0(id_distinct$prop_ID[201:232], collapse=",")
-# write.csv(id_poly_f, file = "id_poly_f.txt", row.names = FALSE)
-# st_write(id_distinct[201:232,], dsn = "id_poly_f.json", driver = "GeoJSON")
-
-# id_poly_g <- paste0(id_distinct$prop_ID[234:300], collapse=",")
-# write.csv(id_poly_g, file = "id_poly_g.txt", row.names = FALSE)
-# st_write(id_distinct[234:300,], dsn = "id_poly_g.json", driver = "GeoJSON")
-
-# id_poly_h <- paste0(id_distinct$prop_ID[301:350], collapse=",")
-# write.csv(id_poly_h, file = "id_poly_h.txt", row.names = FALSE)
-# st_write(id_distinct[301:350,], dsn = "id_poly_h.json", driver = "GeoJSON")
-
-# id_poly_i <- paste0(id_distinct$prop_ID[351:400], collapse=",")
-# write.csv(id_poly_i, file = "id_poly_i.txt", row.names = FALSE)
-# st_write(id_distinct[351:400,], dsn = "id_poly_i.json", driver = "GeoJSON")
-
-# id_poly_j <- paste0(id_distinct$prop_ID[401:450], collapse=",")
-# write.csv(id_poly_j, file = "id_poly_j.txt", row.names = FALSE)
-# st_write(id_distinct[401:450,], dsn = "id_poly_j.json", driver = "GeoJSON")
-
-# id_poly_k <- paste0(id_distinct$prop_ID[451:500], collapse=",")
-# write.csv(id_poly_k, file = "id_poly_k.txt", row.names = FALSE)
-# st_write(id_distinct[451:500,], dsn = "id_poly_k.json", driver = "GeoJSON")
-
-# id_poly_l <- paste0(id_distinct$prop_ID[501:550], collapse=",")
-# write.csv(id_poly_l, file = "id_poly_l.txt", row.names = FALSE)
-# st_write(id_distinct[501:550,], dsn = "id_poly_l.json", driver = "GeoJSON")
-# 
-# id_poly_m <- paste0(id_distinct$prop_ID[551:600], collapse=",")
-# write.csv(id_poly_m, file = "id_poly_m.txt", row.names = FALSE)
-# st_write(id_distinct[551:600,], dsn = "id_poly_m.json", driver = "GeoJSON")
-
-# id_poly_n <- paste0(id_distinct$prop_ID[601:650], collapse=",")
-# write.csv(id_poly_n, file = "id_poly_n.txt", row.names = FALSE)
-# st_write(id_distinct[601:650,], dsn = "id_poly_n.json", driver = "GeoJSON")
-
-# id_poly_o <- paste0(id_distinct$prop_ID[651:700], collapse=",")
-# write.csv(id_poly_o, file = "id_poly_o.txt", row.names = FALSE)
-# st_write(id_distinct[651:700,], dsn = "id_poly_o.json", driver = "GeoJSON")
-
-# id_poly_p <- paste0(id_distinct$prop_ID[701:750], collapse=",")
-# write.csv(id_poly_p, file = "id_poly_p.txt", row.names = FALSE)
-# st_write(id_distinct[701:750,], dsn = "id_poly_p.json", driver = "GeoJSON")
-
-# id_poly_q <- paste0(id_distinct$prop_ID[751:800], collapse=",")
-# write.csv(id_poly_q, file = "id_poly_q.txt", row.names = FALSE)
-# st_write(id_distinct[751:800,], dsn = "id_poly_q.json", driver = "GeoJSON")
-
-# id_poly_r <- paste0(id_distinct$prop_ID[801:850], collapse=",")
-# write.csv(id_poly_r, file = "id_poly_r.txt", row.names = FALSE)
-# st_write(id_distinct[801:850,], dsn = "id_poly_r.json", driver = "GeoJSON")
-# 
-# id_poly_s <- paste0(id_distinct$prop_ID[851:900], collapse=",")
-# write.csv(id_poly_s, file = "id_poly_s.txt", row.names = FALSE)
-# st_write(id_distinct[851:900,], dsn = "id_poly_s.json", driver = "GeoJSON")
-# 
-# id_poly_t <- paste0(id_distinct$prop_ID[901:950], collapse=",")
-# write.csv(id_poly_t, file = "id_poly_t.txt", row.names = FALSE)
-# st_write(id_distinct[901:950,], dsn = "id_poly_t.json", driver = "GeoJSON")
-# 
-# id_poly_u <- paste0(id_distinct$prop_ID[951:1000], collapse=",")
-# write.csv(id_poly_u, file = "id_poly_u.txt", row.names = FALSE)
-# st_write(id_distinct[951:1000,], dsn = "id_poly_u.json", driver = "GeoJSON")
-
-# id_poly_v1 <- paste0(id_distinct$prop_ID[1001:1036], collapse=",")
-# write.csv(id_poly_v1, file = "id_poly_v1.txt", row.names = FALSE)
-# st_write(id_distinct[1001:1036,], dsn = "id_poly_v1.json", driver = "GeoJSON")
-# 
-# id_poly_v2 <- paste0(id_distinct$prop_ID[1038:1050], collapse=",")
-# write.csv(id_poly_v2, file = "id_poly_v2.txt", row.names = FALSE)
-# st_write(id_distinct[1038:1050,], dsn = "id_poly_v2.json", driver = "GeoJSON")
-
-# id_poly_w1 <- paste0(id_distinct$prop_ID[1051:1072], collapse=",")
-# write.csv(id_poly_w1, file = "id_poly_w1.txt", row.names = FALSE)
-# st_write(id_distinct[1051:1072,], dsn = "id_poly_w1.json", driver = "GeoJSON")
-# 
-# id_poly_w2 <- paste0(id_distinct$prop_ID[1075:1100], collapse=",")
-# write.csv(id_poly_w2, file = "id_poly_w2.txt", row.names = FALSE)
-# st_write(id_distinct[1075:1100,], dsn = "id_poly_w2.json", driver = "GeoJSON")
-# 
-# id_poly_x <- paste0(id_distinct$prop_ID[1101:1150], collapse=",")
-# write.csv(id_poly_x, file = "id_poly_x.txt", row.names = FALSE)
-# st_write(id_distinct[1101:1150,], dsn = "id_poly_x.json", driver = "GeoJSON")
-# 
-# id_poly_y <- paste0(id_distinct$prop_ID[1151:1200], collapse=",")
-# write.csv(id_poly_y, file = "id_poly_y.txt", row.names = FALSE)
-# st_write(id_distinct[1151:1200,], dsn = "id_poly_y.json", driver = "GeoJSON")
-# 
-# id_poly_z <- paste0(id_distinct$prop_ID[1201:1250], collapse=",")
-# write.csv(id_poly_z, file = "id_poly_z.txt", row.names = FALSE)
-# st_write(id_distinct[1201:1250,], dsn = "id_poly_z.json", driver = "GeoJSON")
-
-# id_poly_aa1 <- paste0(id_distinct$prop_ID[1251:1283], collapse=",")
-# write.csv(id_poly_aa1, file = "id_poly_aa1.txt", row.names = FALSE)
-# st_write(id_distinct[1251:1283,], dsn = "id_poly_aa1.json", driver = "GeoJSON")
-# 
-# id_poly_aa2 <- paste0(id_distinct$prop_ID[1285:1300], collapse=",")
-# write.csv(id_poly_aa2, file = "id_poly_aa2.txt", row.names = FALSE)
-# st_write(id_distinct[1285:1300,], dsn = "id_poly_aa2.json", driver = "GeoJSON")
-
-# id_poly_ab <- paste0(id_distinct$prop_ID[1301:1350], collapse=",")
-# write.csv(id_poly_ab, file = "id_poly_ab.txt", row.names = FALSE)
-# st_write(id_distinct[1301:1350,], dsn = "id_poly_ab.json", driver = "GeoJSON")
-# 
-# id_poly_ac <- paste0(id_distinct$prop_ID[1351:1397], collapse=",")
-# write.csv(id_poly_ac, file = "id_poly_ac.txt", row.names = FALSE)
-# st_write(id_distinct[1351:1397,], dsn = "id_poly_ac.json", driver = "GeoJSON")
-# 
-# id_poly_ad <- paste0(id_distinct$prop_ID[1399:1450], collapse=",")
-# write.csv(id_poly_ad, file = "id_poly_ad.txt", row.names = FALSE)
-# st_write(id_distinct[1399:1450,], dsn = "id_poly_ad.json", driver = "GeoJSON")
-# 
-# id_poly_ae <- paste0(id_distinct$prop_ID[1451:1500], collapse=",")
-# write.csv(id_poly_ae, file = "id_poly_ae.txt", row.names = FALSE)
-# st_write(id_distinct[1451:1500,], dsn = "id_poly_ae.json", driver = "GeoJSON")
-
-# id_poly_af <- paste0(id_distinct$prop_ID[1501:1550], collapse=",")
-# write.csv(id_poly_af, file = "id_poly_af.txt", row.names = FALSE)
-# st_write(id_distinct[1501:1550,], dsn = "id_poly_af.json", driver = "GeoJSON")
-# 
-# id_poly_ag <- paste0(id_distinct$prop_ID[1551:1600], collapse=",")
-# write.csv(id_poly_ag, file = "id_poly_ag.txt", row.names = FALSE)
-# st_write(id_distinct[1551:1600,], dsn = "id_poly_ag.json", driver = "GeoJSON")
-
-# id_poly_ah1 <- paste0(id_distinct$prop_ID[1601:1621], collapse=",")
-# write.csv(id_poly_ah1, file = "id_poly_ah1.txt", row.names = FALSE)
-# st_write(id_distinct[1601:1621,], dsn = "id_poly_ah1.json", driver = "GeoJSON")
-# 
-# id_poly_ah2 <- paste0(id_distinct$prop_ID[1623:1650], collapse=",")
-# write.csv(id_poly_ah2, file = "id_poly_ah2.txt", row.names = FALSE)
-# st_write(id_distinct[1623:1650,], dsn = "id_poly_ah2.json", driver = "GeoJSON")
-# 
-# id_poly_ai <- paste0(id_distinct$prop_ID[1651:1700], collapse=",")
-# write.csv(id_poly_ai, file = "id_poly_ai.txt", row.names = FALSE)
-# st_write(id_distinct[1651:1700,], dsn = "id_poly_ai.json", driver = "GeoJSON")
-# 
-# id_poly_aj <- paste0(id_distinct$prop_ID[1701:1750], collapse=",")
-# write.csv(id_poly_aj, file = "id_poly_aj.txt", row.names = FALSE)
-# st_write(id_distinct[1701:1750,], dsn = "id_poly_aj.json", driver = "GeoJSON")
-
-# id_poly_ak <- paste0(id_distinct$prop_ID[1751:1791], collapse=",")
-# write.csv(id_poly_ak, file = "id_poly_ak.txt", row.names = FALSE)
-# st_write(id_distinct[1751:1791,], dsn = "id_poly_ak.json", driver = "GeoJSON")
-# 
-# id_poly_al <- paste0(id_distinct$prop_ID[1793:1850], collapse=",")
-# write.csv(id_poly_al, file = "id_poly_al.txt", row.names = FALSE)
-# st_write(id_distinct[1793:1850,], dsn = "id_poly_al.json", driver = "GeoJSON")
-# 
-# id_poly_am <- paste0(id_distinct$prop_ID[1851:1900], collapse=",")
-# write.csv(id_poly_am, file = "id_poly_am.txt", row.names = FALSE)
-# st_write(id_distinct[1851:1900,], dsn = "id_poly_am.json", driver = "GeoJSON")
-# 
-# id_poly_an <- paste0(id_distinct$prop_ID[1901:1950], collapse=",")
-# write.csv(id_poly_an, file = "id_poly_an.txt", row.names = FALSE)
-# st_write(id_distinct[1901:1950,], dsn = "id_poly_an.json", driver = "GeoJSON")
-# 
-# id_poly_ao <- paste0(id_distinct$prop_ID[1951:2000], collapse=",")
-# write.csv(id_poly_ao, file = "id_poly_ao.txt", row.names = FALSE)
-# st_write(id_distinct[1951:2000,], dsn = "id_poly_ao.json", driver = "GeoJSON")
-
-# id_poly_ap <- paste0(id_distinct$prop_ID[2001:2050], collapse=",")
-# write.csv(id_poly_ap, file = "id_poly_ap.txt", row.names = FALSE)
-# st_write(id_distinct[2001:2050,], dsn = "id_poly_ap.json", driver = "GeoJSON")
-# 
-# id_poly_aq <- paste0(id_distinct$prop_ID[2051:2100], collapse=",")
-# write.csv(id_poly_aq, file = "id_poly_aq.txt", row.names = FALSE)
-# st_write(id_distinct[2051:2100,], dsn = "id_poly_aq.json", driver = "GeoJSON")
-
-# id_poly_ar <- paste0(id_distinct$prop_ID[2101:2150], collapse=",")
-# write.csv(id_poly_ar, file = "id_poly_ar.txt", row.names = FALSE)
-# st_write(id_distinct[2101:2150,], dsn = "id_poly_ar.json", driver = "GeoJSON")
-# 
-# id_poly_as <- paste0(id_distinct$prop_ID[2151:2200], collapse=",")
-# write.csv(id_poly_as, file = "id_poly_as.txt", row.names = FALSE)
-# st_write(id_distinct[2151:2200,], dsn = "id_poly_as.json", driver = "GeoJSON")
-# 
-# id_poly_at <- paste0(id_distinct$prop_ID[2201:2250], collapse=",")
-# write.csv(id_poly_at, file = "id_poly_at.txt", row.names = FALSE)
-# st_write(id_distinct[2201:2250,], dsn = "id_poly_at.json", driver = "GeoJSON")
-# 
-# id_poly_au <- paste0(id_distinct$prop_ID[2251:2300], collapse=",")
-# write.csv(id_poly_au, file = "id_poly_au.txt", row.names = FALSE)
-# st_write(id_distinct[2251:2300,], dsn = "id_poly_au.json", driver = "GeoJSON")
-
-# id_poly_av <- paste0(id_distinct$prop_ID[2301:2343], collapse=",")
-# write.csv(id_poly_av, file = "id_poly_av.txt", row.names = FALSE)
-# st_write(id_distinct[2301:2343,], dsn = "id_poly_av.json", driver = "GeoJSON")
-
-# id_poly_aw <- paste0(id_distinct$prop_ID[2345:2400], collapse=",")
-# write.csv(id_poly_aw, file = "id_poly_aw.txt", row.names = FALSE)
-# st_write(id_distinct[2345:2400,], dsn = "id_poly_aw.json", driver = "GeoJSON")
-# 
-# id_poly_ax <- paste0(id_distinct$prop_ID[2401:2450], collapse=",")
-# write.csv(id_poly_ax, file = "id_poly_ax.txt", row.names = FALSE)
-# st_write(id_distinct[2401:2450,], dsn = "id_poly_ax.json", driver = "GeoJSON")
-# 
-id_poly_ay <- paste0(id_distinct$prop_ID[2451:2471], collapse=",")
-write.csv(id_poly_ay, file = "id_poly_ay.txt", row.names = FALSE)
-st_write(id_distinct[2451:2471,], dsn = "id_poly_ay.json", driver = "GeoJSON")
-
-id_poly_ay1 <- paste0(id_distinct$prop_ID[2473:2474], collapse=",")
-write.csv(id_poly_ay1, file = "id_poly_ay1.txt", row.names = FALSE)
-st_write(id_distinct[2473:2474,], dsn = "id_poly_ay1.json", driver = "GeoJSON")
-
-id_poly_ay2 <- paste0(id_distinct$prop_ID[2476:2500], collapse=",")
-write.csv(id_poly_ay2, file = "id_poly_ay2.txt", row.names = FALSE)
-st_write(id_distinct[2476:2500,], dsn = "id_poly_ay2.json", driver = "GeoJSON")
-
-# id_poly_az <- paste0(id_distinct$prop_ID[2501:2550], collapse=",")
-# write.csv(id_poly_az, file = "id_poly_az.txt", row.names = FALSE)
-# st_write(id_distinct[2501:2550,], dsn = "id_poly_az.json", driver = "GeoJSON")
-# 
-# id_poly_ba <- paste0(id_distinct$prop_ID[2551:2600], collapse=",")
-# write.csv(id_poly_ba, file = "id_poly_ba.txt", row.names = FALSE)
-# st_write(id_distinct[2551:2600,], dsn = "id_poly_ba.json", driver = "GeoJSON")
-
-# id_poly_bb <- paste0(id_distinct$prop_ID[2601:2650], collapse=",")
-# write.csv(id_poly_bb, file = "id_poly_bb.txt", row.names = FALSE)
-# st_write(id_distinct[2601:2650,], dsn = "id_poly_bb.json", driver = "GeoJSON")
-
-# id_poly_bc <- paste0(id_distinct$prop_ID[2651:2700], collapse=",")
-# write.csv(id_poly_bc, file = "id_poly_bc.txt", row.names = FALSE)
-# st_write(id_distinct[2651:2700,], dsn = "id_poly_bc.json", driver = "GeoJSON")
-# 
-# id_poly_bd <- paste0(id_distinct$prop_ID[2701:2750], collapse=",")
-# write.csv(id_poly_bd, file = "id_poly_bd.txt", row.names = FALSE)
-# st_write(id_distinct[2701:2750,], dsn = "id_poly_bd.json", driver = "GeoJSON")
-# 
-# id_poly_be <- paste0(id_distinct$prop_ID[2751:2800], collapse=",")
-# write.csv(id_poly_be, file = "id_poly_be.txt", row.names = FALSE)
-# st_write(id_distinct[2751:2800,], dsn = "id_poly_be.json", driver = "GeoJSON")
-# 
-# id_poly_bf <- paste0(id_distinct$prop_ID[2801:2850], collapse=",")
-# write.csv(id_poly_bf, file = "id_poly_bf.txt", row.names = FALSE)
-# st_write(id_distinct[2801:2850,], dsn = "id_poly_bf.json", driver = "GeoJSON")
-# 
-# id_poly_bg <- paste0(id_distinct$prop_ID[2851:2900], collapse=",")
-# write.csv(id_poly_bg, file = "id_poly_bg.txt", row.names = FALSE)
-# st_write(id_distinct[2851:2900,], dsn = "id_poly_bg.json", driver = "GeoJSON")
-# 
-# id_poly_bh <- paste0(id_distinct$prop_ID[2901:2950], collapse=",")
-# write.csv(id_poly_bh, file = "id_poly_bh.txt", row.names = FALSE)
-# st_write(id_distinct[2901:2950,], dsn = "id_poly_bh.json", driver = "GeoJSON")
-# 
-# id_poly_bi <- paste0(id_distinct$prop_ID[2951:3000], collapse=",")
-# write.csv(id_poly_bi, file = "id_poly_bi.txt", row.names = FALSE)
-# st_write(id_distinct[2951:3000,], dsn = "id_poly_bi.json", driver = "GeoJSON")
-
-# id_poly_bj <- paste0(id_distinct$prop_ID[3001:3043], collapse=",")
-# write.csv(id_poly_bj, file = "id_poly_bj.txt", row.names = FALSE)
-# st_write(id_distinct[3001:3043,], dsn = "id_poly_bj.json", driver = "GeoJSON")
-# 
-# id_poly_bj2 <- paste0(id_distinct$prop_ID[3045:3075], collapse=",")
-# write.csv(id_poly_bj2, file = "id_poly_bj2.txt", row.names = FALSE)
-# st_write(id_distinct[3045:3075,], dsn = "id_poly_bj2.json", driver = "GeoJSON")
-# 
-# id_poly_bk <- paste0(id_distinct$prop_ID[3076:3150], collapse=",")
-# write.csv(id_poly_bk, file = "id_poly_bk.txt", row.names = FALSE)
-# st_write(id_distinct[3076:3150,], dsn = "id_poly_bk.json", driver = "GeoJSON")
-# 
-# id_poly_bl <- paste0(id_distinct$prop_ID[3151:3200], collapse=",")
-# write.csv(id_poly_bl, file = "id_poly_bl.txt", row.names = FALSE)
-# st_write(id_distinct[3151:3200,], dsn = "id_poly_bl.json", driver = "GeoJSON")
-# 
-# id_poly_bm <- paste0(id_distinct$prop_ID[3201:3216], collapse=",")
-# write.csv(id_poly_bm, file = "id_poly_bm.txt", row.names = FALSE)
-# st_write(id_distinct[3201:3216,], dsn = "id_poly_bm.json", driver = "GeoJSON")
-# 
-# id_poly_bm2 <- paste0(id_distinct$prop_ID[3218:3272], collapse=",")
-# write.csv(id_poly_bm2, file = "id_poly_bm2.txt", row.names = FALSE)
-# st_write(id_distinct[3218:3272,], dsn = "id_poly_bm2.json", driver = "GeoJSON")
+mgmtplan_geoms <- mgmtplan_df %>%
+  distinct(prop_ID, .keep_all = TRUE)%>%
+  select(prop_ID)
+st_write(mgmtplan_geoms, dsn = "mgmtplan_geoms.shp", driver = "ESRI Shapefile")
+# library(rio)
+export(mgmtplan_df, "mgmtplan_df.rds")
 
 ```
-
-```{r geoms, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
-# here i load the CIREN shapefiles and reduce the size by subsetting provinces
-
-````

@@ -1,0 +1,271 @@
+---
+  title: "matching pool generation"
+#author: "Albert Garcia"
+output:
+  pdf_document:
+  number_sections: yes
+toc: no
+fontsize: 11pt    
+documentclass: article
+geometry: margin=1in
+header-includes: 
+  \usepackage{sectsty}
+\usepackage{enumitem}
+\usepackage{comment}
+\usepackage{multirow,array}
+\usepackage{makecell}
+\usepackage{dcolumn}
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(out.height='300px', dpi=200)
+
+### loads packages
+library(latex2exp)
+library(tidyverse)
+library(ggplot2)
+library(sf)
+library(stringi)
+library(data.table)
+library(fuzzyjoin)
+library(stringdist)
+
+```
+
+``` {r enrolled, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+mgmtplan_df <- readRDS("mgmtplan_df.rds")
+#property_df <- readRDS("property_df.rds")
+mgmtplan_covars <- data.frame(readRDS("mgmtplan_covars.rds"))
+
+exclude_match <- mgmtplan_df
+
+# rolarea_df <- readRDS("rolarea_df.rds")
+# property_df <- readRDS("property_df.rds")
+# rolarea_covars <- data.frame(readRDS("rolarea_covars.rds"))
+
+```
+
+```{r}
+setwd("/home/agarcia/chile_reforestation/input_data/new_CIREN_ndvi/treatment")
+
+# load ndvi time series for all submitted properties
+temp = list.files(pattern="*.csv")
+mgmtplan_ndvi = bind_rows(lapply(temp, read_csv))%>%
+  select(prop_ID, year, mean) %>%
+  distinct(prop_ID, year, .keep_all = TRUE) %>%
+  mutate(year = paste0("y_", year))%>%
+  spread(key = "year", value = "mean")# cast ndvi into wide format
+
+submitted_mgmtplan_df <- mgmtplan_df %>%
+  inner_join(mgmtplan_covars, by ="prop_ID")%>%
+  inner_join(mgmtplan_ndvi, by = "prop_ID")
+
+
+# # load ndvi time series for all submitted properties
+# temp = list.files(pattern="*.csv")
+# rolarea_ndvi = bind_rows(lapply(temp, read_csv))%>%
+#   select(prop_ID, year, mean) %>%
+#   distinct(prop_ID, year, .keep_all = TRUE) %>%
+#   mutate(year = paste0("y_", year))%>%
+#   spread(key = "year", value = "mean")# cast ndvi into wide format
+# 
+# enrolled_df <- rolarea_df %>%
+#   inner_join(rolarea_covars, by ="prop_ID")%>%
+#   inner_join(rolarea_ndvi, by = "prop_ID")
+
+# export(enrolled_df, "enrolled_df")
+
+```
+
+``` {r los rios match pool, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/match/losrios")
+
+# load los rios ndvi time series for all ciren properties
+temp = list.files(pattern="*.csv")
+losrios_ndvi = bind_rows(lapply(temp, read_csv))%>%
+  select(objectid, year, mean) %>%
+  distinct(objectid, year, .keep_all = TRUE) %>%
+  mutate(year = paste0("y_", year))%>%
+  spread(key = "year", value = "mean")# cast ndvi into wide format
+
+# to make sure I'm not selecting treated properties
+# disjoint join los Rios CIREN properties with property df based
+
+losrios_ciren <-  st_read(
+  "C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef/PROPIEDADES_RURALES/LOS_RÍOS_CIREN_2018.shp"
+) 
+losrios_matchpool <- losrios_ciren[!lengths(st_intersects(losrios_ciren, exclude_match)), ] %>%
+  #st_join(mgmtplan_df, join = st_disjoint)%>%
+  inner_join(data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/losrios_CIREN_covars.rds")), by = c("objectid", "rol", "desccomu"))%>%
+  inner_join(losrios_ndvi, by = "objectid")
+
+
+# losrios_matchpool <-  st_read(
+#   "/home/agarcia/chile_reforestation/input_data/PROPIEDADES_RURALES/LOS_RÍOS_CIREN_2018.shp"
+# ) %>%
+#   mutate(desccomu = tolower(desccomu))%>%
+#   #anti_join(property_df, by = c(rol = "rptpre_rol", desccomu = "rptpre_comuna"))%>%
+#   stringdist_anti_join(property_df, by = c(rol = "rptpre_rol", desccomu = "rptpre_comuna"), method = "lv", max_dist = 1)%>%
+#   select("objectid", "rol")%>%
+#   inner_join(data.frame(readRDS("/home/agarcia/chile_reforestation/losrios_CIREN_covars.rds")), by = c("objectid", "rol"))%>%
+#   inner_join(losrios_ndvi, by = "objectid")
+
+```
+
+``` {r biobio ndvi, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/match/biobio")
+
+# load biobio ndvi time series for all ciren properties
+temp = list.files( pattern="*.csv")
+biobio_ndvi = bind_rows(lapply(temp, read_csv))%>%
+  #filter(objectid == 59515) %>%
+  select(objectid, year, mean) %>%
+  distinct(objectid, year, .keep_all = TRUE) %>%
+  mutate(year = paste0("y_", year))%>%
+  spread(key = "year", value = "mean")# cast ndvi into wide format
+
+```
+
+```{r}
+setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/match/nuble")
+
+# add nuble ndvi time series for all ciren properties
+temp = list.files(pattern="*.csv")
+biobionuble_ndvi = bind_rows(lapply(temp, read_csv))%>%
+  select(objectid, year, mean) %>%
+  distinct(objectid, year, .keep_all = TRUE) %>%
+  mutate(year = paste0("y_", year))%>%
+  spread(key = "year", value = "mean")%>%# cast ndvi into wide format%>%
+  bind_rows(biobio_ndvi)
+
+# to make sure I'm not selecting treated properties
+# join los Rios CIREN properties with property df based on rol
+
+biobionuble_ciren <-  st_read(
+  "C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef/PROPIEDADES_RURALES/BIOBÍO_CIREN_2016.shp"
+) 
+biobionuble_matchpool <- biobionuble_ciren[!lengths(st_intersects(biobionuble_ciren, exclude_match)), ] %>%
+  #st_join(mgmtplan_df, join = st_disjoint)%>%
+  inner_join(data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/biobionuble_CIREN_covars.rds")), by = c("objectid", "rol", "desccomu"))%>%
+  inner_join(biobionuble_ndvi, by = "objectid")
+
+
+```
+
+``` {r maule, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/match/maule")
+# load maule ndvi time series for all ciren properties
+temp = list.files( pattern="*.csv")
+maule_ndvi = bind_rows(lapply(temp, read_csv))%>%
+  #filter(objectid == 59515) %>%
+  select(objectid, year, mean) %>%
+  distinct(objectid, year, .keep_all = TRUE) %>%
+  mutate(year = paste0("y_", year))%>%
+  spread(key = "year", value = "mean")# cast ndvi into wide format
+
+# to make sure I'm not selecting treated properties
+maule_ciren <-  st_read(
+  "C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef/PROPIEDADES_RURALES/MAULE_CIREN_2014.shp"
+) 
+maule_matchpool <- maule_ciren[!lengths(st_intersects(maule_ciren, exclude_match)), ] %>%
+  #st_join(mgmtplan_df, join = st_disjoint)%>%
+  inner_join(data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/maule_CIREN_covars.rds")), by = c("objectid", "rol", "desccomu"))%>%
+  inner_join(maule_ndvi, by = "objectid")
+
+
+```
+
+``` {r araucania, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/match/araucania")
+# load araucania ndvi time series for all ciren properties
+temp = list.files( pattern="*.csv")
+araucania_ndvi = bind_rows(lapply(temp, read_csv))%>%
+  select(objectid, year, mean) %>%
+  distinct(objectid, year, .keep_all = TRUE) %>%
+  mutate(year = paste0("y_", year))%>%
+  spread(key = "year", value = "mean")# cast ndvi into wide format
+
+# to make sure I'm not selecting treated properties
+# to make sure I'm not selecting treated properties
+araucania_ciren <-  st_read(
+  "C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef/PROPIEDADES_RURALES/ARAUCANÍA_CIREN_2013.shp"
+) 
+araucania_matchpool <- araucania_ciren[!lengths(st_intersects(araucania_ciren, exclude_match)), ] %>%
+  #st_join(mgmtplan_df, join = st_disjoint)%>%
+  inner_join(data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/araucania_CIREN_covars.rds")), by = c("objectid", "rol", "desccomu"))%>%
+  inner_join(araucania_ndvi, by = "objectid")
+
+
+```
+
+``` {r los lagos, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/match/loslagos")
+# load araucania ndvi time series for all ciren properties
+temp = list.files( pattern="*.csv")
+loslagos_ndvi = bind_rows(lapply(temp, read_csv))%>%
+  select(objectid, year, mean) %>%
+  distinct(objectid, year, .keep_all = TRUE) %>%
+  mutate(year = paste0("y_", year))%>%
+  spread(key = "year", value = "mean")# cast ndvi into wide format
+
+# to make sure I'm not selecting treated properties
+# to make sure I'm not selecting treated properties
+loslagos_ciren <-  st_read(
+  "C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef/PROPIEDADES_RURALES/LOS_LAGOS_CIREN_2016.shp"
+) 
+loslagos_matchpool <- loslagos_ciren[!lengths(st_intersects(loslagos_ciren, exclude_match)), ] %>%
+  #st_join(mgmtplan_df, join = st_disjoint)%>%
+  inner_join(data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/loslagos_CIREN_covars.rds")), by = c("objectid", "rol", "desccomu"))%>%
+  inner_join(loslagos_ndvi, by = "objectid")
+
+```
+
+``` {r ohiggins, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/match/ohiggins")
+# load araucania ndvi time series for all ciren properties
+temp = list.files( pattern="*.csv")
+ohiggins_ndvi = bind_rows(lapply(temp, read_csv))%>%
+  select(objectid, year, mean) %>%
+  distinct(objectid, year, .keep_all = TRUE) %>%
+  mutate(year = paste0("y_", year))%>%
+  spread(key = "year", value = "mean")# cast ndvi into wide format
+
+# to make sure I'm not selecting treated properties
+# to make sure I'm not selecting treated properties
+ohiggins_ciren <-  st_read(
+  "C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef/PROPIEDADES_RURALES/LIBERTADOR_GENERAL_BERNARDO_O_HIGGINS_CIREN_2013.shp"
+) 
+ohiggins_matchpool <- ohiggins_ciren[!lengths(st_intersects(ohiggins_ciren, exclude_match)), ] %>%
+  #st_join(mgmtplan_df, join = st_disjoint)%>%
+  inner_join(data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/ohiggins_CIREN_covars.rds")), by = c("objectid", "rol", "desccomu"))%>%
+  inner_join(ohiggins_ndvi, by = "objectid")
+
+```
+
+```{r}
+
+all_matchpool <- data.frame(losrios_matchpool) %>%
+  bind_rows(maule_matchpool)%>%
+  bind_rows(araucania_matchpool)%>%
+  bind_rows(biobionuble_matchpool)%>%
+  bind_rows(loslagos_matchpool)%>%
+  bind_rows(ohiggins_matchpool)%>%
+  mutate(treat=0,
+         first.treat = 0,
+         forest = c_1,
+         plantation = c_3,
+         baresoil = c_12,+c_10,
+         pasture = c_9,
+         shrub = c_5,
+         water = c_15,
+         urban = c_16)%>%
+  select(objectid, treat, first.treat, area_ha, road_dist, lat, long, slope, elev, treat, forest, plantation, water, shrub, baresoil, pasture, urban, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014, y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)
+
+export(all_matchpool, "all_matchpool_submitted.rds")
+
+```
+
+

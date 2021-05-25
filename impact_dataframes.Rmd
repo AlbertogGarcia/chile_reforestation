@@ -277,10 +277,16 @@ mgmtplan_df <- rbind(submitted_spatialmatch, submittedmp_rol)%>%
   mutate(prop_ID = cur_group_id())
 
 mgmtplan_geoms <- mgmtplan_df %>%
-  distinct(prop_ID, .keep_all = TRUE)%>%
-  select(prop_ID)
+  group_by(prop_ID) %>%
+  filter(area_diff==min(area_diff) )%>%
+  mutate(id = row_number()) %>% 
+  filter(id == 1) %>% 
+  select(prop_ID, -id)
+  
 st_write(mgmtplan_geoms, dsn = "mgmtplan_geoms.shp", driver = "ESRI Shapefile")
 # library(rio)
 export(mgmtplan_df, "mgmtplan_df.rds")
+
+
 
 ```

@@ -32,11 +32,11 @@ library(stringdist)
 
 ```
 
-``` {r enrolled, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+``` {r submitted mp, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 
 mgmtplan_df <- readRDS("mgmtplan_df.rds")
 #property_df <- readRDS("property_df.rds")
-mgmtplan_covars <- data.frame(readRDS("mgmtplan_covars.rds"))
+mgmtplan_covars <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/mgmt_covars.rds"))
 
 exclude_match <- mgmtplan_df
 
@@ -47,7 +47,7 @@ exclude_match <- mgmtplan_df
 ```
 
 ```{r}
-setwd("/home/agarcia/chile_reforestation/input_data/new_CIREN_ndvi/treatment")
+setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/submitted")
 
 # load ndvi time series for all submitted properties
 temp = list.files(pattern="*.csv")
@@ -61,20 +61,8 @@ submitted_mgmtplan_df <- mgmtplan_df %>%
   inner_join(mgmtplan_covars, by ="prop_ID")%>%
   inner_join(mgmtplan_ndvi, by = "prop_ID")
 
+export(submitted_mgmtplan_df, "submitted_mgmtplan_df.rds")
 
-# # load ndvi time series for all submitted properties
-# temp = list.files(pattern="*.csv")
-# rolarea_ndvi = bind_rows(lapply(temp, read_csv))%>%
-#   select(prop_ID, year, mean) %>%
-#   distinct(prop_ID, year, .keep_all = TRUE) %>%
-#   mutate(year = paste0("y_", year))%>%
-#   spread(key = "year", value = "mean")# cast ndvi into wide format
-# 
-# enrolled_df <- rolarea_df %>%
-#   inner_join(rolarea_covars, by ="prop_ID")%>%
-#   inner_join(rolarea_ndvi, by = "prop_ID")
-
-# export(enrolled_df, "enrolled_df")
 
 ```
 

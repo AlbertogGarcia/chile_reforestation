@@ -244,7 +244,8 @@ submitted_spatialmatch <- all_rural_props %>%
          treat = 1
          )%>%
   rename(rptpre_rol = rptpre_rol.y)%>%
-  select(colnames(submittedmp_rol))
+  select(colnames(submittedmp_rol))%>%
+  drop_na(rptpro_id)
 
 mgmtplan_geoms <- rbind(submitted_spatialmatch, submittedmp_rol)
 

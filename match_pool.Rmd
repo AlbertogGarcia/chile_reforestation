@@ -36,27 +36,27 @@ library(rio)
 ``` {r submitted mp, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 
 forestlaw_df <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/NFL_df.rds")
-mgmtplan_covars <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/mgmt_covars.rds"))
+my_covars <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/my_covars.rds"))
 all_geoms <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/all_geoms.rds")
-exclude_match <- mgmtplan_geoms
+exclude_match <- all_geoms
 
 
 
 ```
 
 ```{r}
-setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/submitted")
+setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/enrolled/ndvi")
 
 # load ndvi time series for all submitted properties
 temp = list.files(pattern="*.csv")
-mgmtplan_ndvi = bind_rows(lapply(temp, read_csv))%>%
+my_ndvi = bind_rows(lapply(temp, read_csv))%>%
   select(prop_ID, year, mean) %>%
   distinct(prop_ID, year, .keep_all = TRUE) %>%
   mutate(year = paste0("y_", year))%>%
   spread(key = "year", value = "mean")# cast ndvi into wide format
 
-submitted_match <- mgmtplan_covars %>%
-  inner_join(mgmtplan_ndvi, by = "prop_ID")
+my_match <- my_covars %>%
+  inner_join(my_ndvi, by = "prop_ID")
 
 submitted_mgmtplan_df <- property_df %>%
   left_join(activity_df, by = c("rptpre_rol" , "rptpre_comuna" , "rptpro_ano"))%>%
@@ -88,7 +88,7 @@ test_long <- gather(test, "Year", "NDVI", y_2005:y_2020)%>%
   select(-id)
   
 
-#export(submitted_mgmtplan_df, "submitted_mgmtplan_df.rds")
+export(my_match, "my_match.rds")
 
 ```
 

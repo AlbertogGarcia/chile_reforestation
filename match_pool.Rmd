@@ -29,20 +29,18 @@ library(stringi)
 library(data.table)
 library(fuzzyjoin)
 library(stringdist)
+library(rio)
 
 ```
 
 ``` {r submitted mp, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 
-mgmtplan_df <- readRDS("mgmtplan_df.rds")
-#property_df <- readRDS("property_df.rds")
+forestlaw_df <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/NFL_df.rds")
 mgmtplan_covars <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/mgmt_covars.rds"))
+all_geoms <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/all_geoms.rds")
+exclude_match <- mgmtplan_geoms
 
-exclude_match <- mgmtplan_df
 
-# rolarea_df <- readRDS("rolarea_df.rds")
-# property_df <- readRDS("property_df.rds")
-# rolarea_covars <- data.frame(readRDS("rolarea_covars.rds"))
 
 ```
 
@@ -57,12 +55,40 @@ mgmtplan_ndvi = bind_rows(lapply(temp, read_csv))%>%
   mutate(year = paste0("y_", year))%>%
   spread(key = "year", value = "mean")# cast ndvi into wide format
 
-submitted_mgmtplan_df <- mgmtplan_df %>%
-  inner_join(mgmtplan_covars, by ="prop_ID")%>%
+submitted_match <- mgmtplan_covars %>%
   inner_join(mgmtplan_ndvi, by = "prop_ID")
 
-export(submitted_mgmtplan_df, "submitted_mgmtplan_df.rds")
+submitted_mgmtplan_df <- property_df %>%
+  left_join(activity_df, by = c("rptpre_rol" , "rptpre_comuna" , "rptpro_ano"))%>%
+  mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))%>%
+  inner_join(submitted_match, by ="prop_ID")%>%
+  group_by(prop_ID)%>%
+  mutate(first.treat = min(rptpro_ano),
+         last.treat = max(rptpro_ano))
 
+test <- submitted_mgmtplan_df %>%
+  mutate(ndvi_2007 = y_2007)%>%
+  select(prop_ID, rptpre_id, rptpro_ano, first.treat, last.treat,  rptpro_superficie, rptpre_superficie_predial, rptpro_monto_total, area_prop, area_ha, ndvi_2007, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014 , y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)
+
+test_long <- gather(test, "Year", "NDVI", y_2005:y_2020)%>%
+  separate(Year, into = c(NA, "Year"), sep = "_")%>%
+  group_by(prop_ID, ndvi_2007) %>%
+  arrange(Year, rptpro_ano, .by_group = TRUE)%>%
+  mutate(property_id = cur_group_id(),
+         new_treated_area = ifelse(rptpro_ano == Year , rptpro_superficie, 0),
+         new_monto = ifelse(rptpro_ano == Year , rptpro_monto_total, 0),
+         cum_bonusarea = cumsum(new_treated_area),
+         cum_monto = cumsum(new_monto)
+  )%>%
+  ungroup()%>%
+  group_by(property_id, Year)%>%
+  filter(rptpro_ano==min(rptpro_ano))%>%
+  mutate(id = row_number()) %>% 
+  filter(id == 1) %>% 
+  select(-id)
+  
+
+#export(submitted_mgmtplan_df, "submitted_mgmtplan_df.rds")
 
 ```
 
@@ -252,7 +278,7 @@ all_matchpool <- data.frame(losrios_matchpool) %>%
          urban = c_16)%>%
   select(objectid, treat, first.treat, area_ha, road_dist, lat, long, slope, elev, treat, forest, plantation, water, shrub, baresoil, pasture, urban, y_2005, y_2006, y_2007, y_2008, y_2009, y_2010, y_2011, y_2012, y_2013, y_2014, y_2015, y_2016, y_2017, y_2018, y_2019, y_2020)
 
-export(all_matchpool, "all_matchpool_submitted.rds")
+export(all_matchpool, "all_matchpool.rds")
 
 ```
 

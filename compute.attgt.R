@@ -76,16 +76,16 @@ compute.attgt <- function(dta) {
       # cases as well)
       
       attgt <- DRDID::drdid(yname="Y", tname = "period", idname = "id", dname = "treat",
-                            xformla =  ~lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist
+                            xformla =  ~ forest + plantation + baresoil + pasture + urban +water+ shrub+ slope +lat+ elev  + area_ha + road_dist
                             ,
                             data = this.data,
                             panel = TRUE
                             )$ATT
       
       
-      this.data$geometry.x <- NULL
+      # this.data$geometry.x <- NULL
 
-       mod <- glm(treat ~ lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist
+       mod <- glm(treat ~ forest + plantation + baresoil + pasture + urban +water+ shrub+ slope +lat+ elev  + area_ha + road_dist
                   , data = this.data, family = "binomial")
 
        this.data <- this.data %>%
@@ -99,7 +99,9 @@ compute.attgt <- function(dta) {
       #              , weights = psweights
       #              )$coefficients
       #              , n=11)[11]
-       attgt <- tail(lm(Y ~  treat*post + lat + forest + plantation + baresoil + pasture + urban +water+ slope + elev  + area_ha + road_dist
+       attgt <- tail(lm(Y ~  treat:post
+                        +treat + post
+                        + forest + plantation + baresoil + pasture + urban +water+ slope + elev + lat  + area_ha + road_dist
                         , data   = this.data
                         , weights = psweights
        )$coefficients

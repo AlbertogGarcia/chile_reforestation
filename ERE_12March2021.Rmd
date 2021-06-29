@@ -90,9 +90,9 @@ In an attempt to encourage more reforestation of native forests, Chile passed th
 
 We have obtained property boundaries for all rural properties in the major forested regions of Chile as of the year 2009. Data on the awarded properties are available through CONAF and reflect aspects of the property and projects such as project surface area, bonus amount, and applicant race and gender. Also included is each property's parcel indentifier, which is unique to each property within a comuna, Chile's level 3 administrative unit. I match the enrolled properties to their corresponding boundaries via the unique parcel identifier. Figure XX shows the result of this process. 
 
-```{r enrolled-map, fig.pos="H", out.width = '50%', fig.cap = "This figure shows properties enrolled through the Native Forest Law contest by year of enrollment. We have since expanded the matched property boundaries to the Chile-Argentina border.", echo=FALSE}
-knitr::include_graphics("figs/propertymap_updated.pdf")
-```
+<!-- ```{r enrolled-map, fig.pos="H", out.width = '50%', fig.cap = "This figure shows properties enrolled through the Native Forest Law contest by year of enrollment. We have since expanded the matched property boundaries to the Chile-Argentina border.", echo=FALSE} -->
+<!-- knitr::include_graphics("figs/propertymap_updated.pdf") -->
+<!-- ``` -->
 
 I have obtained the names of payment recipients associated with the Native Forest Law along with the date of the payment. Using fuzzy string matching on the names of the payment recipients and the program application names, I am able to match 85.67\% of the paid names to corresponding properties. Visual confirmation ensures that the fuzzy matching produces reasonable matches. 
 

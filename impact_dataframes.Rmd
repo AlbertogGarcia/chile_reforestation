@@ -247,7 +247,7 @@ submitted_spatialmatch <- all_rural_props %>%
   select(colnames(submittedmp_rol))%>%
   drop_na(rptpro_id)
 
-mgmtplan_geoms <- rbind(submitted_spatialmatch, submittedmp_rol)
+all_geoms <- rbind(submitted_spatialmatch, submittedmp_rol)
 
 geoms <- mgmtplan_geoms %>%
   group_by(prop_ID)%>%
@@ -255,8 +255,16 @@ geoms <- mgmtplan_geoms %>%
   mutate(id = row_number()) %>% 
   filter(id == 1) %>% 
   select(prop_ID, -id)
-  
-st_write(geoms, dsn = "geoms.shp", driver = "ESRI Shapefile")
 
-export(mgmtplan_geoms, "all_geoms.rds")
+used_geoms <- mgmtplan_geoms %>%
+  group_by(prop_ID)%>%
+  filter(area_diff==min(area_diff) )%>%
+  mutate(id = row_number()) %>% 
+  filter(id == 1) %>% 
+  select(prop_ID, -id, area_diff, area_ha, area_prop)
+  
+# st_write(geoms, dsn = "geoms.shp", driver = "ESRI Shapefile")
+# 
+# export(used_geoms, "used_geoms.rds")
+# export(all_geoms, "all_geoms.rds")
 ```

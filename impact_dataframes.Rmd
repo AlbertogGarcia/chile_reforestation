@@ -49,20 +49,15 @@ library(readxl)
 
 # xls files downloaded from CONAF
 #projects
-proyecto2_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_proyecto.csv")
 proyecto_df <- read_xlsx("concurso_conaf/proyecto.xlsx")
 
 #properties and coordinates
-#predio_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_predio.csv")
 predio_df <- read_xlsx("concurso_conaf/predio.xlsx")
 #owners
-#propietario_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_propietario.csv")
 propietario_df <- read_xlsx("concurso_conaf/propietario.xlsx")
 #stands
-#rodal_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_rodal.csv")
 rodal_df <- read_xlsx("concurso_conaf/rodal.xlsx")
 #activities
-#actividades_df <- read.csv("concurso_conaf/ConcursoLeyBosqueNativo_actividad.csv")
 actividades_df <- read_xlsx("concurso_conaf/actividad.xlsx")
 
 coordinadas_df <- read_xlsx("concurso_conaf/coordinadas_predio.xlsx")
@@ -108,7 +103,7 @@ NFL_df <- property_df %>%
   left_join(activity_df, by = c("prop_ID" , "rptpro_ano"))%>%
   mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))
 
-submitted_mp <- property_df %>%
+NFL_df <- property_df %>%
   #filter(rptpro_tiene_plan_saff == "Si" | rptpro_tiene_bonificacion_saff == "Si")%>%
   mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))%>%
   separate(rptpre_rol, into = c("rol1", "rol2"), sep = "-", remove=FALSE)%>%
@@ -127,15 +122,16 @@ export(NFL_df, "NFL_df.rds")
 ```{r scraped CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 setwd("C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef")
 
+# create list of all files with .shp extension in PROPIEDADES_RURALES folder
 file_list <- list.files("PROPIEDADES_RURALES", pattern = "*shp", full.names = TRUE)
+# read in all files in the list using read_sf
 shapefile_list <- lapply(file_list, read_sf)
 
+# bind rows into df then to sf object
 propiedadesrurales <- sf::st_as_sf(bind_rows(shapefile_list)) %>%
   rename(rptpre_rol = rol)%>%
   mutate(area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
   select(desccomu, rptpre_rol, area_ha)
-
-class(propiedadesrurales)
 
 ```
 
@@ -192,8 +188,8 @@ all_rural_props <- prop_rural %>%
 # library(rio)
 # export(rolarea_df, "rolarea_df.rds")
 
-submittedmp_rol <- all_rural_props %>%
-  inner_join(submitted_mp, by = "rptpre_rol")%>%
+match_by_rol <- all_rural_props %>%
+  inner_join(NFL_df, by = "rptpre_rol")%>%
   mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl")) %>%
   filter(comuna_stringd <= 1) %>%
   group_by(prop_ID) %>%
@@ -204,8 +200,8 @@ submittedmp_rol <- all_rural_props %>%
   ungroup()%>%
   select(-comuna_stringd)
 
-submittedmp_rol <- prop_rural %>%
-  merge(submitted_mp, by = "rptpre_rol", all = TRUE) %>%
+match_by_rol <- prop_rural %>%
+  merge(NFL_df, by = "rptpre_rol", all = TRUE) %>%
   mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl")) %>%
   filter(between(comuna_stringd, 2, 3)) %>%
   mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
@@ -215,9 +211,9 @@ submittedmp_rol <- prop_rural %>%
   filter(area_prop<.5 & area_diff==min(area_diff) &(area_prop <.25 | comuna_stringd <3))%>%
   ungroup()%>%
   select(colnames(submittedmp_rol))%>%
-  rbind(submittedmp_rol)
+  rbind(match_by_rol)
 
-# 
+ 
 # st_write(submitted_geoms, dsn = "submitted_geoms.shp", driver = "ESRI Shapefile")
 # library(rio)
 # export(submitted_rol, "submitted_rol.rds")
@@ -227,7 +223,7 @@ submittedmp_rol <- prop_rural %>%
 # missed_submitted <- submitted_mp %>%
 #   anti_join(submittedmp_rol, by = c("rptpre_id")) 
 
-submitted_coordinadas <- submitted_mp %>%
+enrolled_coordinadas <- NFL_df %>%
   left_join(coordinadas_df, by = "rptpre_id")%>%
   left_join(rodal_df, by = "rptpre_id")%>%
   mutate(datum = ifelse(is.na(rptro_datum), rptub_datum, rptro_datum),
@@ -237,26 +233,27 @@ submitted_coordinadas <- submitted_mp %>%
   crs_clean_fcn(.)%>%
   st_transform(crs = st_crs(all_rural_props))
 
-submitted_spatialmatch <- all_rural_props %>%
-  st_join(submitted_coordinadas)%>%
+spatial_match <- all_rural_props %>%
+  st_join(enrolled_coordinadas)%>%
   mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
          area_prop = area_diff/rptpre_superficie_predial,
          treat = 1
          )%>%
   rename(rptpre_rol = rptpre_rol.y)%>%
-  select(colnames(submittedmp_rol))%>%
+  select(colnames(match_by_rol))%>%
   drop_na(rptpro_id)
 
-all_geoms <- rbind(submitted_spatialmatch, submittedmp_rol)
+enrolled_geoms <- rbind(spatial_match, match_by_rol)
 
-geoms <- mgmtplan_geoms %>%
+
+geoms <- enrolled_geoms %>%
   group_by(prop_ID)%>%
   filter(area_diff==min(area_diff) )%>%
   mutate(id = row_number()) %>% 
   filter(id == 1) %>% 
   select(prop_ID, -id)
 
-used_geoms <- mgmtplan_geoms %>%
+used_geoms <- enrolled_geoms %>%
   group_by(prop_ID)%>%
   filter(area_diff==min(area_diff) )%>%
   mutate(id = row_number()) %>% 

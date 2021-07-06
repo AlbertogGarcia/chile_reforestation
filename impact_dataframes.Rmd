@@ -210,7 +210,7 @@ match_by_rol <- prop_rural %>%
   group_by(rptpre_id)%>%
   filter(area_prop<.5 & area_diff==min(area_diff) &(area_prop <.25 | comuna_stringd <3))%>%
   ungroup()%>%
-  select(colnames(submittedmp_rol))%>%
+  select(colnames(match_by_rol))%>%
   rbind(match_by_rol)
 
  
@@ -253,6 +253,7 @@ geoms <- enrolled_geoms %>%
   filter(id == 1) %>% 
   select(prop_ID, -id)
 
+
 used_geoms <- enrolled_geoms %>%
   group_by(prop_ID)%>%
   filter(area_diff==min(area_diff) )%>%
@@ -261,7 +262,7 @@ used_geoms <- enrolled_geoms %>%
   select(prop_ID, -id, area_diff, area_ha, area_prop)
   
 # st_write(geoms, dsn = "geoms.shp", driver = "ESRI Shapefile")
-# 
+ 
 # export(used_geoms, "used_geoms.rds")
 # export(all_geoms, "all_geoms.rds")
 ```

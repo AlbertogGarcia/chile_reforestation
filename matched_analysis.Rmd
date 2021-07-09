@@ -60,7 +60,7 @@ did.mgmt <- att_gt(yname="EVI2",
                      idname="id",
                      gname="first.treat",
                      est_method = "reg",
-                     xformla=~  smallholder+forest + plantation + baresoil + pasture +shrub + urban +water+ slope +lat+  elev  + area_ha  +road_dist ,
+                     xformla=~  forest + plantation + baresoil + pasture +shrub + urban +water+ slope +lat+  elev  + area_ha  +road_dist ,
                      data=mgmtplan_analysis, clustervars = "id"
                      , panel=TRUE, bstrap = TRUE
                      )
@@ -80,67 +80,56 @@ plot_mgmt <- ggplot(data=dyn.es, aes(x=e, y=att, color = period)) +
 plot_mgmt
 ```
 
-``` {r did smallholder, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
-
-set.seed(0930)
-
-did.mgmt <- att_gt(yname="EVI2",
-                     tname="Year",
-                     idname="id",
-                     gname="first.treat",
-                     est_method = my_did_panel,
-                     xformla=~  smallholder+forest + plantation + baresoil + pasture +shrub + urban +water+ slope +lat+  elev  + area_ha  +road_dist ,
-                     data=mgmtplan_analysis, clustervars = "id"
-                     , panel=TRUE, bstrap = TRUE
-                     )
-
-did.mgmt.es <- aggte(did.mgmt, type="dynamic")
-# smallholder*treat
-# > did.mgmt.es$overall.att
-# [1] 0.009475155
-# > did.mgmt.es$overall.se
-# [1] 0.006829084
-# treat 
-did.mgmt.ovr <- aggte(did.mgmt, na.rm=TRUE, type = "simple")
-# smallholder*treat
-# > did.mgmt.ovr$overall.att
-# [1] 0.008398502
-# > did.mgmt.ovr$overall.se
-# [1] 0.006527092
-# treat 
-
-```
-
 ``` {r did plantation, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
 
+
+source('lu_did_panel.R')
+source('lu_compute_attgt.R')
+source('lu_att_gt.R')
 set.seed(0930)
+
+did.landuse <- lu_att_gt(yname="EVI2",
+                     tname="Year",
+                     idname="id",
+                     gname="first.treat",
+                     est_method = lu_did_panel,
+                     xformla=~  forest + plantation + baresoil + pasture +shrub + urban +water+ slope +lat+  elev  + area_ha  +road_dist ,
+                     data=mgmtplan_analysis, clustervars = "id"
+                     , panel=TRUE, bstrap = TRUE
+                     , lu_varname = "forest", interaction=TRUE
+                     )
+
+did.lu.es <- aggte(did.landuse, type="dynamic")
+
+```
+
+``` {r colinear with treatment interactions, echo = FALSE, message = FALSE, warning = FALSE, include = TRUE, eval = TRUE}
+
+set.seed(0930)
+
+mgmtplan_analysis <- mgmtplan_analysis %>%
+  mutate(reforestation2 = ifelse(is.na(reforestation2), 0, reforestation2),
+         smally = ifelse(smallholder==1&treat==1, 1, 0),
+         rptpro_puntaje = ifelse(is.na(rptpro_puntaje), 0, rptpro_puntaje),
+         female = ifelse(rptprop_sexo=="Masculino" | is.na(rptprop_sexo), 0, 1),
+         indigenous = ifelse(is.na(rptprop_etnia), 0, 1),
+         extensionist = ifelse(rptpro_tipo_presenta=="Extensionista", 1, 0)
+         )
 
 did.mgmt <- att_gt(yname="EVI2",
                      tname="Year",
                      idname="id",
                      gname="first.treat",
-                     est_method = twfe_did_panel,
-                     xformla=~  smallholder+forest + plantation + baresoil + pasture +shrub + urban +water+ slope +lat+  elev  + area_ha  +road_dist ,
+                     est_method = my_did_panel2,
+                     xformla=~  indigenous + forest + plantation + baresoil + pasture +shrub + urban +water+ slope +lat+  elev  + area_ha  +road_dist ,
                      data=mgmtplan_analysis, clustervars = "id"
                      , panel=TRUE, bstrap = TRUE
                      )
 
 did.mgmt.es <- aggte(did.mgmt, type="dynamic")
-# smallholder*treat
-# > did.mgmt.es$overall.att
-# [1] -0.01046869
-# > did.mgmt.es$overall.se
-# [1] 0.01808671
-# treat 
-did.mgmt.ovr <- aggte(did.mgmt, na.rm=TRUE, type = "simple")
-# smallholder*treat
-# > did.mgmt.ovr$overall.se
-# [1] 0.01540353
-# > did.mgmt.ovr$overall.att
-# [1] -0.01386236
-# treat 
 
 ```
+
 
 
 ```{r}

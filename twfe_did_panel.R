@@ -36,6 +36,24 @@ twfe_did_panel <-function(y1, y0, D, covariates, i.weights = NULL,
     }
   }
   
+  pasture <- as.data.frame(covariates)$pasture
+  pasture <- as.vector((c(pasture, pasture)))
+  
+  shrub <- as.data.frame(covariates)$shrub
+  shrub <- as.vector((c(shrub, shrub)))
+  
+  plantation <- as.data.frame(covariates)$plantation
+  plantation <- as.vector((c(plantation, plantation)))
+  
+  forest <- as.data.frame(covariates)$forest
+  forest <- as.vector((c(forest, forest)))
+  
+  smallholder <- as.data.frame(covariates)$smallholder
+  smallholder <- as.vector((c(smallholder, smallholder)))
+  
+  baresoil <- as.data.frame(covariates)$baresoil
+  baresoil <- as.vector((c(baresoil, baresoil)))
+  
   # Post treatment indicator
   post <- as.vector(c(rep(0, length(y0)), rep(1,length(y1))))
   # treatment group
@@ -50,10 +68,15 @@ twfe_did_panel <-function(y1, y0, D, covariates, i.weights = NULL,
     #---------------------------------------------------------------------------
     #Estimate TWFE regression
     
-    reg <- stats::lm(y ~  dd:post + post + dd + x, x = TRUE, weights = i.weights)
+    reg <- stats::lm(y ~ # dd:post:smallholder:plantation +
+                       # dd:post:smallholder + dd:smallholder + post:smallholder+
+                       #dd:post:plantation + dd:plantation + post:plantation+
+                       dd:post:pasture + dd:pasture + post:pasture+
+                       #dd:post:forest + dd:forest + post:forest+
+                       dd:post+ post + dd + x, x = TRUE, weights = i.weights)
     
     
-    twfe.att <- reg$coefficients["dd:post"]
+    twfe.att <- reg$coefficients["dd:post:pasture"]
     #-----------------------------------------------------------------------------
     #Elemenets for influence functions
     inf.reg <- (i.weights * reg$x * reg$residuals) %*%
@@ -61,7 +84,7 @@ twfe_did_panel <-function(y1, y0, D, covariates, i.weights = NULL,
     
     sel.theta <- matrix(c(rep(0, dim(inf.reg)[2])))
     
-    index.theta <- which(dimnames(reg$x)[[2]]=="dd:post",
+    index.theta <- which(dimnames(reg$x)[[2]]=="dd:post:pasture",
                          arr.ind = TRUE)
     
     sel.theta[index.theta, ] <- 1

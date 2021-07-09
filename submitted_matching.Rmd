@@ -35,6 +35,8 @@ library(kableExtra)
 
 ```{r}
 
+
+
 NFL_df <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/NFL_df.rds")
 #property_df <- readRDS("property_df.rds")
 all_matchpool <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/all_matchpool.rds"))
@@ -147,67 +149,67 @@ r=2
 
 
 
-matched_2009 <- matchit(treat ~ evi_trend0807 + evi_trend0706 + evi_trend0605 + evi_2007
+matched_2009 <- matchit(treat ~ evi_trend0807 + evi_trend0706 + evi_trend0605 + y_2007
                         + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2009),
                  method = "nearest", ratio = r)
 
 matched_2010 <- matchit(treat ~ evi_trend0908 + evi_trend0807 + evi_trend0706  + evi_trend0605
-                        + evi_2007
+                        + y_2007
                         + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2010),
                  method = "nearest", ratio = r)
 
 matched_2011 <- matchit(treat ~ evi_trend1009 + evi_trend0908 + evi_trend0807 + evi_trend0706 + evi_trend0605
-                        + evi_2007
+                        + y_2007
                         + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2011),
                  method = "nearest", ratio = r)
 
 matched_2012 <- matchit(treat ~ evi_trend1110 + evi_trend1009 + evi_trend0908 + evi_trend0807+ evi_trend0706 +evi_trend0605
-                        + evi_2007
+                        + y_2007
                         + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2012),
                  method = "nearest", ratio = r)
 
 matched_2013 <- matchit(treat ~ evi_trend1211 + evi_trend1110 + evi_trend1009 + evi_trend0908 + evi_trend0807+ evi_trend0706 + evi_trend0605
-                        + evi_2007
+                        + y_2007
                         + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2013),
                  method = "nearest", ratio = r)
 
 matched_2014 <- matchit(treat ~ evi_trend1312 + evi_trend1211 + evi_trend1110 + evi_trend1009 + evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
-                        + evi_2007
+                        + y_2007
                         + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2014),
                  method = "nearest", ratio = r)
 
 matched_2015 <- matchit(treat ~ evi_trend1413 + evi_trend1312 + evi_trend1211 + evi_trend1110 + evi_trend1009 + evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
-                        + evi_2007
+                        + y_2007
                         + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2015),
                  method = "nearest", ratio = r)
 
 matched_2016 <- matchit(treat ~ evi_trend1514 + evi_trend1413 + evi_trend1312 + evi_trend1211 + evi_trend1110+ evi_trend1009 + evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
-                        +  evi_2007
+                        +  y_2007
                         + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2016),
                  method = "nearest", ratio = r)
 
 matched_2017 <- matchit(treat ~ evi_trend1615 + evi_trend1514 + evi_trend1413 + evi_trend1312 + evi_trend1211+ evi_trend1110+ evi_trend1009 + evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
-                        +  evi_2007
+                        +  y_2007
                         + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2017),
                  method = "nearest", ratio = r)
 
 matched_2018 <- matchit(treat ~ evi_trend1716 + evi_trend1615 + evi_trend1514 + evi_trend1413 + evi_trend1312 + evi_trend1211+ evi_trend1110+ evi_trend1009 + evi_trend0908+evi_trend0807+ evi_trend0706 +evi_trend0605
-                        +  evi_2007
+                        +  y_2007
                         + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2018),
                  method = "nearest", ratio = r)
 
 matched_2019 <- matchit(treat ~ evi_trend1817 + evi_trend1716 + evi_trend1615 + evi_trend1514 + evi_trend1413 + evi_trend1312 + evi_trend1211+ evi_trend1110+ evi_trend1009 + evi_trend0908+evi_trend0807+ evi_trend0706 + evi_trend0605
-                        + evi_2007
+                        + y_2007
                         + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2019),
                  method = "nearest", ratio = r)

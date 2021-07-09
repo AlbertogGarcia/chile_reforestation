@@ -93,13 +93,16 @@ my_did_panel <-function(y1, y0, D, covariates, i.weights = NULL,
     #---------------------------------------------------------------------------
     #Estimate TWFE regression
     
-    reg <- stats::lm(y ~  dd:post:smallholder:plantation +
-                     dd:post:smallholder + dd:smallholder + post:smallholder+
-                     dd:post:plantation + dd:plantation + post:plantation+
+    reg <- stats::lm(y ~  #dd:post:smallholder:plantation +
+                    # dd:post:smallholder + dd:smallholder + post:smallholder+
+                   #  dd:post:plantation + dd:plantation + post:plantation+
+                    #  dd:post:shrub + dd:shrub + post:shrub+
+                      dd:post:forest + dd:forest + post:forest+
+                     # dd:post:pasture + dd:pasture + post:pasture+
                       dd:post+ post + dd + x, x = TRUE, weights = p.weights)
     
     
-    twfe.att <- reg$coefficients["dd:post:"]
+    twfe.att <- reg$coefficients["dd:post:forest"]
     #-----------------------------------------------------------------------------
     #Elemenets for influence functions
     inf.reg <- (i.weights * reg$x * reg$residuals) %*%
@@ -107,7 +110,7 @@ my_did_panel <-function(y1, y0, D, covariates, i.weights = NULL,
     
     sel.theta <- matrix(c(rep(0, dim(inf.reg)[2])))
     
-    index.theta <- which(dimnames(reg$x)[[2]]=="dd:post",
+    index.theta <- which(dimnames(reg$x)[[2]]=="dd:post:forest",
                          arr.ind = TRUE)
     
     sel.theta[index.theta, ] <- 1

@@ -41,6 +41,9 @@ library(Hmisc)
 ```
 
 ``` {r NFL_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+### In this chunk, I'm reading in the program documents from the Native Forest Law
+
 #setting working directory
 
 setwd("C:/Users/garci/Dropbox/chile_reforestation/external_data")
@@ -64,6 +67,9 @@ coordinadas_df <- read_xlsx("concurso_conaf/coordinadas_predio.xlsx")
 ```
 
 ```{r}
+
+### In this chunk, I'm merging all of the program document dataframes and cleaning them up a bit
+
 #merging into dataframe of all properties and owners
 property_df <- proyecto_df %>%
   full_join(predio_df, by = "rptpro_id") %>%
@@ -76,6 +82,7 @@ full_df <- property_df %>%
   left_join(rodal_df, by = "rptpre_id") %>%
   left_join(actividades_df, by = "rptro_id")
 
+# this creates a dataframe describing the activities performed on each property
 activity_df <- property_df %>%
   left_join(rodal_df, by = "rptpre_id") %>%
   left_join(actividades_df, by = "rptro_id") %>%
@@ -99,12 +106,11 @@ accents <- function(x){
   x <- stri_trans_general(x, id = "Latin-ASCII")
 }
 
-NFL_df <- property_df %>%
-  left_join(activity_df, by = c("prop_ID" , "rptpro_ano"))%>%
-  mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))
+# merge the property dataframe with the activities being performed on the property
+#NFL_df contains the information about each property that we'll need to perform analysis wrt a lot of the program objectives
 
 NFL_df <- property_df %>%
-  #filter(rptpro_tiene_plan_saff == "Si" | rptpro_tiene_bonificacion_saff == "Si")%>%
+  left_join(activity_df, by = c("prop_ID" , "rptpro_ano"))%>%
   mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))%>%
   separate(rptpre_rol, into = c("rol1", "rol2"), sep = "-", remove=FALSE)%>%
   mutate(rol1 = str_remove(rol1, "^0+"),
@@ -120,6 +126,9 @@ export(NFL_df, "NFL_df.rds")
 ```
 
 ```{r scraped CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+# This chunk reads in the first set of our property boundaries
+
 setwd("C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef")
 
 # create list of all files with .shp extension in PROPIEDADES_RURALES folder
@@ -136,6 +145,9 @@ propiedadesrurales <- sf::st_as_sf(bind_rows(shapefile_list)) %>%
 ```
 
 ```{r original CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+
+# This chunk reads in the second set of our property boundaries and combines with the first to create all_rural_props df, containing all rural property boundaries
+
 # setwd("C:/Users/garci/Desktop/chile_data/prop_rural")
 
 # fcn to remove accents
@@ -163,30 +175,7 @@ all_rural_props <- prop_rural %>%
 
 ```{r CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 
-# rolarea_df <- all_rural_props %>%
-#   merge(NFL_df, by = "rptpre_rol", all = TRUE) %>%
-#   mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl")) %>%
-#   filter(comuna_stringd <= 1) %>%
-#   group_by(prop_ID) %>%
-#   mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
-#          good_ranks = order(order(area_diff, decreasing=FALSE)),
-#          area_prop = area_diff/rptpre_superficie_predial,
-#          treat = 1) %>%
-#   ungroup()%>%
-#   filter(good_ranks ==1 )#& area_prop < 1/3)
-# #%>%st_sf(sf_column_name = 'geometry')
-#   
-# class(rolarea_df)
-# 
-# rolarea_geoms <- rolarea_df %>%
-#   select(prop_ID)%>%
-#   distinct(prop_ID)
-# 
-# class(rolarea_geoms)
-# 
-# #st_write(rolarea_geoms, dsn = "rolarea_geoms.shp", driver = "ESRI Shapefile")
-# library(rio)
-# export(rolarea_df, "rolarea_df.rds")
+# This chuunk matches program enrollees to property boundaries via unique parcel identifier (rol) and comuna
 
 match_by_rol <- all_rural_props %>%
   inner_join(NFL_df, by = "rptpre_rol")%>%
@@ -223,6 +212,8 @@ match_by_rol <- prop_rural %>%
 # missed_submitted <- submitted_mp %>%
 #   anti_join(submittedmp_rol, by = c("rptpre_id")) 
 
+# This chunk uses property point coordinates provided in program application to spatially match with property boundaries
+
 enrolled_coordinadas <- NFL_df %>%
   left_join(coordinadas_df, by = "rptpre_id")%>%
   left_join(rodal_df, by = "rptpre_id")%>%
@@ -242,6 +233,11 @@ spatial_match <- all_rural_props %>%
   rename(rptpre_rol = rptpre_rol.y)%>%
   select(colnames(match_by_rol))%>%
   drop_na(rptpro_id)
+
+```
+
+```{r}
+# Combining both sets of matches
 
 enrolled_geoms <- rbind(spatial_match, match_by_rol)
 

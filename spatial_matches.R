@@ -1,26 +1,5 @@
----
-  title: "building native forest law impact dataframes"
-#author: "Albert Garcia"
-output:
-  pdf_document:
-  number_sections: yes
-toc: no
-fontsize: 11pt    
-documentclass: article
-geometry: margin=1in
-header-includes: 
-  \usepackage{sectsty}
-\usepackage{enumitem}
-\usepackage{comment}
-\usepackage{multirow,array}
-\usepackage{makecell}
-\usepackage{dcolumn}
----
-  
-  ```{r setup, include=FALSE}
-knitr::opts_chunk$set(out.height='300px', dpi=200)
 
-### loads tidyverse packages, defines helper functions
+### loads packages
 library(latex2exp)
 library(tidyverse)
 library(ggplot2)
@@ -38,9 +17,10 @@ library(Metrics)
 library(DataCombine)
 library(Hmisc)
 
-```
+#########################################################################################
+###########
+#########################################################################################
 
-``` {r NFL_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 #setting working directory
 
 setwd("C:/Users/garci/Dropbox/chile_reforestation/external_data")
@@ -61,9 +41,11 @@ rodal_df <- read_xlsx("concurso_conaf/rodal.xlsx")
 actividades_df <- read_xlsx("concurso_conaf/actividad.xlsx")
 
 coordinadas_df <- read_xlsx("concurso_conaf/coordinadas_predio.xlsx")
-```
 
-```{r}
+#########################################################################################
+###########
+#########################################################################################
+
 #merging into dataframe of all properties and owners
 property_df <- proyecto_df %>%
   full_join(predio_df, by = "rptpro_id") %>%
@@ -117,9 +99,9 @@ export(NFL_df, "NFL_df.rds")
 
 
 
-```
-
-```{r scraped CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+#########################################################################################
+###########
+#########################################################################################
 setwd("C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef")
 
 # create list of all files with .shp extension in PROPIEDADES_RURALES folder
@@ -133,9 +115,9 @@ propiedadesrurales <- sf::st_as_sf(bind_rows(shapefile_list)) %>%
   mutate(area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
   select(desccomu, rptpre_rol, area_ha)
 
-```
-
-```{r original CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
+#########################################################################################
+###########
+#########################################################################################
 # setwd("C:/Users/garci/Desktop/chile_data/prop_rural")
 
 # fcn to remove accents
@@ -159,34 +141,11 @@ all_rural_props <- prop_rural %>%
   rbind(propiedadesrurales)%>%
   mutate(desccomu = tolower(accents(desccomu)))
 
-```
+#########################################################################################
+###########
+#########################################################################################
 
-```{r CIREN_data, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 
-# rolarea_df <- all_rural_props %>%
-#   merge(NFL_df, by = "rptpre_rol", all = TRUE) %>%
-#   mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl")) %>%
-#   filter(comuna_stringd <= 1) %>%
-#   group_by(prop_ID) %>%
-#   mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
-#          good_ranks = order(order(area_diff, decreasing=FALSE)),
-#          area_prop = area_diff/rptpre_superficie_predial,
-#          treat = 1) %>%
-#   ungroup()%>%
-#   filter(good_ranks ==1 )#& area_prop < 1/3)
-# #%>%st_sf(sf_column_name = 'geometry')
-#   
-# class(rolarea_df)
-# 
-# rolarea_geoms <- rolarea_df %>%
-#   select(prop_ID)%>%
-#   distinct(prop_ID)
-# 
-# class(rolarea_geoms)
-# 
-# #st_write(rolarea_geoms, dsn = "rolarea_geoms.shp", driver = "ESRI Shapefile")
-# library(rio)
-# export(rolarea_df, "rolarea_df.rds")
 
 match_by_rol <- all_rural_props %>%
   inner_join(NFL_df, by = "rptpre_rol")%>%
@@ -214,14 +173,9 @@ match_by_rol <- prop_rural %>%
   rbind(match_by_rol)
 
 
-# st_write(submitted_geoms, dsn = "submitted_geoms.shp", driver = "ESRI Shapefile")
-# library(rio)
-# export(submitted_rol, "submitted_rol.rds")
-```
-
-```{r}
-# missed_submitted <- submitted_mp %>%
-#   anti_join(submittedmp_rol, by = c("rptpre_id")) 
+#########################################################################################
+###########
+#########################################################################################
 
 enrolled_coordinadas <- NFL_df %>%
   left_join(coordinadas_df, by = "rptpre_id")%>%
@@ -264,4 +218,4 @@ used_geoms <- enrolled_geoms %>%
 # 
 # export(used_geoms, "used_geoms.rds")
 # export(all_geoms, "all_geoms.rds")
-```
+

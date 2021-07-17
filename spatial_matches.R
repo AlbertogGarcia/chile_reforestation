@@ -17,92 +17,28 @@ library(Metrics)
 library(DataCombine)
 library(Hmisc)
 
+source('crs_crean_fcn.R')
+
 #########################################################################################
-###########
+########### read in native forest law dataframe
 #########################################################################################
 
 #setting working directory
 
-setwd("C:/Users/garci/Dropbox/chile_reforestation/external_data")
+setwd("C:/Users/garci/Dropbox/chile_collab/input_files")
 
 library(readxl)
 
 # xls files downloaded from CONAF
 #projects
-proyecto_df <- read_xlsx("concurso_conaf/proyecto.xlsx")
-
-#properties and coordinates
-predio_df <- read_xlsx("concurso_conaf/predio.xlsx")
-#owners
-propietario_df <- read_xlsx("concurso_conaf/propietario.xlsx")
-#stands
-rodal_df <- read_xlsx("concurso_conaf/rodal.xlsx")
-#activities
-actividades_df <- read_xlsx("concurso_conaf/actividad.xlsx")
-
-coordinadas_df <- read_xlsx("concurso_conaf/coordinadas_predio.xlsx")
-
-#########################################################################################
-###########
-#########################################################################################
-
-#merging into dataframe of all properties and owners
-property_df <- proyecto_df %>%
-  full_join(predio_df, by = "rptpro_id") %>%
-  full_join(propietario_df, by = "rptpre_id")%>%
-  group_by(rptpre_rol, rptpre_comuna, rptpre_region)%>%
-  mutate(prop_ID = cur_group_id())%>%
-  ungroup()
-
-full_df <- property_df %>%
-  left_join(rodal_df, by = "rptpre_id") %>%
-  left_join(actividades_df, by = "rptro_id")
-
-activity_df <- property_df %>%
-  left_join(rodal_df, by = "rptpre_id") %>%
-  left_join(actividades_df, by = "rptro_id") %>%
-  dcast(prop_ID
-        + rptpro_ano
-        ~ rptac_tipo, 
-        fun.aggregate = function(x){as.integer(length(x) > 0)})%>%
-  group_by(prop_ID)%>%
-  mutate(reforestation = ifelse(plantacion == 1 | `plantacion-suplementaria`==1 | regeneracion==1 , 1, 0),
-         reforestation2 = ifelse(plantacion == 1 | `plantacion-suplementaria`==1 | regeneracion==1 |`corta-regeneracion`==1, 1, 0),
-         ref_indicyr = ifelse(reforestation ==1 , rptpro_ano, NA),
-         ref2_indicyr = ifelse(reforestation2 ==1 , rptpro_ano, NA),
-         reffirst.treat = ifelse(reforestation ==1, min(ref_indicyr), NA),
-         ref2first.treat = ifelse(reforestation2 ==1, min(ref2_indicyr), NA)
-  )%>%
-  ungroup()%>%
-  select(-c(ref_indicyr, ref2_indicyr))
-
-# fcn to remove accents
-accents <- function(x){
-  x <- stri_trans_general(x, id = "Latin-ASCII")
-}
-
-NFL_df <- property_df %>%
-  left_join(activity_df, by = c("prop_ID" , "rptpro_ano"))%>%
-  mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))
-
-NFL_df <- property_df %>%
-  #filter(rptpro_tiene_plan_saff == "Si" | rptpro_tiene_bonificacion_saff == "Si")%>%
-  mutate(rptpre_comuna = tolower(accents(rptpre_comuna)))%>%
-  separate(rptpre_rol, into = c("rol1", "rol2"), sep = "-", remove=FALSE)%>%
-  mutate(rol1 = str_remove(rol1, "^0+"),
-         rol2 = str_remove(rol2, "^0+"))%>%
-  unite("rptpre_rol", rol1, rol2, sep="-")
-
-
-library(rio)
-export(NFL_df, "NFL_df.rds")
+NFL_df <- readRDS("NFL_df.rds")
 
 
 
 #########################################################################################
 ###########
 #########################################################################################
-setwd("C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef")
+setwd("C:/Users/garci/Dropbox/chile_collab")
 
 # create list of all files with .shp extension in PROPIEDADES_RURALES folder
 file_list <- list.files("PROPIEDADES_RURALES", pattern = "*shp", full.names = TRUE)
@@ -118,63 +54,29 @@ propiedadesrurales <- sf::st_as_sf(bind_rows(shapefile_list)) %>%
 #########################################################################################
 ###########
 #########################################################################################
-# setwd("C:/Users/garci/Desktop/chile_data/prop_rural")
-
-# fcn to remove accents
 
 prop_rural <- st_read(
-  "C:/Users/garci/Desktop/UCSB/chile_data/prop_rural/prop_rural.shp"
+  "C:/Users/garci/Dropbox/chile_collab/prop_rural.shp"
 )%>%
   rename(rptpre_rol = ROL, desccomu = DESCCOMU)%>%
   st_transform(crs = st_crs(propiedadesrurales))%>%
   mutate(area_ha = as.numeric(units::set_units(st_area(.), ha)),
          desccomu = tolower(accents(desccomu)))
 
-# prop_rural1 <- prop_rural %>%
-#   separate(rptpre_rol, into = c("rol1", "rol2"), sep = "-", remove=FALSE)%>%
-#   mutate(rol1 = str_remove(rol1, "^0+"),
-#          rol2 = str_remove(rol2, "^0+"))%>%
-#   unite("rptpre_rol", rol1, rol2, sep="-")
+#########################################################################################
+########### combine both sets of property boundaries
+#########################################################################################
+
 
 all_rural_props <- prop_rural %>%  
   select(desccomu, rptpre_rol, area_ha) %>%
   rbind(propiedadesrurales)%>%
   mutate(desccomu = tolower(accents(desccomu)))
 
-#########################################################################################
-###########
-#########################################################################################
-
-
-
-match_by_rol <- all_rural_props %>%
-  inner_join(NFL_df, by = "rptpre_rol")%>%
-  mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl")) %>%
-  filter(comuna_stringd <= 1) %>%
-  group_by(prop_ID) %>%
-  mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
-         area_prop = area_diff/rptpre_superficie_predial,
-         treat = 1) %>%
-  #filter(area_diff == min(area_diff))%>%
-  ungroup()%>%
-  select(-comuna_stringd)
-
-match_by_rol <- prop_rural %>%
-  merge(NFL_df, by = "rptpre_rol", all = TRUE) %>%
-  mutate(comuna_stringd = stringdist(rptpre_comuna, desccomu, method = "dl")) %>%
-  filter(between(comuna_stringd, 2, 3)) %>%
-  mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
-         area_prop = area_diff/rptpre_superficie_predial,
-         treat = 1)%>%
-  group_by(rptpre_id)%>%
-  filter(area_prop<.5 & area_diff==min(area_diff) &(area_prop <.25 | comuna_stringd <3))%>%
-  ungroup()%>%
-  select(colnames(submittedmp_rol))%>%
-  rbind(match_by_rol)
 
 
 #########################################################################################
-###########
+########### perform spatial match
 #########################################################################################
 
 enrolled_coordinadas <- NFL_df %>%
@@ -197,25 +99,5 @@ spatial_match <- all_rural_props %>%
   select(colnames(match_by_rol))%>%
   drop_na(rptpro_id)
 
-enrolled_geoms <- rbind(spatial_match, match_by_rol)
 
-
-geoms <- enrolled_geoms %>%
-  group_by(prop_ID)%>%
-  filter(area_diff==min(area_diff) )%>%
-  mutate(id = row_number()) %>% 
-  filter(id == 1) %>% 
-  select(prop_ID, -id)
-
-used_geoms <- enrolled_geoms %>%
-  group_by(prop_ID)%>%
-  filter(area_diff==min(area_diff) )%>%
-  mutate(id = row_number()) %>% 
-  filter(id == 1) %>% 
-  select(prop_ID, -id, area_diff, area_ha, area_prop)
-
-# st_write(geoms, dsn = "geoms.shp", driver = "ESRI Shapefile")
-# 
-# export(used_geoms, "used_geoms.rds")
-# export(all_geoms, "all_geoms.rds")
 

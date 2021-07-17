@@ -17,7 +17,7 @@ library(Metrics)
 library(DataCombine)
 library(Hmisc)
 
-source('crs_crean_fcn.R')
+source('crs_clean_fcn.R')
 
 #########################################################################################
 ########### read in native forest law dataframe
@@ -25,20 +25,37 @@ source('crs_crean_fcn.R')
 
 #setting working directory
 
-setwd("C:/Users/garci/Dropbox/chile_collab/input_files")
+setwd("C:/Users/garci/Dropbox/chile_collab")
 
 library(readxl)
 
 # xls files downloaded from CONAF
 #projects
-NFL_df <- readRDS("NFL_df.rds")
+NFL_df <- readRDS("input_files/NFL_df.rds")
+
+library(readxl)
+coordinadas_df <- read_xlsx("concurso_conaf/coordinadas_predio.xlsx")
+
+#stands
+rodal_df <- read_xlsx("concurso_conaf/rodal.xlsx")
 
 
 
 #########################################################################################
 ###########
 #########################################################################################
-setwd("C:/Users/garci/Dropbox/chile_collab")
+
+prop_rural <- st_make_valid(st_read(
+  "prop_rural.shp"
+))%>%
+  rename(rptpre_rol = ROL, desccomu = DESCCOMU)%>%
+  #st_transform(crs = st_crs(propiedadesrurales))%>%
+  mutate(area_ha = as.numeric(units::set_units(st_area(.), ha)),
+         desccomu = tolower(accents(desccomu)))
+
+#########################################################################################
+###########
+#########################################################################################
 
 # create list of all files with .shp extension in PROPIEDADES_RURALES folder
 file_list <- list.files("PROPIEDADES_RURALES", pattern = "*shp", full.names = TRUE)
@@ -46,34 +63,20 @@ file_list <- list.files("PROPIEDADES_RURALES", pattern = "*shp", full.names = TR
 shapefile_list <- lapply(file_list, read_sf)
 
 # bind rows into df then to sf object
-propiedadesrurales <- sf::st_as_sf(bind_rows(shapefile_list)) %>%
+propiedadesrurales <- st_make_valid(sf::st_as_sf(bind_rows(shapefile_list))) %>%
   rename(rptpre_rol = rol)%>%
   mutate(area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
-  select(desccomu, rptpre_rol, area_ha)
-
-#########################################################################################
-###########
-#########################################################################################
-
-prop_rural <- st_read(
-  "C:/Users/garci/Dropbox/chile_collab/prop_rural.shp"
-)%>%
-  rename(rptpre_rol = ROL, desccomu = DESCCOMU)%>%
-  st_transform(crs = st_crs(propiedadesrurales))%>%
-  mutate(area_ha = as.numeric(units::set_units(st_area(.), ha)),
-         desccomu = tolower(accents(desccomu)))
+  select(desccomu, rptpre_rol, area_ha)%>%
+  st_transform(crs = st_crs(prop_rural))
 
 #########################################################################################
 ########### combine both sets of property boundaries
 #########################################################################################
 
-
 all_rural_props <- prop_rural %>%  
   select(desccomu, rptpre_rol, area_ha) %>%
   rbind(propiedadesrurales)%>%
   mutate(desccomu = tolower(accents(desccomu)))
-
-
 
 #########################################################################################
 ########### perform spatial match
@@ -95,8 +98,6 @@ spatial_match <- all_rural_props %>%
          area_prop = area_diff/rptpre_superficie_predial,
          treat = 1
   )%>%
-  rename(rptpre_rol = rptpre_rol.y)%>%
-  select(colnames(match_by_rol))%>%
   drop_na(rptpro_id)
 
 

@@ -25,7 +25,7 @@ source('crs_clean_fcn.R')
 
 #setting working directory
 
-setwd("C:/Users/garci/Dropbox/chile_collab")
+setwd("/Users/tiffanyhsu/Dropbox/chile_collab")
 
 library(readxl)
 
@@ -44,6 +44,11 @@ rodal_df <- read_xlsx("concurso_conaf/rodal.xlsx")
 #########################################################################################
 ###########
 #########################################################################################
+# fcn to remove accents
+accents <- function(x){
+  x <- stri_trans_general(x, id = "Latin-ASCII")
+}
+
 
 prop_rural <- st_make_valid(st_read(
   "prop_rural.shp"

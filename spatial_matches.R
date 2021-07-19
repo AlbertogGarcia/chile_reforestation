@@ -17,15 +17,15 @@ library(Metrics)
 library(DataCombine)
 library(Hmisc)
 
-source('crs_clean_fcn.R')
+source(here::here("chile_reforestation" , "crs_clean_fcn.R"))
 
 #########################################################################################
 ########### read in native forest law dataframe
 #########################################################################################
 
 #setting working directory
-
-setwd("/Users/tiffanyhsu/Dropbox/chile_collab")
+setwd("C:/Users/garci/Dropbox/chile_collab")
+# setwd("/Users/tiffanyhsu/Dropbox/chile_collab")
 
 library(readxl)
 
@@ -96,6 +96,20 @@ enrolled_coordinadas <- NFL_df %>%
          huso = ifelse(is.na(rptro_huso), rptub_huso, rptro_huso))%>%
   crs_clean_fcn(.)%>%
   st_transform(crs = st_crs(all_rural_props))
+
+# generate buffer around point coordinates
+
+enrolled_buffer <- enrolled_coordinadas %>%
+  
+  
+  
+spatial_match_buffer <- all_rural_props %>%
+  st_join(enrolled_buffer)%>%
+  mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
+         area_prop = area_diff/rptpre_superficie_predial,
+         treat = 1
+  )%>%
+  drop_na(rptpro_id)
 
 spatial_match <- all_rural_props %>%
   st_join(enrolled_coordinadas)%>%

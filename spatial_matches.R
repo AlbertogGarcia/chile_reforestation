@@ -17,7 +17,7 @@ library(Metrics)
 library(DataCombine)
 library(Hmisc)
 
-source(here::here("chile_reforestation" , "crs_clean_fcn.R"))
+source(here::here("crs_clean_fcn.R"))
 
 #########################################################################################
 ########### read in native forest law dataframe
@@ -79,8 +79,8 @@ propiedadesrurales <- st_make_valid(sf::st_as_sf(bind_rows(shapefile_list))) %>%
 #########################################################################################
 
 all_rural_props <- prop_rural %>%  
-  select(desccomu, rptpre_rol, area_ha) %>%
-  rbind(propiedadesrurales)%>%
+  select(desccomu, rptpre_rol, area_ha, PROPIETARI, NOM_PREDIO) %>%
+  bind_rows(propiedadesrurales)%>%
   mutate(desccomu = tolower(accents(desccomu)))
 
 #########################################################################################
@@ -99,17 +99,19 @@ enrolled_coordinadas <- NFL_df %>%
 
 # generate buffer around point coordinates
 
-enrolled_buffer <- enrolled_coordinadas %>%
-  
-  
-  
+enrolled_buffer <- st_buffer(enrolled_coordinadas, 250)
+
+# spatial match based on buffer  
+
 spatial_match_buffer <- all_rural_props %>%
   st_join(enrolled_buffer)%>%
-  mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
+  mutate(area_diff = abs(area_ha - rptpre_superficie_predial),
          area_prop = area_diff/rptpre_superficie_predial,
          treat = 1
   )%>%
   drop_na(rptpro_id)
+
+# spatial match based on point coordinates  
 
 spatial_match <- all_rural_props %>%
   st_join(enrolled_coordinadas)%>%
@@ -119,5 +121,18 @@ spatial_match <- all_rural_props %>%
   )%>%
   drop_na(rptpro_id)
 
+# get distinct property boundaries for each project
+
+spatial_test <- spatial_match_buffer %>%
+  select(rptpro_id, rptpre_rol.x, rptpre_rol.y, area_diff, area_ha, rptpre_superficie_predial, PROPIETARI, rptprop_nombre, NOM_PREDIO, rptpre_nombre) %>%
+  #distinct(rptpro_id, NOM_PREDIO, area_ha, .keep_all=TRUE)
+  unique(by = c("rptpro_id", "NOM_PREDIO", "area_ha"))
+
+# eliminate particularly bad matches
+
+spatial_test2 <- spatial_test %>%
+  group_by(rptpro_id) %>%
+  mutate(rank = dense_rank(area_diff)) %>%
+  filter(rank <= 5)
 
 

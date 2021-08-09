@@ -128,11 +128,5 @@ spatial_test <- spatial_match_buffer %>%
   #distinct(rptpro_id, NOM_PREDIO, area_ha, .keep_all=TRUE)
   unique(by = c("rptpro_id", "NOM_PREDIO", "area_ha"))
 
-# eliminate particularly bad matches
-
-spatial_test2 <- spatial_test %>%
-  group_by(rptpro_id) %>%
-  mutate(rank = dense_rank(area_diff)) %>%
-  filter(rank <= 5)
 
 

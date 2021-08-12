@@ -24,8 +24,8 @@ source(here::here("crs_clean_fcn.R"))
 #########################################################################################
 
 #setting working directory
-setwd("C:/Users/garci/Dropbox/chile_collab")
-# setwd("/Users/tiffanyhsu/Dropbox/chile_collab")
+# setwd("C:/Users/garci/Dropbox/chile_collab")
+setwd("/Users/tiffanyhsu/Dropbox/chile_collab")
 
 library(readxl)
 
@@ -127,6 +127,12 @@ spatial_test <- spatial_match_buffer %>%
   select(rptpro_id, rptpre_rol.x, rptpre_rol.y, area_diff, area_ha, rptpre_superficie_predial, PROPIETARI, rptprop_nombre, NOM_PREDIO, rptpre_nombre) %>%
   #distinct(rptpro_id, NOM_PREDIO, area_ha, .keep_all=TRUE)
   unique(by = c("rptpro_id", "NOM_PREDIO", "area_ha"))
+
+# sorting by ID & area differences, then taking top 5 closest properties
+spatial_cleaned <- spatial_test %>% 
+  arrange(rptpro_id, area_diff) %>% 
+  group_by(rptpro_id) %>% 
+  slice(1:5)
 
 
 

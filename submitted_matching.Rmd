@@ -42,33 +42,97 @@ NFL_df <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_a
 all_matchpool <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/all_matchpool.rds"))
 my_match <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/my_match.rds"))
 
-# native_df <- NFL_df %>%
-#   mutate(submitted_mp = ifelse( rptpro_tiene_plan_saff!="No", 1, 0))%>%
-#   distinct(prop_ID, submitted_mp, .keep_all = TRUE)
+native_df <- NFL_df %>%
+  mutate(submitted_mp = ifelse( rptpro_tiene_plan_saff=="Si", 1, 0))%>%
+  distinct(prop_ID, submitted_mp, .keep_all = TRUE)
 
-# follow_thru <- my_match %>%
-#   inner_join(native_df, by = "prop_ID")%>%
-#   mutate(treat=1,
-#          forest = c_1,
-#          plantation = c_3,
-#          baresoil = c_12,+c_10,
-#          pasture = c_9,
-#          shrub = c_5,
-#          water = c_15,
-#          urban = c_16,
-#          plantation2 = plantation*area_ha)%>%
-#   filter(area_diff<100)%>%
-#   drop_na(submitted_mp)
-# 
-# mod <- lm(submitted_mp ~  as.factor(rptprop_etnia) + as.factor(rptpro_objetivo_manejo) + as.factor(rptpro_tipo_concurso) + as.factor(rptpro_ano) + rptpro_monto_total + rptpre_superficie_predial+rptpre_superficie_bonificada + as.factor(rptpro_tipo_presenta)+as.factor(rptpre_region), data = native_df)
-# summary(mod)
-# 
-# mod2 <- lm(submitted_mp ~  plantation, data = follow_thru)
-# summary(mod2)
-# mod2 <- lm(submitted_mp ~  pasture, data = follow_thru)
-# summary(mod2)
+follow_thru <- my_match %>%
+  inner_join(native_df, by = "prop_ID")%>%
+  mutate(treat=1,
+         forest = c_1,
+         plantation = c_3,
+         baresoil = c_12,+c_10,
+         pasture = c_9,
+         shrub = c_5,
+         water = c_15,
+         urban = c_16,
+         road_dist = unlist(road_dist),
+         industry_dist = unlist(industry_dist),
+         native_industry_dist = unlist(native_industry_dist),
+         female = ifelse(rptprop_sexo == "Femenino", "Female", ifelse(rptprop_sexo == "Masculino", "Male", "Not reported")),
+         indig_etnia = ifelse(is.na(rptprop_etnia) & treat==1, 0, ifelse(treat==0, NA, 1)), 
+         ind_comunidad = grepl(pattern = "indigena", accents(tolower(rptprop_razon_social)))*1,
+         indigenous = ifelse(ind_comunidad==1 | indig_etnia==1, "indigenous", "not indigenous"))%>%
+  filter(area_diff<10000 & rptpro_ano < 2019)%>%
+  drop_na(submitted_mp)
+
+source('summarySE.R')
+
+submitby_contest <- ggplot(summarySE(follow_thru, measurevar="submitted_mp", groupvars=c("rptpro_tipo_concurso"), na.rm = TRUE), 
+       aes(x=rptpro_tipo_concurso, y=submitted_mp, fill=c("firebrick4", "green4"))
+       ) + 
+  geom_bar(position=position_dodge(), stat="identity") +
+  geom_errorbar(aes(ymin=submitted_mp-se, ymax=submitted_mp+se), width=.25, position=pd) +
+  xlab("contest")+
+  ylab("proportion with submitted management plan")+ggtitle("follow through by contest")+theme(legend.position = "none")
+
+submitby_objective <- ggplot(summarySE(follow_thru, measurevar="submitted_mp", groupvars=c("rptpro_objetivo_manejo"), na.rm = TRUE), 
+       aes(x=rptpro_objetivo_manejo, y=submitted_mp, fill=c("firebrick4", "green4", "blue"))
+       ) + 
+  geom_bar(position=position_dodge(), stat="identity") +
+  geom_errorbar(aes(ymin=submitted_mp-se, ymax=submitted_mp+se), width=.25, position=pd) +
+  xlab("contest")+
+  ylab("proportion with submitted management plan")+ggtitle("follow through by project objective")+theme(legend.position = "none")
+
+submitby_sex <- ggplot(summarySE(follow_thru, measurevar="submitted_mp", groupvars=c("female"), na.rm = TRUE), 
+       aes(x=female, y=submitted_mp, fill=c("firebrick4", "green4", "blue"))
+       ) + 
+  geom_bar(position=position_dodge(), stat="identity") +
+  geom_errorbar(aes(ymin=submitted_mp-se, ymax=submitted_mp+se), width=.25, position=pd) +
+  xlab("contest")+
+  ylab("proportion with submitted management plan")+ggtitle("follow through by gender")+theme(legend.position = "none")
+
+submitby_indigenous <- ggplot(summarySE(follow_thru, measurevar="submitted_mp", groupvars=c("indigenous"), na.rm = TRUE), 
+       aes(x=indigenous, y=submitted_mp, fill=c("firebrick4", "green4"))
+       ) + 
+  geom_bar(position=position_dodge(), stat="identity") +
+  geom_errorbar(aes(ymin=submitted_mp-se, ymax=submitted_mp+se), width=.25, position=pd) +
+  xlab("contest")+
+  ylab("proportion with submitted management plan")+ggtitle("follow through for indigenous peoples")+theme(legend.position = "none")
+
+
 
 ```
+
+```{r, include = FALSE}
+
+score <- t.test(rptpro_puntaje ~ submitted_mp, data = follow_thru)
+payment <- t.test(rptpre_monto_total ~ submitted_mp, data = follow_thru)
+area_bono <- t.test(rptpre_superficie_bonificada ~ submitted_mp, data = follow_thru)
+area_prop <- t.test(rptpre_superficie_predial ~ submitted_mp, data = follow_thru)
+forest <- t.test(forest ~ submitted_mp, data = follow_thru)
+plantation <- t.test(plantation ~ submitted_mp, data = follow_thru)
+pasture <- t.test(pasture ~ submitted_mp, data = follow_thru)
+slope <- t.test(slope ~ submitted_mp, data = follow_thru)
+elev <- t.test(elev ~ submitted_mp, data = follow_thru)
+native_ind <- t.test(native_industry_dist ~ submitted_mp, data = follow_thru)
+industry <- t.test(industry_dist ~ submitted_mp, data = follow_thru)
+road <- t.test(road_dist ~ submitted_mp, data = follow_thru)
+erosion <- t.test(proportion_erosion ~ submitted_mp, data = follow_thru)
+shrub <- t.test(shrub ~ submitted_mp, data = follow_thru)
+
+
+covar <- c("score", "award (UTM)", "bonus area (ha)", "property area (ha)", "proportion forest", "proportion plantation", "proportion pasture", "proportion shrub", "mod-to-severe erosion", "slope", "elevation", "dist. to native timber processing", "dist. to any timber processing", "dist. to road" )
+paid <- c(score$estimate[2], payment$estimate[2], area_bono$estimate[2],  area_prop$estimate[2],  forest$estimate[2], plantation$estimate[2], pasture$estimate[2], shrub$estimate[2], erosion$estimate[2], slope$estimate[2], elev$estimate[2], native_ind$estimate[2], industry$estimate[2], road$estimate[2])
+unpaid <- c(score$estimate[1], payment$estimate[1], area_bono$estimate[1],  area_prop$estimate[1],  forest$estimate[1], plantation$estimate[1], pasture$estimate[1], shrub$estimate[1], erosion$estimate[1], slope$estimate[1], elev$estimate[1], native_ind$estimate[1], industry$estimate[1], road$estimate[1])
+p_value <-  c(score$p.value, payment$p.value, area_bono$p.value,  area_prop$p.value,  forest$p.value, plantation$p.value, pasture$p.value, shrub$p.value, erosion$p.value, slope$p.value, elev$p.value, native_ind$p.value, industry$p.value, road$p.value)
+
+follow_thru_covars <- data.frame(covar, paid, unpaid, p_value) %>%
+  mutate(p_value = round(p_value, digits = 5))
+library(rio)
+export(follow_thru_covars, "follow_thru_covars.rds" )
+```
+
 
 ```{r}
 # combining regional matchpools and treatedmatches
@@ -78,8 +142,9 @@ native_forest_df <- NFL_df %>%
 sumbit_ids <- native_forest_df %>%
   group_by(prop_ID)%>%
   mutate(first.treat = min(rptpro_ano),
-         smallholder = ifelse(rptpro_tipo_concurso != "Otros Interesados", 1, 0))%>%
-  select(prop_ID, first.treat, smallholder) %>%
+         #smallholder = ifelse(rptpro_tipo_concurso != "Otros Interesados", 1, 0)
+         )%>%
+  select(prop_ID, first.treat, rptpre_superficie_predial) %>%
   distinct(prop_ID, .keep_all = TRUE)
 
 my_submitted_match <- my_match %>%
@@ -91,7 +156,10 @@ my_submitted_match <- my_match %>%
          pasture = c_9,
          shrub = c_5,
          water = c_15,
-         urban = c_16)
+         urban = c_16,
+        # property_area_ha = rptpre_superficie_predial
+        )%>%
+  select(prop_ID, geometry.x, treat, first.treat, rptpre_superficie_predial, area_diff, property_area_ha, road_dist, lat, long, slope, elev, treat, forest, plantation, water, shrub, baresoil, pasture, urban, proportion_erosion, mod_to_severe_erosion_area, industry_dist, native_industry_dist, y_2005:y_2020, evi_2005:evi_2020)
 
 df <- data.frame(my_submitted_match)%>%
   bind_rows(all_matchpool)%>%
@@ -123,7 +191,10 @@ df <- data.frame(my_submitted_match)%>%
          evi_trend0807 = evi_2008 - evi_2007,
          evi_trend0706 = evi_2007 - evi_2006,
          evi_trend0605 = evi_2006 - evi_2005,
-         road_dist = unlist(road_dist))%>%
+         road_dist = unlist(road_dist),
+         industry_dist = unlist(industry_dist),
+         native_industry_dist = unlist(native_industry_dist),
+         )%>%
   mutate(id = 1:nrow(.))
 library(rio)
 export(df, "matching_df.rds")
@@ -135,7 +206,7 @@ export(df, "matching_df.rds")
 ```{r}
 
 # create matched dataframes
-df <- readRDS("matching_df.rds")
+df <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/matching_df.rds")
 ```
 
 ```{r}
@@ -147,72 +218,74 @@ df <- df %>%
 
 r=2
 
-
+my_match_method = "nearest"
+my_distance = "glm"
+#my_distance = "mahalanobis"
 
 matched_2009 <- matchit(treat ~ evi_trend0807 + evi_trend0706 + evi_trend0605 + y_2007
-                        + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
+                        + forest + plantation + baresoil + pasture + shrub + urban +water +proportion_erosion+ slope + elev + lat +long + property_area_ha + road_dist + industry_dist + native_industry_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2009),
-                 method = "nearest", ratio = r)
+                 method = my_match_method, ratio = r, distance = my_distance)
 
 matched_2010 <- matchit(treat ~ evi_trend0908 + evi_trend0807 + evi_trend0706  + evi_trend0605
                         + y_2007
-                        + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
+                        + forest + plantation + baresoil + pasture + shrub + urban +water +proportion_erosion+ slope + elev + lat +long + property_area_ha + road_dist + industry_dist + native_industry_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2010),
-                 method = "nearest", ratio = r)
+                 method = my_match_method, ratio = r, distance = my_distance)
 
 matched_2011 <- matchit(treat ~ evi_trend1009 + evi_trend0908 + evi_trend0807 + evi_trend0706 + evi_trend0605
                         + y_2007
-                        + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
+                        + forest + plantation + baresoil + pasture + shrub + urban +water +proportion_erosion+ slope + elev + lat +long + property_area_ha + road_dist + industry_dist + native_industry_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2011),
-                 method = "nearest", ratio = r)
+                 method = my_match_method, ratio = r, distance = my_distance)
 
 matched_2012 <- matchit(treat ~ evi_trend1110 + evi_trend1009 + evi_trend0908 + evi_trend0807+ evi_trend0706 +evi_trend0605
                         + y_2007
-                        + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
+                        + forest + plantation + baresoil + pasture + shrub + urban +water +proportion_erosion+ slope + elev + lat +long + property_area_ha + road_dist + industry_dist + native_industry_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2012),
-                 method = "nearest", ratio = r)
+                 method = my_match_method, ratio = r, distance = my_distance)
 
 matched_2013 <- matchit(treat ~ evi_trend1211 + evi_trend1110 + evi_trend1009 + evi_trend0908 + evi_trend0807+ evi_trend0706 + evi_trend0605
                         + y_2007
-                        + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
+                        + forest + plantation + baresoil + pasture + shrub + urban +water +proportion_erosion+ slope + elev + lat +long + property_area_ha + road_dist + industry_dist + native_industry_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2013),
-                 method = "nearest", ratio = r)
+                 method = my_match_method, ratio = r, distance = my_distance)
 
 matched_2014 <- matchit(treat ~ evi_trend1312 + evi_trend1211 + evi_trend1110 + evi_trend1009 + evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
                         + y_2007
-                        + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
+                        + forest + plantation + baresoil + pasture + shrub + urban +water +proportion_erosion+ slope + elev + lat +long + property_area_ha + road_dist + industry_dist + native_industry_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2014),
-                 method = "nearest", ratio = r)
+                 method = my_match_method, ratio = r, distance = my_distance)
 
 matched_2015 <- matchit(treat ~ evi_trend1413 + evi_trend1312 + evi_trend1211 + evi_trend1110 + evi_trend1009 + evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
                         + y_2007
-                        + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
+                        + forest + plantation + baresoil + pasture + shrub + urban +water +proportion_erosion+ slope + elev + lat +long + property_area_ha + road_dist + industry_dist + native_industry_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2015),
-                 method = "nearest", ratio = r)
+                 method = my_match_method, ratio = r, distance = my_distance)
 
 matched_2016 <- matchit(treat ~ evi_trend1514 + evi_trend1413 + evi_trend1312 + evi_trend1211 + evi_trend1110+ evi_trend1009 + evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
                         +  y_2007
-                        + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
+                        + forest + plantation + baresoil + pasture + shrub + urban +water +proportion_erosion+ slope + elev + lat +long + property_area_ha + road_dist + industry_dist + native_industry_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2016),
-                 method = "nearest", ratio = r)
+                 method = my_match_method, ratio = r, distance = my_distance)
 
 matched_2017 <- matchit(treat ~ evi_trend1615 + evi_trend1514 + evi_trend1413 + evi_trend1312 + evi_trend1211+ evi_trend1110+ evi_trend1009 + evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
                         +  y_2007
-                        + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
+                        + forest + plantation + baresoil + pasture + shrub + urban +water +proportion_erosion+ slope + elev + lat +long + property_area_ha + road_dist + industry_dist + native_industry_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2017),
-                 method = "nearest", ratio = r)
+                 method = my_match_method, ratio = r, distance = my_distance)
 
 matched_2018 <- matchit(treat ~ evi_trend1716 + evi_trend1615 + evi_trend1514 + evi_trend1413 + evi_trend1312 + evi_trend1211+ evi_trend1110+ evi_trend1009 + evi_trend0908+evi_trend0807+ evi_trend0706 +evi_trend0605
                         +  y_2007
-                        + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
+                        + forest + plantation + baresoil + pasture + shrub + urban +water +proportion_erosion+ slope + elev + lat +long + property_area_ha + road_dist + industry_dist + native_industry_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2018),
-                 method = "nearest", ratio = r)
+                 method = my_match_method, ratio = r, distance = my_distance)
 
 matched_2019 <- matchit(treat ~ evi_trend1817 + evi_trend1716 + evi_trend1615 + evi_trend1514 + evi_trend1413 + evi_trend1312 + evi_trend1211+ evi_trend1110+ evi_trend1009 + evi_trend0908+evi_trend0807+ evi_trend0706 + evi_trend0605
                         + y_2007
-                        + forest + plantation + baresoil + pasture + shrub + urban +water + slope + elev + lat +long + area_ha + road_dist,
+                        + forest + plantation + baresoil + pasture + shrub + urban +water +proportion_erosion+ slope + elev + lat +long + property_area_ha + road_dist + industry_dist + native_industry_dist,
                    data = subset(df, first.treat == 0 | first.treat == 2019),
-                 method = "nearest", ratio = r)
+                 method = my_match_method, ratio = r, distance = my_distance)
 
 
 map_covars <- function(df){
@@ -220,9 +293,9 @@ map_covars <- function(df){
   
     return_df <- df %>%
     group_by(subclass)%>%
-    mutate(smallholder = max(smallholder, na.rm = TRUE)
+    #mutate(smallholder = max(smallholder, na.rm = TRUE)
          #quartile = max(quartile, na.rm = TRUE)
-         )%>%
+     #    )%>%
     ungroup()
   
  return(return_df)
@@ -243,58 +316,7 @@ matched_wide <- map_covars(match.data(matched_2009, subclass = "subclass"))%>%
   bind_rows(map_covars(match.data(matched_2019, subclass = "subclass")))%>%
   distinct(id, .keep_all = TRUE)
 
-export(matched_wide, "matched_wide.rds")
-
-# ndvi_year_vars <- c("y_2005", "y_2006", "y_2007", "y_2008", "y_2009", "y_2010", "y_2011", "y_2012", "y_2013", "y_2014", "y_2015", "y_2016", "y_2017", "y_2018", "y_2019", "y_2020")
-# 
-# evi_year_vars <- c("evi_2005", "evi_2006", "evi_2007", "evi_2008", "evi_2009", "evi_2010", "evi_2011", "evi_2012", "evi_2013", "evi_2014", "evi_2015", "evi_2016", "evi_2017", "evi_2018", "evi_2019", "evi_2020")
-# 
-# id_vars <- c("id", "smallholder", "forest", "plantation" , "baresoil" , "shrub", "pasture" , "urban", "water", "slope" , "elev"  , "area_ha" , "road_dist", "lat", "long", "treat", "first.treat" )
-# 
-# m_long <- melt(matched_wide, id.vars = id_vars,  variable.name = c("Year"), value.name = c("EVI2"), measure.vars = evi_year_vars) %>%
-#   separate(Year, into = c(NA, "Year"), sep = "_")
-
-```
-
-```{r}
-
-
-# control_matches <- matched_wide %>%
-#   drop_na(controlid)%>%
-#   select(controlid)
-# 
-# control_geoms <- all_matchpool %>%
-#   inner_join(control_matches, by = "controlid")%>%
-#   select(controlid)
-# 
-# st_write(control_geoms, dsn = "control_geoms.shp", driver = "ESRI Shapefile")
-  
-
-```
-
-```{r}
-# setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/control_evi")
-# 
-# # load evi time series for all matched properties
-# temp = list.files(pattern="*.csv")
-# control_evi = bind_rows(lapply(temp, read_csv))%>%
-#   select(controlid, year, mean) %>%
-#   distinct(controlid, year, .keep_all = TRUE) %>%
-#   rename(evi2 = mean,
-#          Year=year)
-
-```
-
-```{r}
-# setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/enrolled/evi2")
-# 
-# # load evi time series for all matched properties
-# temp = list.files(pattern="*.csv")
-# treat_evi = bind_rows(lapply(temp, read_csv))%>%
-#   select(prop_ID, year, mean) %>%
-#   distinct(prop_ID, year, .keep_all = TRUE) %>%
-#   rename(evi2 = mean,
-#          Year=year)
+export(matched_wide, "matched_wide_updated.rds")
 
 ```
 
@@ -339,51 +361,122 @@ treat_long <- treat_wide %>%
   
 matched_long <- bind_rows(control_long, treat_long)
 
-export(matched_long, "mgmtplan_analysis.rds")
+data <- matched_long %>%
+  mutate(G = first.treat,
+         period = Year,
+         Y = EVI2,
+         id = as.numeric(id))
+data$geometry.x <- NULL
+data$geometry.y <- NULL
+data$geometry <- NULL
 
+export(data, "mgmtplan_analysis_updated.rds")
+
+```
+
+```{r}
+library(did)
+
+quantile(subset(matched_long, treat==1)$area_diff, .9)
+check <- matched_long %>%
+  filter(treat==1 & area_diff > quantile(subset(matched_long, treat==1)$area_diff, .9))
+data <- matched_long %>%
+  filter(treat==0 | (area_diff <= quantile(subset(matched_long, treat==1)$area_diff, .9)))
+
+did <- att_gt(yname="EVI2",
+              tname="Year",
+              idname="id",
+              gname="first.treat",
+              est_method = "dr",
+              xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev + property_area_ha 
+              ,
+              data=data, clustervars = "id"
+              , panel=TRUE, bstrap = TRUE
+)
+
+aggte(did, type="dynamic")$overall.att
+did.ovr <- aggte(did, type="simple")
+ggdid(aggte(did, type="dynamic"))
 ```
 
 
 
 ```{r}
+matched_wide <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/matched_wide_updated.rds")%>%
+  filter(treat==0 | area_diff <= quantile(subset(matched_long, treat==1)$area_diff, .9))
 
-dta <- matched_long %>%
-  mutate(G = first.treat,
-         period = Year,
-         Y = NDVI)
-dta$geometry.x <- NULL
-dta$geometry.y <- NULL
+df <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/matching_df.rds")
+df <- df %>%
+  drop_na(elev, slope)
 
-library(plm)
-# the number of bootstrap iterations
-biters <- 50
+baltest_covs <- subset(matched_wide, select = c("forest" ,"plantation" , "baresoil", "pasture", "urban", "water", "slope", "elev", "property_area_ha", "road_dist", "industry_dist", "native_industry_dist", "proportion_erosion", "y_2007"))
+library(cobalt)
+bal_match <- bal.tab(baltest_covs, treat = matched_wide$treat,thresholds = c(m = .25))[[1]][,2:3]
 
-# list to store bootstrap results
-boot.res <- list()
+baltestun_covs <- subset(df, select = c("forest" ,"plantation" , "baresoil", "pasture", "urban", "water", "slope", "elev", "property_area_ha", "road_dist", "industry_dist", "native_industry_dist", "proportion_erosion", "y_2007"))
 
-# loop for each nonparametric bootstrap iteration
-for (b in 1:biters) {
-  
-  # bdata <- BMisc::blockBootSample(dta, "id")
-  
-  unique_ids <- unique(dta$id)      #unique properties
+bal_unmatch <- bal.tab(baltestun_covs, treat = df$treat,thresholds = c(m = .25))[[1]][,2:3]
 
-  sample_props <- sample(unique_ids, size=length(unique_ids), replace=T ) #choose from unique props randomly with replacement
-  bdata <- do.call(rbind, lapply(sample_props, function(x)  dta[dta$id==x,] ))#fetch all years for each randomly picked firm and rbind
-  
-  # call our function for estimating dynamic effects on the
-  # bootstrapped data
-  boot.res[[b]] <- compute.attgt(bdata)$dyn.ovr
-  print(b)
-}
+bal_test.tbl <- cbind(bal_match, bal_unmatch)%>%
+  rownames_to_column(var = "covariate")%>%
+  rename(unmatched = 4,
+         matched = 2)
 
-# use the bootstrapped results to compute standard errors
-boot.res <- t(simplify2array(boot.res))
-boot.se <- sd(boot.res, na.rm = TRUE)#apply(boot.res, 1, sd)
-res <- compute.attgt(dta)
+ export(bal_test.tbl, "covariate_balance.rds")
 
-# add the standard errors to the main results
-treatpost.results <- res$dyn.ovr
-treatpost.results$att.se <- boot.se
+
+```
+
+```{r}
+
+mytheme <- theme(legend.position = "none", plot.title = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
+
+bottom_theme <- theme(legend.position="bottom",plot.title = element_blank(), legend.title = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
+
+
+# density plots for matched data
+den_m_plantation <- bal.plot(baltest_covs, treat = matched_wide$treat, var.name = "plantation", sample.names = "matched" )+mytheme
+den_m_forest <- bal.plot(baltest_covs, treat = matched_wide$treat, var.name = "forest", sample.names = "matched" )+mytheme
+den_m_pasture <- bal.plot(baltest_covs, treat = matched_wide$treat, var.name = "pasture", sample.names = "matched" )+mytheme
+den_m_industry <- bal.plot(baltest_covs, treat = matched_wide$treat, var.name = "industry_dist", sample.names = "matched" )+xlab("distance to timber processing (e.g., sawmill)")+mytheme
+den_m_slope <- bal.plot(baltest_covs, treat = matched_wide$treat, var.name = "slope", sample.names = "matched" )+mytheme
+den_m_area <- bal.plot(baltest_covs, treat = matched_wide$treat, var.name = "property_area_ha", sample.names = "matched" )+xlab("property area (ha)")+mytheme+xlim(0,1000)
+den_m_ndvi <- bal.plot(baltest_covs, treat = matched_wide$treat, var.name = "y_2007", sample.names = "matched" )+xlab("2007 NDVI")+bottom_theme+scale_fill_discrete( labels = c("non-enrollees", "enrollees"))
+
+
+# density plots for unmatched data
+den_un_plantation <- bal.plot(baltestun_covs, treat = df$treat, var.name = "plantation", sample.names = "unmatched" )+mytheme
+den_un_forest <- bal.plot(baltestun_covs, treat = df$treat, var.name = "forest", sample.names = "unmatched" )+mytheme
+den_un_pasture <- bal.plot(baltestun_covs, treat = df$treat, var.name = "pasture", sample.names = "unmatched" )+mytheme
+den_un_industry <- bal.plot(baltestun_covs, treat = df$treat, var.name = "industry_dist", sample.names = "unmatched" )+xlab("distance to timber processing (e.g., sawmill)")+mytheme
+den_un_slope <- bal.plot(baltestun_covs, treat = df$treat, var.name = "slope", sample.names = "unmatched")+mytheme
+den_un_area <- bal.plot(baltestun_covs, treat = df$treat, var.name = "property_area_ha", sample.names = "unmatched" )+xlab("property area (ha)")+mytheme+xlim(0,1000)
+den_un_ndvi <- bal.plot(baltestun_covs, treat = df$treat, var.name = "y_2007", sample.names = "unmatched" )+xlab("2007 NDVI")+bottom_theme+scale_fill_discrete( labels = c("non-enrollees", "enrollees"))
+
+blankPlot <- ggplot()+geom_blank(aes(1,1))+
+  theme(
+    plot.background = element_blank(), 
+   panel.grid.major = element_blank(),
+   panel.grid.minor = element_blank(), 
+   panel.border = element_blank(),
+   panel.background = element_blank(),
+   axis.title.x = element_blank(),
+   axis.title.y = element_blank(),
+   axis.text.x = element_blank(), 
+   axis.text.y = element_blank(),
+   axis.ticks = element_blank(),
+   axis.line = element_blank()
+     )
+
+library(gridExtra)
+match_density_plot <- grid.arrange(den_un_plantation, den_m_plantation,
+             den_un_forest, den_m_forest,
+             den_un_pasture, den_m_pasture,
+            # den_un_industry, den_m_industry,
+             den_un_slope, den_m_slope,
+             den_un_area, den_m_area,
+             den_un_ndvi, den_m_ndvi,
+             #plot_grid(grid.draw(legend), ncol=1),blankPlot,
+             ncol=2, heights=c(9,9,9,9,9,13))
 
 ```

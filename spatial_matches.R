@@ -116,7 +116,6 @@ spatial_match_buffer <- all_rural_props %>%
 spatial_match <- all_rural_props %>%
   st_join(enrolled_coordinadas)%>%
   mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
-         area_prop = area_diff/rptpre_superficie_predial,
          treat = 1
   )%>%
   drop_na(rptpro_id)
@@ -133,10 +132,19 @@ spatial_cleaned <- spatial_unique %>%
   arrange(rptpro_id, area_diff) %>% 
   group_by(rptpro_id) %>% 
   slice(1:5)%>%
-  ungroup()%>%
   mutate(match_verified = ifelse(rptpre_rol.x == rptpre_rol.y, 1, NA),
-         id = 1:nrow(.))
+         min_area_diff = min (area_diff)
+         ) %>%
+  ungroup() %>%
+  mutate(id = 1:nrow(.),
+         priority_rank = dense_rank(desc(min_area_diff)))
 
 spatial_names <- spatial_cleaned %>%
-  drop_na(NOM_PREDIO)
+  drop_na(NOM_PREDIO)%>%
+  filter(is.na(match_verified))%>%
+  select(id, priority_rank, PROPIETARI, rptprop_nombre, NOM_PREDIO, rptpre_nombre, match_verified)%>%
+  arrange(priority_rank)
+spatial_names$geometry <- NULL
+
+write.csv(spatial_names, "spatial_names.csv")
 

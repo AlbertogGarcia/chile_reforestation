@@ -142,7 +142,7 @@ spatial_cleaned <- spatial_unique %>%
 spatial_names <- spatial_cleaned %>%
   drop_na(NOM_PREDIO)%>%
   filter(is.na(match_verified))%>%
-  select(id, priority_rank, PROPIETARI, rptprop_nombre, NOM_PREDIO, rptpre_nombre, match_verified)%>%
+  select(id, priority_rank, area_diff, PROPIETARI, rptprop_nombre, NOM_PREDIO, rptpre_nombre, match_verified)%>%
   arrange(priority_rank)
 spatial_names$geometry <- NULL
 

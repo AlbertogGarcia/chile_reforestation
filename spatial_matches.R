@@ -146,5 +146,5 @@ spatial_names <- spatial_cleaned %>%
   arrange(priority_rank)
 spatial_names$geometry <- NULL
 
-write.csv(spatial_names, "spatial_names.csv")
+#write.csv(spatial_names, "spatial_names.csv")
 

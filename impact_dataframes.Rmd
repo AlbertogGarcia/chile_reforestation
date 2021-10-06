@@ -137,7 +137,7 @@ file_list <- list.files("PROPIEDADES_RURALES", pattern = "*shp", full.names = TR
 shapefile_list <- lapply(file_list, read_sf)
 
 # bind rows into df then to sf object
-propiedadesrurales <- sf::st_as_sf(bind_rows(shapefile_list)) %>%
+propiedadesrurales <- st_make_valid(sf::st_as_sf(bind_rows(shapefile_list))) %>%
   rename(rptpre_rol = rol)%>%
   mutate(area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
   select(desccomu, rptpre_rol, area_ha)

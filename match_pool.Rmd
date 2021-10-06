@@ -45,7 +45,7 @@ exclude_match <- all_geoms
 
 ```
 
-```{r}
+```{r, message = FALSE}
 setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/enrolled/ndvi")
 
 # load ndvi time series for all submitted properties
@@ -57,7 +57,7 @@ my_ndvi = bind_rows(lapply(temp, read_csv))%>%
   spread(key = "year", value = "mean")# cast ndvi into wide format
 ```
 
-```{r}
+```{r, message = FALSE}
 setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/enrolled/evi2")
 
 # load evi time series for all matched properties
@@ -108,9 +108,10 @@ losrios_evi = bind_rows(lapply(temp, read_csv))%>%
 
 losrios_ciren <-  st_read(
   "C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef/PROPIEDADES_RURALES/LOS_RÍOS_CIREN_2018.shp"
-) 
+)%>%
+  st_make_valid()
 
-losrios_matchpool <- losrios_ciren[!lengths(st_intersects(losrios_ciren, exclude_match)), ] %>%
+losrios_matchpool <- losrios_ciren[!lengths(st_intersects(losrios_ciren, st_make_valid(exclude_match))), ] %>%
   #st_join(mgmtplan_df, join = st_disjoint)%>%
   inner_join(data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/losrios_CIREN_covars.rds")), by = c("objectid", "rol", "desccomu"))%>%
   inner_join(losrios_ndvi, by = "objectid")%>%
@@ -179,8 +180,9 @@ biobionuble_evi = bind_rows(lapply(temp, read_csv))%>%
 
 biobionuble_ciren <-  st_read(
   "C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef/PROPIEDADES_RURALES/BIOBÍO_CIREN_2016.shp"
-) 
-biobionuble_matchpool <- biobionuble_ciren[!lengths(st_intersects(biobionuble_ciren, exclude_match)), ] %>%
+) %>%
+  st_make_valid()
+biobionuble_matchpool <- biobionuble_ciren[!lengths(st_intersects(biobionuble_ciren, st_make_valid(exclude_match))), ] %>%
   #st_join(mgmtplan_df, join = st_disjoint)%>%
   inner_join(data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/biobionuble_CIREN_covars.rds")), by = c("objectid", "rol", "desccomu"))%>%
   inner_join(biobionuble_ndvi, by = "objectid")%>%
@@ -216,8 +218,9 @@ maule_evi = bind_rows(lapply(temp, read_csv))%>%
 # to make sure I'm not selecting treated properties
 maule_ciren <-  st_read(
   "C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef/PROPIEDADES_RURALES/MAULE_CIREN_2014.shp"
-) 
-maule_matchpool <- maule_ciren[!lengths(st_intersects(maule_ciren, exclude_match)), ] %>%
+)  %>%
+  st_make_valid()
+maule_matchpool <- maule_ciren[!lengths(st_intersects(maule_ciren, st_make_valid(exclude_match))), ] %>%
   #st_join(mgmtplan_df, join = st_disjoint)%>%
   inner_join(data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/maule_CIREN_covars.rds")), by = c("objectid", "rol", "desccomu"))%>%
   inner_join(maule_ndvi, by = "objectid")%>%
@@ -251,9 +254,10 @@ araucania_evi = bind_rows(lapply(temp, read_csv))%>%
 # to make sure I'm not selecting treated properties
 araucania_ciren <-  st_read(
   "C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef/PROPIEDADES_RURALES/ARAUCANÍA_CIREN_2013.shp"
-) 
+)  %>%
+  st_make_valid()
 
-araucania_matchpool <- araucania_ciren[!lengths(st_intersects(araucania_ciren, exclude_match)), ] %>%
+araucania_matchpool <- araucania_ciren[!lengths(st_intersects(araucania_ciren, st_make_valid(exclude_match))), ] %>%
   #st_join(mgmtplan_df, join = st_disjoint)%>%
   inner_join(data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/araucania_CIREN_covars.rds")), by = c("objectid", "rol", "desccomu"))%>%
   inner_join(araucania_ndvi, by = "objectid")%>%
@@ -265,7 +269,7 @@ araucania_matchpool <- araucania_ciren[!lengths(st_intersects(araucania_ciren, e
 ``` {r los lagos, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE, eval = TRUE}
 
 setwd("C:/Users/garci/Dropbox/chile_reforestation/data/property_ndvi/new_CIREN_ndvi/match/loslagos")
-# load araucania ndvi time series for all ciren properties
+# load los lagos ndvi time series for all ciren properties
 temp = list.files( pattern="*.csv")
 loslagos_ndvi = bind_rows(lapply(temp, read_csv))%>%
   select(objectid, year, mean) %>%
@@ -291,8 +295,9 @@ loslagos_evi = bind_rows(lapply(temp, read_csv))%>%
 # to make sure I'm not selecting treated properties
 loslagos_ciren <-  st_read(
   "C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef/PROPIEDADES_RURALES/LOS_LAGOS_CIREN_2016.shp"
-) 
-loslagos_matchpool <- loslagos_ciren[!lengths(st_intersects(loslagos_ciren, exclude_match)), ] %>%
+)  %>%
+  st_make_valid()
+loslagos_matchpool <- loslagos_ciren[!lengths(st_intersects(loslagos_ciren, st_make_valid(exclude_match))), ] %>%
   #st_join(mgmtplan_df, join = st_disjoint)%>%
   inner_join(data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/loslagos_CIREN_covars.rds")), by = c("objectid", "rol", "desccomu"))%>%
   inner_join(loslagos_ndvi, by = "objectid")%>%
@@ -327,8 +332,9 @@ ohiggins_evi = bind_rows(lapply(temp, read_csv))%>%
 # to make sure I'm not selecting treated properties
 ohiggins_ciren <-  st_read(
   "C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef/PROPIEDADES_RURALES/LIBERTADOR_GENERAL_BERNARDO_O_HIGGINS_CIREN_2013.shp"
-) 
-ohiggins_matchpool <- ohiggins_ciren[!lengths(st_intersects(ohiggins_ciren, exclude_match)), ] %>%
+)  %>%
+  st_make_valid()
+ohiggins_matchpool <- ohiggins_ciren[!lengths(st_intersects(ohiggins_ciren, st_make_valid(exclude_match))), ] %>%
   #st_join(mgmtplan_df, join = st_disjoint)%>%
   inner_join(data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/ohiggins_CIREN_covars.rds")), by = c("objectid", "rol", "desccomu"))%>%
   inner_join(ohiggins_ndvi, by = "objectid")%>%
@@ -349,8 +355,8 @@ variabler <- function(df){
          shrub = c_5,
          water = c_15,
          urban = c_16)%>%
-  select(objectid, geometry.x, treat, first.treat, area_ha, road_dist, lat, long, slope, elev, treat, forest, plantation, water, shrub, baresoil, pasture, urban, y_2005:y_2020, evi_2005:evi_2020)
-  
+  select(objectid, geometry.x, treat, first.treat, property_area_ha, road_dist, lat, long, slope, elev, treat, forest, plantation, water, shrub, baresoil, pasture, urban, proportion_erosion, mod_to_severe_erosion_area, industry_dist, native_industry_dist, y_2005:y_2020, evi_2005:evi_2020)
+
  return(return_df)
 }
 

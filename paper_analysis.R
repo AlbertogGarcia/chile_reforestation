@@ -11,13 +11,13 @@ mgmtplan_analysis$geometry.y <- NULL
 mgmtplan_analysis$geometry <- NULL
 dta <- mgmtplan_analysis %>%
   mutate(area_diff = abs(property_area_ha - rptpre_superficie_predial),
-         cut = ifelse( area_diff > quantile(subset(mgmtplan_analysis, treat==1)$property_area_ha, .9), 1, 0),
+         #cut = ifelse( area_diff > quantile(subset(mgmtplan_analysis, treat==1)$property_area_ha, .9), 1, 0),
          G = first.treat,
          period = Year,
          Y = EVI2,
          id = as.numeric(id),
          utm_per_ha = rptpre_monto_total/property_area_ha)
-dta <- subset(dta, cut==0 | treat ==0)
+dta <- subset(dta, area_diff <= 1000 | treat ==0)
 #############################################################################################
 ##### all enrolled project analysis
 ##############################################################################
@@ -50,15 +50,16 @@ evi_avg <- mean(subset(dta, Year == first.treat - 1 & treat ==1)$Y)
 #################################################################################
 set.seed(0930)
 
-araucania <- subset(dta, rptpre_region == "Región de La Araucanía" | rptpre_region == "Región del Maule" | rptpre_region == "Región de Los Ríos"| rptpre_region == "Región de Ñuble" | rptpre_region == "Región del Bío-Bío" | treat == 0)
+main_regions <- subset(dta, rptpre_region == "Región de La Araucanía" | rptpre_region == "Región del Maule" | rptpre_region == "Región de Los Ríos"| rptpre_region == "Región de Ñuble" | rptpre_region == "Región del Bío-Bío" | treat == 0)
 
 did <- att_gt(yname="EVI2",
               tname="Year",
               idname="id",
               gname="first.treat",
               est_method = "reg",
+              control_group = "notyettreated",
               xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
-              data=dta, clustervars = "id"
+              data=main_regions, clustervars = "id"
               , panel=TRUE, bstrap = TRUE
 )
 did.es <- aggte(did, type="dynamic")
@@ -70,7 +71,7 @@ dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$
 plot_mgmt <- ggplot(data=dyn.es, aes(x=e, y=att, color = period)) +
   geom_point() +
   geom_errorbar(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), width=0.1) +
-  ggtitle("Event time treatment effects (r=2)") +
+  ggtitle("Event time treatment effects") +
   xlab("years since property enrollment") + ylab("EVI")+ ylim(-.012, 0.03)
 plot_mgmt
 ggsave(plot = plot_mgmt, width = 8, height = 5, path = "figs", filename = "main_did.png", dpi = 500)
@@ -81,22 +82,23 @@ accents <- function(x){
   x <- stri_trans_general(x, id = "Latin-ASCII")
 }
 dta <- as.data.frame(dta)%>%
-  mutate(female = ifelse(rptprop_sexo == "Femenino", 1, ifelse(rptprop_sexo == "Masculino", 0, NA)),
+  dplyr::mutate(female = ifelse(rptprop_sexo == "Femenino", 1, ifelse(rptprop_sexo == "Masculino", 0, NA)),
          indig_etnia = ifelse(is.na(rptprop_etnia) & treat==1, 0, ifelse(treat==0, NA, 1)),
          rptprop_razon_social = accents(tolower(rptprop_razon_social)), 
          ind_comunidad = grepl(pattern = "indigena", rptprop_razon_social)*1,
          otros = ifelse(rptpro_tipo_concurso == "Otros Interesados", 1, 0),
          small = ifelse(rptpro_tipo_concurso != "Otros Interesados", 1, 0))%>%
-  group_by(id)%>%
-  mutate(indigenous = ifelse(max(ind_comunidad) ==1 | max(indig_etnia) ==1, 1, indig_etnia),
+  dplyr::group_by(id)%>%
+  dplyr::mutate(indigenous = ifelse(max(ind_comunidad) ==1 | max(indig_etnia) ==1, 1, indig_etnia),
          smallholder = ifelse(max(small)==1,1, small),
          other_interested = ifelse(max(otros)==1,1, otros)
   )%>%
-  ungroup()
+  dplyr::ungroup()
 
 timber_dta <- subset(dta, rptpro_objetivo_manejo == "PRODUCCION MADERERA" | treat == 0)
 nottimber_dta <- subset(dta, rptpro_objetivo_manejo != "PRODUCCION MADERERA" | treat == 0)
 indig_dta <- subset(dta, indigenous == 1 | treat == 0)
+notindig_dta <- subset(dta, indigenous != 1 | treat == 0)
 small_dta <- subset(dta, smallholder==1 | treat == 0)
 other_dta <- subset(dta, other_interested==1 | treat == 0)
 
@@ -107,7 +109,7 @@ timber_did <- att_gt(yname="EVI2",
               tname="Year",
               idname="id",
               gname="first.treat",
-              est_method = "dr",
+              est_method = "reg",
               xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
               data=timber_dta, clustervars = "id"
               , panel=TRUE, bstrap = TRUE
@@ -182,13 +184,41 @@ indig_plot
 ggsave(plot = indig_plot, width = 8, height = 5, path = "figs", filename = "indig_did.png", dpi = 500)
 
 ####################################################################################
+#### results on non-indigenous subset
+
+notindig_did <- att_gt(yname="EVI2",
+                    tname="Year",
+                    idname="id",
+                    gname="first.treat",
+                    est_method = "reg",
+                    xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                    data=notindig_dta, clustervars = "id"
+                    , panel=TRUE, bstrap = TRUE
+)
+notindig_did.es <- aggte(notindig_did, type="dynamic")
+notindig_did.ovr <- aggte(notindig_did, type="simple")
+
+indig_dyn.es <- data.frame("att" = indig_did.es$att.egt, "se" = indig_did.es$se.egt, "e" = indig_did.es$egt, "crit.val" = indig_did.es$crit.val.egt)%>%
+  mutate(period = ifelse(e >= 0 , "post", "pre"))
+
+indig_plot <- ggplot(data= indig_dyn.es, aes(x=e, y=att, color = period)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), width=0.1) +
+  ggtitle("Event time treatment effects for indigenous peoples") +
+  xlab("years since property enrollment") + ylab("EVI") 
+indig_plot
+
+ggsave(plot = indig_plot, width = 8, height = 5, path = "figs", filename = "indig_did.png", dpi = 500)
+
+
+####################################################################################
 #### results on smallholders subset
 
 smallholder_did <- att_gt(yname="EVI2",
                     tname="Year",
                     idname="id",
                     gname="first.treat",
-                    est_method = "dr",
+                    est_method = "reg",
                     xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
                     data=small_dta, clustervars = "id"
                     , panel=TRUE, bstrap = TRUE
@@ -256,7 +286,7 @@ female_dyn.es <- data.frame("att" = female_did.es$att.egt, "se" = female_did.es$
 female_plot <- ggplot(data= female_dyn.es, aes(x=e, y=att, color = period)) +
   geom_point() +
   geom_errorbar(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), width=0.1) +
-  ggtitle("Event time treatment effects for other interested parties") +
+  ggtitle("Event time treatment effects for female landowners") +
   xlab("years since property enrollment") + ylab("EVI") 
 female_plot
 
@@ -283,7 +313,7 @@ male_dyn.es <- data.frame("att" = male_did.es$att.egt, "se" = male_did.es$se.egt
 male_plot <- ggplot(data= male_dyn.es, aes(x=e, y=att, color = period)) +
   geom_point() +
   geom_errorbar(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), width=0.1) +
-  ggtitle("Event time treatment effects for other interested parties") +
+  ggtitle("Event time treatment effects for male landowners") +
   xlab("years since property enrollment") + ylab("EVI") 
 male_plot
 

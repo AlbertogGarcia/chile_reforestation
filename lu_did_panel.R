@@ -1,6 +1,6 @@
 lu_did_panel <-function(y1, y0, D, covariates, i.weights = NULL,
                         boot = FALSE, boot.type = "weighted", nboot = NULL,
-                        lu_varname, coeff_name, interaction = TRUE,
+                        lu_varname, 
                         inffunc = TRUE){
   
   
@@ -96,11 +96,13 @@ lu_did_panel <-function(y1, y0, D, covariates, i.weights = NULL,
                          # dd:post:pasture + dd:pasture + post:pasture+
                          dd:post+ post + dd + x, x = TRUE, weights = p.weights)
       
-      if(interaction) {
+      # if(interaction==TRUE) {
+      # twfe.att <- reg$coefficients["dd:post:outcome"]
+      #   } else {
+      #    twfe.att <- reg$coefficients["dd:post"]
+      # }
       twfe.att <- reg$coefficients["dd:post:outcome"]
-        } else {
-         twfe.att <- reg$coefficients["dd:post"]
-      }
+      
       
       #-----------------------------------------------------------------------------
       #Elemenets for influence functions
@@ -109,13 +111,15 @@ lu_did_panel <-function(y1, y0, D, covariates, i.weights = NULL,
       
       sel.theta <- matrix(c(rep(0, dim(inf.reg)[2])))
       
-      if(interaction) {
-        index.theta <- which(dimnames(reg$x)[[2]]=="dd:post:outcome",
-                             arr.ind = TRUE)
-      } else {
-        index.theta <- which(dimnames(reg$x)[[2]]=="dd:post",
-                             arr.ind = TRUE)
-      }
+      # if(interaction==TRUE) {
+      #   index.theta <- which(dimnames(reg$x)[[2]]=="dd:post:outcome",
+      #                        arr.ind = TRUE)
+      # } else {
+      #   index.theta <- which(dimnames(reg$x)[[2]]=="dd:post",
+      #                        arr.ind = TRUE)
+      # }
+      index.theta <- which(dimnames(reg$x)[[2]]=="dd:post:outcome",
+                                                   arr.ind = TRUE)
       
       
       sel.theta[index.theta, ] <- 1

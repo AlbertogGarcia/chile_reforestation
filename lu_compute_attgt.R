@@ -1,4 +1,4 @@
-lu_compute_attgt <- function(dp, lu_varname, coeff_name, interaction = TRUE) {
+lu_compute_attgt <- function(dp, lu_varname) {
   
   #-----------------------------------------------------------------------------
   # unpack DIDparams
@@ -195,7 +195,7 @@ lu_compute_attgt <- function(dp, lu_varname, coeff_name, interaction = TRUE) {
                               D=G,
                               covariates=covariates,
                               i.weights=w,
-                              lu_varname, coeff_name,
+                              lu_varname = lu_varname, 
                               inffunc=TRUE)
         } else if (est_method == "ipw") {
           # inverse-probability weights
@@ -295,7 +295,7 @@ lu_compute_attgt <- function(dp, lu_varname, coeff_name, interaction = TRUE) {
                               D=G,
                               covariates=covariates,
                               i.weights=w,
-                              lu_varname, coeff_name,
+                              lu_varname, 
                               inffunc=TRUE)
         } else if (est_method == "ipw") {
           # inverse-probability weights

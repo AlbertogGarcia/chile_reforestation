@@ -22,7 +22,6 @@ knitr::opts_chunk$set(out.height='300px', dpi=200)
 
 ### loads packages
 library(latex2exp)
-library(tidyverse)
 library(ggplot2)
 library(sf)
 library(stringi)
@@ -30,6 +29,8 @@ library(data.table)
 library(fuzzyjoin)
 library(stringdist)
 library(kableExtra)
+
+library(tidyverse)
 
 ```
 
@@ -46,6 +47,11 @@ native_df <- NFL_df %>%
   mutate(submitted_mp = ifelse( rptpro_tiene_plan_saff=="Si", 1, 0))%>%
   distinct(prop_ID, submitted_mp, .keep_all = TRUE)
 
+accents <- function(x){
+  x <- stri_trans_general(x, id = "Latin-ASCII")
+}
+
+
 follow_thru <- my_match %>%
   inner_join(native_df, by = "prop_ID")%>%
   mutate(treat=1,
@@ -60,6 +66,7 @@ follow_thru <- my_match %>%
          industry_dist = unlist(industry_dist),
          native_industry_dist = unlist(native_industry_dist),
          female = ifelse(rptprop_sexo == "Femenino", "Female", ifelse(rptprop_sexo == "Masculino", "Male", "Not reported")),
+         report_female = ifelse(rptprop_sexo != "Femenino" | is.na(rptprop_sexo), "Not reported female", "Female"),
          indig_etnia = ifelse(is.na(rptprop_etnia) & treat==1, 0, ifelse(treat==0, NA, 1)), 
          ind_comunidad = grepl(pattern = "indigena", accents(tolower(rptprop_razon_social)))*1,
          indigenous = ifelse(ind_comunidad==1 | indig_etnia==1, "indigenous", "not indigenous"))%>%
@@ -72,34 +79,42 @@ submitby_contest <- ggplot(summarySE(follow_thru, measurevar="submitted_mp", gro
        aes(x=rptpro_tipo_concurso, y=submitted_mp, fill=c("firebrick4", "green4"))
        ) + 
   geom_bar(position=position_dodge(), stat="identity") +
-  geom_errorbar(aes(ymin=submitted_mp-se, ymax=submitted_mp+se), width=.25, position=pd) +
+  geom_errorbar(aes(ymin=submitted_mp-se, ymax=submitted_mp+se), width=.25) +
   xlab("contest")+
   ylab("proportion with submitted management plan")+ggtitle("follow through by contest")+theme(legend.position = "none")
+
+ggsave(plot = submitby_contest, width = 8, height = 5, path = "figs", filename = "followthru_contest.png", dpi = 500)
 
 submitby_objective <- ggplot(summarySE(follow_thru, measurevar="submitted_mp", groupvars=c("rptpro_objetivo_manejo"), na.rm = TRUE), 
        aes(x=rptpro_objetivo_manejo, y=submitted_mp, fill=c("firebrick4", "green4", "blue"))
        ) + 
   geom_bar(position=position_dodge(), stat="identity") +
-  geom_errorbar(aes(ymin=submitted_mp-se, ymax=submitted_mp+se), width=.25, position=pd) +
+  geom_errorbar(aes(ymin=submitted_mp-se, ymax=submitted_mp+se), width=.25) +
   xlab("contest")+
   ylab("proportion with submitted management plan")+ggtitle("follow through by project objective")+theme(legend.position = "none")
 
-submitby_sex <- ggplot(summarySE(follow_thru, measurevar="submitted_mp", groupvars=c("female"), na.rm = TRUE), 
-       aes(x=female, y=submitted_mp, fill=c("firebrick4", "green4", "blue"))
+ggsave(plot = submitby_objective, width = 8, height = 5, path = "figs", filename = "followthru_objective.png", dpi = 500)
+
+
+submitby_sex <- ggplot(summarySE(follow_thru, measurevar="submitted_mp", groupvars=c("report_female"), na.rm = TRUE), 
+       aes(x=report_female, y=submitted_mp, fill=c("firebrick4", "green4"))
        ) + 
   geom_bar(position=position_dodge(), stat="identity") +
-  geom_errorbar(aes(ymin=submitted_mp-se, ymax=submitted_mp+se), width=.25, position=pd) +
+  geom_errorbar(aes(ymin=submitted_mp-se, ymax=submitted_mp+se), width=.25) +
   xlab("contest")+
   ylab("proportion with submitted management plan")+ggtitle("follow through by gender")+theme(legend.position = "none")
+
+ggsave(plot = submitby_sex, width = 8, height = 5, path = "figs", filename = "followthru_sex.png", dpi = 500)
 
 submitby_indigenous <- ggplot(summarySE(follow_thru, measurevar="submitted_mp", groupvars=c("indigenous"), na.rm = TRUE), 
        aes(x=indigenous, y=submitted_mp, fill=c("firebrick4", "green4"))
        ) + 
   geom_bar(position=position_dodge(), stat="identity") +
-  geom_errorbar(aes(ymin=submitted_mp-se, ymax=submitted_mp+se), width=.25, position=pd) +
+  geom_errorbar(aes(ymin=submitted_mp-se, ymax=submitted_mp+se), width=.25) +
   xlab("contest")+
   ylab("proportion with submitted management plan")+ggtitle("follow through for indigenous peoples")+theme(legend.position = "none")
 
+ggsave(plot = submitby_indigenous, width = 8, height = 5, path = "figs", filename = "followthru_indingenous.png", dpi = 500)
 
 
 ```

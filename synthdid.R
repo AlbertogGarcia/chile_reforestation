@@ -2,8 +2,12 @@ library(synthdid)
 library(tidyverse)
 library(stringi)
 source('panel_matrices2.R')
-nativeforestcontest <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/NFL_df.rds")
-mgmtplan_analysis <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/mgmtplan_analysis_updated.rds")
+# nativeforestcontest <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/NFL_df.rds")
+# mgmtplan_analysis <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/mgmtplan_analysis_updated.rds")
+
+nativeforestcontest <- readRDS("C:/Users/agarcia/Dropbox/chile_reforestation/data/submittedmp_analysis/NFL_df.rds")
+mgmtplan_analysis <- readRDS("C:/Users/agarcia/Dropbox/chile_reforestation/data/submittedmp_analysis/mgmtplan_analysis_updated.rds")
+
 mgmtplan_analysis$geometry.x <- NULL
 mgmtplan_analysis$geometry.y <- NULL
 mgmtplan_analysis$geometry <- NULL
@@ -25,41 +29,41 @@ dta <- mgmtplan_analysis %>%
 
 
 treated_ids = unique(subset(dta, treat == 1)$id)
-rdta <- subset(dta, reforestation2 ==1 | treat == 0)
-treated_ids = unique(subset(rdta, treat == 1)$id)
-set.seed(0930) # 34, 1007
-random_id <- sample(treated_ids, 1)
-# 856, 820, 345
-random_dta <- rdta %>%
-  filter(id == random_id | treat == 0)%>%
-  select(id, Year, Y, treated, first.treat, rptpro_puntaje, rptpre_monto_total, rptpre_superficie_predial, rptpre_superficie_bonificada, indig_etnia, ind_comunidad, property_area_ha, rptpro_tipo_concurso) 
 
-this_random_id <- random_dta %>%
-  filter(id == random_id) 
+# random_id <- sample(treated_ids, 1)
+# # 856, 820, 345
+# random_dta <- dta %>%
+#   filter(id == random_id | treat == 0)%>%
+#   select(id, Year, Y, treated, first.treat, rptpro_puntaje, rptpre_monto_total, rptpre_superficie_predial, rptpre_superficie_bonificada, indig_etnia, ind_comunidad, property_area_ha, rptpro_tipo_concurso) 
+# 
+# this_random_id <- random_dta %>%
+#   filter(id == random_id) 
+# 
+# my_random_setup = panel_matrices2(random_dta)
+# tau_hat = synthdid_estimate(my_random_setup$Y, my_random_setup$N0, my_random_setup$T0)
+# 
+# plot(tau_hat, overlay=1, 
+#      effect.alpha = 0.5, onset.alpha = 1,  point.size = 0.5, trajectory.alpha=1)
+# 
+# my_guy <- subset(dta, id == random_id)
+# 
+# 
+# 
+# 
+# 
+# plot(tau_hat, overlay=0.0, diagram.alpha = 0.5, 
+#      effect.alpha = 0.5, onset.alpha = 1, point.size = 0.5, trajectory.alpha=1, lambda.plot.scale = 0)
 
-my_random_setup = panel_matrices2(random_dta)
-tau_hat = synthdid_estimate(my_random_setup$Y, my_random_setup$N0, my_random_setup$T0)
-
-plot(tau_hat, overlay=1, 
-     effect.alpha = 0.5, onset.alpha = 1,  point.size = 0.5, trajectory.alpha=1)
-
-my_guy <- subset(dta, id == random_id)
-
-
-
-
-
-plot(tau_hat, overlay=0.0, diagram.alpha = 0.5, 
-     effect.alpha = 0.5, onset.alpha = 1, point.size = 0.5, trajectory.alpha=1, lambda.plot.scale = 0)
-
-
+# reforest_ids = unique(subset(dta, reforestation2 == 1 & treat == 1)$id)
+# 
+# treated_ids <- reforest_ids
 
 results_df <- data.frame()
 
 for(i in treated_ids){
   this_dta <- dta %>%
     filter(id == i | treat == 0)%>%
-    select(id, Year, Y, treated, first.treat, rptpro_puntaje, rptpre_monto_total, rptpre_superficie_predial, rptpre_superficie_bonificada, indig_etnia, ind_comunidad, property_area_ha, rptpro_tipo_concurso, anillado:zanja) 
+    select(id, Year, Y, treated, first.treat, rptpro_puntaje, rptpro_objetivo_manejo, rptpre_monto_total, rptpre_superficie_predial, rptpre_superficie_bonificada, indig_etnia, ind_comunidad, property_area_ha, rptpro_tipo_concurso, anillado:zanja) 
   
   my_setup = panel_matrices2(this_dta)
   tau_hat = synthdid_estimate(my_setup$Y, my_setup$N0, my_setup$T0)
@@ -99,6 +103,10 @@ for(i in treated_ids){
 }
 library(rio)
 library(ggplot2)
+
+summary(lm(tau.2020 ~ as.factor(first.treat) + `plantacion-suplementaria`  +plantacion +regeneracion + rptpre_monto_total + rptpre_superficie_bonificada + rptpre_superficie_predial + rptpro_puntaje ,data = results_df))
+
+
 
 export(results_df, "results_df.rds")
 

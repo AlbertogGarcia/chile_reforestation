@@ -24,7 +24,7 @@ source(here::here("crs_clean_fcn.R"))
 #########################################################################################
 
 #setting working directory
- setwd("C:/Users/garci/Dropbox/chile_collab")
+ setwd("C:/Users/agarcia/Dropbox/chile_collab")
 setwd("/Users/tiffanyhsu/Dropbox/chile_collab")
 
 library(readxl)
@@ -133,7 +133,7 @@ spatial_cleaned <- spatial_unique %>%
   group_by(rptpro_id) %>% 
   slice(1:5)%>%
   mutate(match_verified = ifelse(rptpre_rol.x == rptpre_rol.y, 1, NA),
-         min_area_diff = min (area_diff)
+         min_area_diff = min(area_diff)
          ) %>%
   ungroup() %>%
   mutate(id = 1:nrow(.),
@@ -148,3 +148,6 @@ spatial_names$geometry <- NULL
 
 #write.csv(spatial_names, "spatial_names.csv")
 
+### read in spatial names with verified matches
+spatial_df <- spatial_cleaned %>%
+  mutate(min_area_diff_verified = ifelse(min_area_diff == area_diff), 1, 0)

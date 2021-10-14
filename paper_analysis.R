@@ -4,8 +4,9 @@ library(tidyverse)
 library(ggplot2)
 library(did)
 source(here::here("compute_attgt_interaction.R"))
-nativeforestcontest <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/NFL_df.rds")
-mgmtplan_analysis <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/mgmtplan_analysis_updated.rds")
+#garci/agarcia
+nativeforestcontest <- readRDS("C:/Users/agarcia/Dropbox/chile_reforestation/data/submittedmp_analysis/NFL_df.rds")
+mgmtplan_analysis <- readRDS("C:/Users/agarcia/Dropbox/chile_reforestation/data/submittedmp_analysis/mgmtplan_analysis_updated.rds")
 mgmtplan_analysis$geometry.x <- NULL
 mgmtplan_analysis$geometry.y <- NULL
 mgmtplan_analysis$geometry <- NULL
@@ -31,12 +32,31 @@ project_objective_proportions <- table(unique_proj$rptpro_objetivo_manejo)/nrow(
 
 evi_avg <- mean(subset(dta, Year == first.treat - 1 & treat ==1)$Y)
 
+#############################################################################################
+##### trends plots
+##############################################################################
 
 
+group_df <- dta %>%
+  group_by(first.treat, period) %>%
+  summarise(EVI2 = mean(EVI2),
+            cohort = as.character(first.treat))%>%
+  filter(first.treat %in% c(0, 2011, 2016))
 
+cohort_trends_plot <- ggplot(group_df, aes(x = period, y = EVI2, color = cohort)) +
+  geom_point() +
+  geom_line() +
+  theme_minimal()
+cohort_trends_plot  
 
+treat_df <- dta %>%
+  group_by(treat, period) %>%
+  summarise(EVI2 = mean(EVI2),
+            group = as.character(treat))
 
-
+trends_plot <- ggplot(treat_df, aes(x = period, y = EVI2, color = group)) +
+  geom_point() +
+  geom_line()
 
 ##############################################################################
 ##### DID analysis

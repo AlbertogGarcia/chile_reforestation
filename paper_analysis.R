@@ -65,7 +65,7 @@ trends_plot <- ggplot(treat_df, aes(x = period, y = EVI2, color = group)) +
 
 
 
-#################################################################################
+
 ######### main results
 #################################################################################
 set.seed(0930)
@@ -353,6 +353,7 @@ ref_did <- att_gt(yname="EVI2",
                    data=ref, clustervars = "id"
                    , panel=TRUE, bstrap = TRUE
 )
+
 ref_did.es <- aggte(test_did, type="dynamic")
 ref_did.ovr <- aggte(test_did, type="simple")
 ########################################################################################################
@@ -372,6 +373,143 @@ Main_ATT <- data.frame( subsample = c("main", "timber", "not timber", "indigenou
          p.1 = ifelse(ATT/std.error >= 1.645, 1, 0))
 
 write.csv(Main_ATT, "subsample_results.csv")
+
+
+
+
+
+
+
+
+
+
+
+#################################################################################
+######### quartile score DIDs
+#################################################################################
+
+
+quartiles <- quantile(dta$rptpro_puntaje, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
+  
+small_quartiles <- quantile(small_dta$rptpro_puntaje, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
+  
+other_quartiles <-  quantile(other_dta$rptpro_puntaje, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+q1 <- dta %>%
+  filter(between(rptpro_puntaje, 0, quartiles[1]) | treat == 0)
+
+q2 <- dta %>%
+  filter(between(rptpro_puntaje, quartiles[1], quartiles[2]) | treat == 0)
+
+q3 <- dta %>%
+  filter(between(rptpro_puntaje, quartiles[2], quartiles[3]) | treat == 0)
+
+q4 <- dta %>%
+  filter(between(rptpro_puntaje, quartiles[3], max(rptpro_puntaje, na.rm = TRUE)) | treat == 0)
+
+
+
+
+other_q1 <- other_dta %>%
+  filter(between(rptpro_puntaje, 0, other_quartiles[1]) | treat == 0)
+
+other_q2 <- other_dta %>%
+  filter(between(rptpro_puntaje, other_quartiles[1], other_quartiles[2]) | treat == 0)
+
+other_q3 <- other_dta %>%
+  filter(between(rptpro_puntaje, other_quartiles[2], other_quartiles[3]) | treat == 0)
+
+other_q4 <- other_dta %>%
+  filter(between(rptpro_puntaje, other_quartiles[3], max(rptpro_puntaje, na.rm = TRUE)) | treat == 0)
+
+
+small_q1 <- small_dta %>%
+  filter(between(rptpro_puntaje, 0, small_quartiles[1]) | treat == 0)
+
+small_q2 <- small_dta %>%
+  filter(between(rptpro_puntaje, small_quartiles[1], small_quartiles[2]) | treat == 0)
+
+small_q3 <- small_dta %>%
+  filter(between(rptpro_puntaje, small_quartiles[2], small_quartiles[3]) | treat == 0)
+
+small_q4 <- small_dta %>%
+  filter(between(rptpro_puntaje, small_quartiles[3], max(rptpro_puntaje, na.rm = TRUE)) | treat == 0)
+
+
+
+small_did_q1 <- att_gt(yname="EVI2",
+                       tname="Year",
+                       idname="id",
+                       gname="first.treat",
+                       est_method = "reg",
+                       xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                       data = small_q1, clustervars = "id"
+                       , panel=TRUE, bstrap = TRUE
+)
+
+smallholder_q1.es <- aggte(small_did_q1, type="dynamic")
+smallholder_q1.ovr <- aggte(small_did_q1, type="simple")
+
+
+small_did_q2 <- att_gt(yname="EVI2",
+                       tname="Year",
+                       idname="id",
+                       gname="first.treat",
+                       est_method = "reg",
+                       xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                       data = small_q2, clustervars = "id"
+                       , panel=TRUE, bstrap = TRUE
+)
+
+smallholder_q2.es <- aggte(small_did_q2, type="dynamic")
+smallholder_q2.ovr <- aggte(small_did_q2, type="simple")
+
+
+small_did_q3 <- att_gt(yname="EVI2",
+                       tname="Year",
+                       idname="id",
+                       gname="first.treat",
+                       est_method = "reg",
+                       xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                       data = small_q3, clustervars = "id"
+                       , panel=TRUE, bstrap = TRUE
+)
+
+smallholder_q3.es <- aggte(small_did_q3, type="dynamic")
+smallholder_q3.ovr <- aggte(small_did_q3, type="simple")
+
+
+small_did_q4 <- att_gt(yname="EVI2",
+                       tname="Year",
+                       idname="id",
+                       gname="first.treat",
+                       est_method = "reg",
+                       xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                       data = small_q4, clustervars = "id"
+                       , panel=TRUE, bstrap = TRUE
+)
+
+smallholder_q4.es <- aggte(small_did_q4, type="dynamic")
+smallholder_q4.ovr <- aggte(small_did_q4, type="simple")
+  
+sizecut_points <- c(0, 40, 80, 120, 200)
+bonuscut_points <- c(0, 40, 80, 120, 200)
+
+adjusted_score_smallholders <- small_dta %>%
+  mutate(VPI = ifelse(indigenous == 1, 100, 50),
+         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[1], sizecut_points[2]), 100, 25),
+         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[2], sizecut_points[3]), 75, 25),
+         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[3], sizecut_points[4]), 50, 25),
+         VI = TP*.5 + .5*VPI,
+         VMBS = 0.1*
+           VMBS,
+         VMBS
+         )
+
+
+
+
+
 
 #################################################################################
 ######### land-use regressions

@@ -5,8 +5,8 @@ library(ggplot2)
 library(did)
 source(here::here("compute_attgt_interaction.R"))
 #garci/agarcia
-nativeforestcontest <- readRDS("C:/Users/agarcia/Dropbox/chile_reforestation/data/submittedmp_analysis/NFL_df.rds")
-mgmtplan_analysis <- readRDS("C:/Users/agarcia/Dropbox/chile_reforestation/data/submittedmp_analysis/mgmtplan_analysis_updated.rds")
+nativeforestcontest <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/NFL_df.rds")
+mgmtplan_analysis <- readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/submittedmp_analysis/mgmtplan_analysis_updated.rds")
 mgmtplan_analysis$geometry.x <- NULL
 mgmtplan_analysis$geometry.y <- NULL
 mgmtplan_analysis$geometry <- NULL
@@ -385,57 +385,97 @@ write.csv(Main_ATT, "subsample_results.csv")
 
 
 #################################################################################
-######### quartile score DIDs
+######### adjusting smallholder scores
 #################################################################################
 
 
-quartiles <- quantile(dta$rptpro_puntaje, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
-  
-small_quartiles <- quantile(small_dta$rptpro_puntaje, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
-  
-other_quartiles <-  quantile(other_dta$rptpro_puntaje, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
+sizecut_points <- c(0, 40, 80, 120, 200)
+bonuscut_points <- c(0, 70, 150, 300, 500)
 
-q1 <- dta %>%
-  filter(between(rptpro_puntaje, 0, quartiles[1]) | treat == 0)
+small_dta <- small_dta %>%
+  mutate(VPI = ifelse(indigenous == 1, 100, 50),
+         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[1], sizecut_points[2]), 100, 25),
+         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[2], sizecut_points[3]), 75, 25),
+         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[3], sizecut_points[4]), 50, 25),
+         VI = TP*.5 + .5*VPI,
+         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[1], bonuscut_points[2]), 100, 15),
+         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[2], bonuscut_points[3]), 75, 15),
+         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[3], bonuscut_points[4]), 50, 15),
+         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[4], bonuscut_points[5]), 25, 15),
+         VP = .1*VMBS,
+         VPS = ifelse(is.na(rptprop_razon_social), 0, 100),
+         adjusted_puntaje = rptpro_puntaje - .2*VI - .35*VP - 0.05*VPS
+  ) %>%
+  group_by(first.treat) %>%
+  mutate(q1 = quantile(rptpro_puntaje, probs = c(0.25), na.rm = TRUE),
+         q2 = quantile(rptpro_puntaje, probs = c(0.5), na.rm = TRUE),
+         q3 = quantile(rptpro_puntaje, probs = c(0.75), na.rm = TRUE),
+         q4 = quantile(rptpro_puntaje, probs = c(1), na.rm = TRUE),
+         adj_q1 = quantile(adjusted_puntaje, probs = c(0.25), na.rm = TRUE),
+         adj_q2 = quantile(adjusted_puntaje, probs = c(0.5), na.rm = TRUE),
+         adj_q3 = quantile(adjusted_puntaje, probs = c(0.75), na.rm = TRUE),
+         adj_q4 = quantile(adjusted_puntaje, probs = c(1), na.rm = TRUE)
+         )
 
-q2 <- dta %>%
-  filter(between(rptpro_puntaje, quartiles[1], quartiles[2]) | treat == 0)
+sizecut_points <- c(0, 300, 600, 2000)
+bonuscut_points <- c(0, 300, 600, 1000)
 
-q3 <- dta %>%
-  filter(between(rptpro_puntaje, quartiles[2], quartiles[3]) | treat == 0)
+other_dta <- other_dta %>%
+  mutate(VPI = ifelse(indigenous == 1, 100, 50),
+         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[1], sizecut_points[2]), 100, 25),
+         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[2], sizecut_points[3]), 75, 25),
+         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[3], sizecut_points[4]), 50, 25),
+         VI = TP*.5 + .5*VPI,
+         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[1], bonuscut_points[2]), 100, 25),
+         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[2], bonuscut_points[3]), 75, 25),
+         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[3], bonuscut_points[4]), 50, 25),
+         VP = .1*VMBS,
+         VPS = ifelse(is.na(rptprop_razon_social), 0, 100),
+         adjusted_puntaje = rptpro_puntaje - .25*VI - .25*VP - 0.05*VPS
+  )%>%
+  group_by(first.treat) %>%
+  mutate(q1 = quantile(rptpro_puntaje, probs = c(0.25), na.rm = TRUE),
+         q2 = quantile(rptpro_puntaje, probs = c(0.5), na.rm = TRUE),
+         q3 = quantile(rptpro_puntaje, probs = c(0.75), na.rm = TRUE),
+         q4 = quantile(rptpro_puntaje, probs = c(1), na.rm = TRUE),
+         adj_q1 = quantile(adjusted_puntaje, probs = c(0.25), na.rm = TRUE),
+         adj_q2 = quantile(adjusted_puntaje, probs = c(0.5), na.rm = TRUE),
+         adj_q3 = quantile(adjusted_puntaje, probs = c(0.75), na.rm = TRUE),
+         adj_q4 = quantile(adjusted_puntaje, probs = c(1), na.rm = TRUE)
+  )
 
-q4 <- dta %>%
-  filter(between(rptpro_puntaje, quartiles[3], max(rptpro_puntaje, na.rm = TRUE)) | treat == 0)
 
-
-
+#################################################################################
+######### quartile score DIDs
+#################################################################################
 
 other_q1 <- other_dta %>%
-  filter(between(rptpro_puntaje, 0, other_quartiles[1]) | treat == 0)
+  filter(rptpro_puntaje <= q1 | treat == 0)
 
 other_q2 <- other_dta %>%
-  filter(between(rptpro_puntaje, other_quartiles[1], other_quartiles[2]) | treat == 0)
+  filter((rptpro_puntaje <= q2 & rptpro_puntaje > q1) | treat == 0)
 
 other_q3 <- other_dta %>%
-  filter(between(rptpro_puntaje, other_quartiles[2], other_quartiles[3]) | treat == 0)
+  filter((rptpro_puntaje <= q3 & rptpro_puntaje > q2) | treat == 0)
 
 other_q4 <- other_dta %>%
-  filter(between(rptpro_puntaje, other_quartiles[3], max(rptpro_puntaje, na.rm = TRUE)) | treat == 0)
+  filter((rptpro_puntaje <= q4 & rptpro_puntaje > q3) | treat == 0)
 
 
 small_q1 <- small_dta %>%
-  filter(between(rptpro_puntaje, 0, small_quartiles[1]) | treat == 0)
+  filter(rptpro_puntaje <= q1 | treat == 0)
 
 small_q2 <- small_dta %>%
-  filter(between(rptpro_puntaje, small_quartiles[1], small_quartiles[2]) | treat == 0)
+  filter((rptpro_puntaje <= q2 & rptpro_puntaje > q1) | treat == 0)
 
 small_q3 <- small_dta %>%
-  filter(between(rptpro_puntaje, small_quartiles[2], small_quartiles[3]) | treat == 0)
+  filter((rptpro_puntaje <= q3 & rptpro_puntaje > q2) | treat == 0)
 
 small_q4 <- small_dta %>%
-  filter(between(rptpro_puntaje, small_quartiles[3], max(rptpro_puntaje, na.rm = TRUE)) | treat == 0)
+  filter((rptpro_puntaje <= q4 & rptpro_puntaje > q3) | treat == 0)
 
 
+############################################################################################################
 
 small_did_q1 <- att_gt(yname="EVI2",
                        tname="Year",
@@ -492,19 +532,234 @@ small_did_q4 <- att_gt(yname="EVI2",
 smallholder_q4.es <- aggte(small_did_q4, type="dynamic")
 smallholder_q4.ovr <- aggte(small_did_q4, type="simple")
   
-sizecut_points <- c(0, 40, 80, 120, 200)
-bonuscut_points <- c(0, 40, 80, 120, 200)
+####################################################################################################
 
-adjusted_score_smallholders <- small_dta %>%
-  mutate(VPI = ifelse(indigenous == 1, 100, 50),
-         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[1], sizecut_points[2]), 100, 25),
-         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[2], sizecut_points[3]), 75, 25),
-         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[3], sizecut_points[4]), 50, 25),
-         VI = TP*.5 + .5*VPI,
-         VMBS = 0.1*
-           VMBS,
-         VMBS
-         )
+
+
+
+other_did_q1 <- att_gt(yname="EVI2",
+                       tname="Year",
+                       idname="id",
+                       gname="first.treat",
+                       est_method = "reg",
+                       xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                       data = other_q1, clustervars = "id"
+                       , panel=TRUE, bstrap = TRUE
+)
+
+other_q1.es <- aggte(other_did_q1, type="dynamic")
+other_q1.ovr <- aggte(other_did_q1, type="simple")
+
+
+other_did_q2 <- att_gt(yname="EVI2",
+                       tname="Year",
+                       idname="id",
+                       gname="first.treat",
+                       est_method = "reg",
+                       xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                       data = other_q2, clustervars = "id"
+                       , panel=TRUE, bstrap = TRUE
+)
+
+other_q2.es <- aggte(other_did_q2, type="dynamic")
+other_q2.ovr <- aggte(other_did_q2, type="simple")
+
+
+other_did_q3 <- att_gt(yname="EVI2",
+                       tname="Year",
+                       idname="id",
+                       gname="first.treat",
+                       est_method = "reg",
+                       xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                       data = other_q3, clustervars = "id"
+                       , panel=TRUE, bstrap = TRUE
+)
+
+other_q3.es <- aggte(other_did_q3, type="dynamic")
+other_q3.ovr <- aggte(other_did_q3, type="simple")
+
+
+other_did_q4 <- att_gt(yname="EVI2",
+                       tname="Year",
+                       idname="id",
+                       gname="first.treat",
+                       est_method = "reg",
+                       xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                       data = other_q4, clustervars = "id"
+                       , panel=TRUE, bstrap = TRUE
+)
+
+other_q4.es <- aggte(other_did_q4, type="dynamic")
+other_q4.ovr <- aggte(other_did_q4, type="simple")
+
+
+
+
+######################################################################################################
+
+adj_other_q1 <- other_dta %>%
+  filter(adjusted_puntaje <= q1_adj | treat == 0)
+
+adj_other_q2 <- other_dta %>%
+  filter((adjusted_puntaje <= q2_adj & adjusted_puntaje > q1_adj) | treat == 0)
+
+adj_other_q3 <- other_dta %>%
+  filter((adjusted_puntaje <= q3_adj & adjusted_puntaje > q2_adj) | treat == 0)
+
+adj_other_q4 <- other_dta %>%
+  filter((adjusted_puntaje <= q4_adj & adjusted_puntaje > q3_adj) | treat == 0)
+
+
+
+adj_small_q1 <- small_dta %>%
+  filter(adjusted_puntaje <= q1_adj | treat == 0)
+
+adj_small_q2 <- small_dta %>%
+  filter((adjusted_puntaje <= q2_adj & adjusted_puntaje > q1_adj) | treat == 0)
+
+adj_small_q3 <- small_dta %>%
+  filter((adjusted_puntaje <= q3_adj & adjusted_puntaje > q2_adj) | treat == 0)
+
+adj_small_q4 <- small_dta %>%
+  filter((adjusted_puntaje <= q4_adj & adjusted_puntaje > q3_adj) | treat == 0)
+
+
+################################################################################################
+
+adj_small_did_q1 <- att_gt(yname="EVI2",
+                       tname="Year",
+                       idname="id",
+                       gname="first.treat",
+                       est_method = "reg",
+                       xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                       data = adj_small_q1, clustervars = "id"
+                       , panel=TRUE, bstrap = TRUE
+)
+
+adj_smallholder_q1.es <- aggte(adj_small_did_q1, type="dynamic")
+adj_smallholder_q1.ovr <- aggte(adj_small_did_q1, type="simple")
+
+
+adj_small_did_q2 <- att_gt(yname="EVI2",
+                       tname="Year",
+                       idname="id",
+                       gname="first.treat",
+                       est_method = "reg",
+                       xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                       data = adj_small_q2, clustervars = "id"
+                       , panel=TRUE, bstrap = TRUE
+)
+
+adj_smallholder_q2.es <- aggte(adj_small_did_q2, type="dynamic")
+adj_smallholder_q2.ovr <- aggte(adj_small_did_q2, type="simple")
+
+
+adj_small_did_q3 <- att_gt(yname="EVI2",
+                       tname="Year",
+                       idname="id",
+                       gname="first.treat",
+                       est_method = "reg",
+                       xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                       data = adj_small_q2, clustervars = "id"
+                       , panel=TRUE, bstrap = TRUE
+)
+
+adj_smallholder_q3.es <- aggte(adj_small_did_q3, type="dynamic")
+adj_smallholder_q3.ovr <- aggte(adj_small_did_q3, type="simple")
+
+
+adj_small_did_q4 <- att_gt(yname="EVI2",
+                       tname="Year",
+                       idname="id",
+                       gname="first.treat",
+                       est_method = "reg",
+                       xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                       data = adj_small_q2, clustervars = "id"
+                       , panel=TRUE, bstrap = TRUE
+)
+
+adj_smallholder_q4.es <- aggte(adj_small_did_q4, type="dynamic")
+adj_smallholder_q4.ovr <- aggte(adj_small_did_q4, type="simple")
+
+#########################################################################################################
+
+
+
+adj_other_did_q1 <- att_gt(yname="EVI2",
+                           tname="Year",
+                           idname="id",
+                           gname="first.treat",
+                           est_method = "reg",
+                           xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                           data = adj_other_q1, clustervars = "id"
+                           , panel=TRUE, bstrap = TRUE
+)
+
+adj_other_q1.es <- aggte(adj_other_did_q1, type="dynamic")
+adj_other_q1.ovr <- aggte(adj_other_did_q1, type="simple")
+
+
+adj_other_did_q2 <- att_gt(yname="EVI2",
+                           tname="Year",
+                           idname="id",
+                           gname="first.treat",
+                           est_method = "reg",
+                           xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                           data = adj_other_q2, clustervars = "id"
+                           , panel=TRUE, bstrap = TRUE
+)
+
+adj_other_q2.es <- aggte(adj_other_did_q2, type="dynamic")
+adj_other_q2.ovr <- aggte(adj_other_did_q2, type="simple")
+
+
+adj_other_did_q3 <- att_gt(yname="EVI2",
+                           tname="Year",
+                           idname="id",
+                           gname="first.treat",
+                           est_method = "reg",
+                           xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                           data = adj_other_q3, clustervars = "id"
+                           , panel=TRUE, bstrap = TRUE
+)
+
+adj_other_q3.es <- aggte(adj_other_did_q3, type="dynamic")
+adj_other_q3.ovr <- aggte(adj_other_did_q3, type="simple")
+
+
+adj_other_did_q4 <- att_gt(yname="EVI2",
+                           tname="Year",
+                           idname="id",
+                           gname="first.treat",
+                           est_method = "reg",
+                           xformla=~  road_dist + proportion_erosion + industry_dist +native_industry_dist + forest + plantation + baresoil + pasture + shrub + urban + water + slope + lat +  elev  + property_area_ha ,
+                           data = adj_other_q4, clustervars = "id"
+                           , panel=TRUE, bstrap = TRUE
+)
+
+adj_other_q4.es <- aggte(adj_other_did_q4, type="dynamic")
+adj_other_q4.ovr <- aggte(adj_other_did_q4, type="simple")
+
+
+es_points <- data.frame(
+  "agg_type" = rep("es", 16),
+  "contest" = c(rep("other interested", 8), rep("smallholders", 8)),
+  "quartile" = rep(seq(1, 4, by = 1), 4), 
+  "scoring method" = c(rep("standard", 4), rep("adjusted", 4), rep("standard", 4), rep("adjusted", 4)),
+  "ATT" = c(other_q1.es$overall.att, other_q2.es$overall.att, other_q3.es$overall.att, other_q4.es$overall.att,
+            adj_other_q1.es$overall.att, adj_other_q2.es$overall.att, adj_other_q3.es$overall.att, adj_other_q4.es$overall.att,
+            small_q1.es$overall.att, small_q2.es$overall.att, small_q3.es$overall.att, small_q4.es$overall.att,
+            adj_small_q1.es$overall.att, adj_small_q2.es$overall.att, adj_small_q3.es$overall.att, adj_small_q4.es$overall.att),
+  "se" = c(other_q1.es$overall.se, other_q2.es$overall.se, other_q3.es$overall.se, other_q4.es$overall.se,
+           adj_other_q1.es$overall.se, adj_other_q2.es$overall.se, adj_other_q3.es$overall.se, adj_other_q4.es$overall.se,
+           small_q1.es$overall.se, small_q2.es$overall.se, small_q3.es$overall.se, small_q4.es$overall.se,
+           adj_small_q1.es$overall.se, adj_small_q2.es$overall.se, adj_small_q3.es$overall.se, adj_small_q4.es$overall.se)
+    )
+
+
+
+
+
 
 
 

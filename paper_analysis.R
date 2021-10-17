@@ -488,7 +488,7 @@ small_did_q1 <- att_gt(yname="EVI2",
 )
 
 smallholder_q1.es <- aggte(small_did_q1, type="dynamic")
-smallholder_q1.ovr <- aggte(small_did_q1, type="simple")
+#smallholder_q1.ovr <- aggte(small_did_q1, type="simple")
 
 
 small_did_q2 <- att_gt(yname="EVI2",
@@ -502,7 +502,7 @@ small_did_q2 <- att_gt(yname="EVI2",
 )
 
 smallholder_q2.es <- aggte(small_did_q2, type="dynamic")
-smallholder_q2.ovr <- aggte(small_did_q2, type="simple")
+#smallholder_q2.ovr <- aggte(small_did_q2, type="simple")
 
 
 small_did_q3 <- att_gt(yname="EVI2",
@@ -516,7 +516,7 @@ small_did_q3 <- att_gt(yname="EVI2",
 )
 
 smallholder_q3.es <- aggte(small_did_q3, type="dynamic")
-smallholder_q3.ovr <- aggte(small_did_q3, type="simple")
+#smallholder_q3.ovr <- aggte(small_did_q3, type="simple")
 
 
 small_did_q4 <- att_gt(yname="EVI2",
@@ -530,7 +530,7 @@ small_did_q4 <- att_gt(yname="EVI2",
 )
 
 smallholder_q4.es <- aggte(small_did_q4, type="dynamic")
-smallholder_q4.ovr <- aggte(small_did_q4, type="simple")
+#smallholder_q4.ovr <- aggte(small_did_q4, type="simple")
   
 ####################################################################################################
 

@@ -106,9 +106,7 @@ enrolled_buffer <- st_buffer(enrolled_coordinadas, 250)
 
 spatial_match_buffer <- all_rural_props %>%
   st_join(enrolled_buffer)%>%
-  mutate(area_diff = abs(area_ha - rptpre_superficie_predial),
-         area_prop = area_diff/rptpre_superficie_predial,
-         treat = 1
+  mutate(area_diff = abs(area_ha - rptpre_superficie_predial)
   )%>%
   drop_na(rptpro_id)
 
@@ -116,8 +114,7 @@ spatial_match_buffer <- all_rural_props %>%
 
 spatial_match <- all_rural_props %>%
   st_join(enrolled_coordinadas)%>%
-  mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
-         treat = 1
+  mutate(area_diff = abs(area_ha-rptpre_superficie_predial)
   )%>%
   drop_na(rptpro_id)
 
@@ -172,15 +169,16 @@ rol_match_df <- all_rural_props %>%
   inner_join(NFL_df, by = "rptpre_rol")%>%
   mutate(comuna_stringd = stringdist(tolower(rptpre_comuna), desccomu, method = "dl")) %>%
   filter(comuna_stringd <= 1) %>%
-  mutate(area_diff = abs(area_ha-rptpre_superficie_predial),
-         area_prop = area_diff/rptpre_superficie_predial,
-         treat = 1) %>%
-  select(-comuna_stringd)%>%
+  mutate(area_diff = abs(area_ha-rptpre_superficie_predial)) %>%
   group_by(rptpro_id)%>%
   filter(area_diff == max(area_diff))%>%
-  slice(1:1)
+  slice(1:1)%>%
+  select(PROPIETARI, NOM_PREDIO, rptpre_nombre, rptprop_nombre, rptpro_id, rptpre_rol, area_ha, area_diff)
 
+library(rio)
 
+export(spatial_df, "spatial_df.rds")
+export(rol_match_df, "rol_match_df.rds")
 
 rol_match_geoms <- rol_match_df %>%
 select(rptpro_id)

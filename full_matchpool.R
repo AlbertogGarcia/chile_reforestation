@@ -10,8 +10,9 @@ library(fuzzyjoin)
 library(stringdist)
 library(rio)
 
-forestlaw_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/NFL_df.rds")
-spatial_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/output_files/spatial_df.rds")
+spatial_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/output_files/spatial_df.rds")%>%
+  select(PROPIETARI, NOM_PREDIO, rptpre_nombre, rptprop_nombre, rptpro_id, rptpre_rol.x, rptpre_rol.y, area_ha, area_diff)
+
 rol_match_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/output_files/rol_match_df.rds")
 my_rol_covars <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/my_rol_match_covars.rds"))
 my_spatial_covars <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/my_spatial_match_covars.rds"))
@@ -48,10 +49,14 @@ my_spatial_evi = bind_rows(lapply(temp, read_csv))%>%
   mutate(year = paste0("evi_", year))%>%
   spread(key = "year", value = "mean")# cast into wide format
 
-my_spatial_match <- my_rol_covars %>%
+my_spatial_match <- my_spatial_covars %>%
   inner_join(spatial_df, by = "rptpro_id")%>%
   inner_join(my_spatial_evi, by = "rptpro_id")
 
+setwd("C:/Users/garci/Dropbox/chile_reforestation/data/analysis")
+
+export(my_spatial_match, "my_spatial_match.rds")
+export(my_rol_match, "my_rol_match.rds")
 
 #########################################################################################################
 ######## Los Rios control properties
@@ -222,3 +227,30 @@ ohiggins_matchpool <- ohiggins_ciren[!lengths(st_intersects(ohiggins_ciren, st_m
   #st_join(mgmtplan_df, join = st_disjoint)%>%
   inner_join(data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/property_covariates/ohiggins_CIREN_covars.rds")), by = c("objectid", "rol", "desccomu"))%>%
   inner_join(ohiggins_evi, by = "objectid")
+
+
+
+#########################################################################################################
+######## Combining all control regions
+#########################################################################################################
+
+control_fcn <- function(df){
+  return_df <- df %>%
+    mutate(treat=0,
+           first.treat = 0)%>%
+    select(objectid, geometry.x, treat, first.treat, property_area_ha, road_dist, lat, long, slope, elev, c_1:c_NA, proportion_erosion, mod_to_severe_erosion_area, industry_dist, native_industry_dist, evi_2005:evi_2020)
+  
+  return(return_df)
+}
+
+all_matchpool <- control_fcn(losrios_matchpool) %>%
+  bind_rows(control_fcn(maule_matchpool))%>%
+  bind_rows(control_fcn(araucania_matchpool))%>%
+  bind_rows(control_fcn(biobionuble_matchpool))%>%
+  bind_rows(control_fcn(loslagos_matchpool))%>%
+  bind_rows(control_fcn(ohiggins_matchpool))%>%
+  mutate(controlid = 1:nrow(.))%>%
+  rename(geometry=geometry.x,
+         area_ha = property_area_ha)
+setwd("C:/Users/garci/Dropbox/chile_reforestation/data/analysis")
+export(all_matchpool, "control_matchpool.rds")

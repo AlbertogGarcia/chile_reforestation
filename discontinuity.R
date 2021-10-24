@@ -61,6 +61,12 @@ model_fuzzy_150 <- iv_robust(
 )
 tidy(model_fuzzy_150)
 
+model_fuzzy_100 <- iv_robust(
+  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  data = filter(discontinuity_main, size_centered >= -100 & size_centered <= 100)# & rptpro_numero_region %in% regions_200)
+)
+tidy(model_fuzzy_100)
+
 model_fuzzy_75 <- iv_robust(
   received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
   data = filter(discontinuity_main, size_centered >= -75 & size_centered <= 75)# & rptpro_numero_region %in% regions_200)
@@ -72,6 +78,12 @@ model_donut_150 <- iv_robust(
   data = filter(discontinuity_main, between(size_centered, 15, 150) | between(size_centered, -150, -15) )# & rptpro_numero_region %in% regions_200)
 )
 tidy(model_donut_150)
+
+model_donut_100 <- iv_robust(
+  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  data = filter(discontinuity_main, between(size_centered, 10, 100) | between(size_centered, -100, -10) )# & rptpro_numero_region %in% regions_200)
+)
+tidy(model_donut_100)
 
 model_donut_75 <- iv_robust(
   received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,

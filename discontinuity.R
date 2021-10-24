@@ -117,11 +117,21 @@ modelsummary(list("Bandwidth = 150" = model_fuzzy_150,
 
 
 # non-parametric rd on full sample
-nonp_rd_df <- discontinuity_main %>%
-  filter(rptpro_numero_region %in% regions_200)
+nonprdd_df <- discontinuity_main 
 
-nonp_rd <- rdrobust(y = nonp_rd_df$received_bonus, x = nonp_rd_df$property_size, c = 200,
+donut_size = 25
+
+donut_nonprdd_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+                   )
+
+
+nonp_rd <- rdrobust(y = nonp_rd_df$received_bonus, x = nonp_rd_df$size_centered, c = 0,
          fuzzy = nonp_rd_df$smallholder) %>% 
+  summary()
+
+donut_nonp_rd <- rdrobust(y = donut_nonprdd_df$received_bonus, x = donut_nonprdd_df$size_centered, c = 0,
+                    fuzzy = donut_nonprdd_df$smallholder) %>% 
   summary()
 
 

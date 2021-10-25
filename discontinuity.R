@@ -32,11 +32,6 @@ discontinuity_main %>%
   group_by(rptpro_tipo_concurso) %>% 
   mutate(prop = count / sum(count))
 
-ggplot(discontinuity_main, aes(x = property_size)) +
-  geom_histogram(binwidth = 20, color = "white", boundary = 200) + 
-  geom_vline(xintercept = 200) + 
-  labs(x = "property size")+xlim(0, 400)
-
 test_density <- rddensity(discontinuity_main$property_size, c = 200)
 summary(test_density)
 rdplotdensity(rdd = test_density, 
@@ -49,13 +44,50 @@ rdplotdensity(rdd = test_density_adjusted,
                                    X = subset(discontinuity_main, property_size > 200 | property_size <= 197)$property_size,
                                    type = "both")  # This adds both points and lines
 
-ggplot(discontinuity_main, aes(x = property_size, y = received_bonus, color = rptpro_tipo_concurso)) +
-  geom_point(alpha = 0.5) + 
-  stat_summary_bin(fun = "mean", geom = "line", alpha = 0.5, bins = 50)+
-  # Add a line based on a linear model for the properties less than 200
-  geom_vline(xintercept = 200) +
-  labs(x = "property size", y = "received bonus", color = "contest type")+
-  xlim(0, 400)
+
+
+discontinuity_with_bins <- discontinuity_main %>% 
+  filter(rptpro_numero_region %in% c(5,6,7,8,9, 10, 14))%>%
+  mutate(size_binned = cut(property_size, breaks = seq(0, 400, 20)),
+         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", FALSE, TRUE)) %>% 
+  # Group by each of the new bins and tutoring status
+  group_by(size_binned, smallholder) %>% 
+  # Count how many people are in each test bin + used/didn't use tutoring
+  summarize(n = n()) %>% 
+  # Make this summarized data wider so that there's a column for tutoring and no tutoring
+  pivot_wider(names_from = "smallholder", values_from = "n", values_fill = 0) %>% 
+  rename(small_yes = `TRUE`, small_no = `FALSE`) %>% 
+  # Find the probability of tutoring in each bin by taking 
+  # the count of yes / count of yes + count of no
+  mutate(prob_smallholder = small_yes / (small_yes + small_no),
+         bin_end = as.numeric(size_binned)*20,
+         below_cutoff = bin_end <= 200)%>%
+  drop_na(size_binned)
+
+# Plot this puppy
+ggplot(discontinuity_with_bins, aes(x = bin_end, y = prob_smallholder, color = below_cutoff)) +
+  geom_col(fill = "grey90") +
+  geom_vline(xintercept = 210)+
+  labs(x = "property size", y = "Proportion of properties designated as smallholders")+
+  theme_minimal()
+
+ggplot(discontinuity_with_bins, aes(x = bin_end, y = prob_smallholder, color = below_cutoff)) +
+  geom_line(fill = "grey90") +
+  geom_vline(xintercept = 210)+
+  labs(x = "property size", y = "Proportion of properties designated as smallholders")+
+  theme_minimal()
+
+ggplot(subset(discontinuity_main, rptpro_numero_region %in% regions_200), aes(x = property_size, y = rptpro_tipo_concurso, color = property_size <= 200)) +
+  # Make points small and semi-transparent since there are lots of them
+  geom_point(size = 1.5, alpha = 0.5, 
+             position = position_jitter(width = 0, height = 0.25, seed = 1234)) + 
+  # Add vertical line
+  geom_vline(xintercept = 200) + 
+  # Add labels
+  labs(x = "property size", y = "contest type") + 
+  # Turn off the color legend, since it's redundant
+  guides(color = FALSE)+
+  xlim(0, 500)
 
 # Now we have a new column named below_cutoff that we’ll use as an instrument. Most of the time this will be the same as the contest column, since most people are compliers. But some people didn’t comply,
 
@@ -129,8 +161,9 @@ donut_3_df <- nonprdd_df %>%
   )
 
 donut_nonp_3 <- rdrobust(y = donut_3_df$received_bonus, x = donut_3_df$size_centered, c = 0,
-                         fuzzy = donut_3_df$smallholder) %>% 
-  summary()
+                         fuzzy = donut_3_df$smallholder) 
+
+results_donut_3 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_3$bws[1], "coeff" = donut_nonp_3$coef[1], "se" = donut_nonp_3$se[1], "pval" = donut_nonp_3$pv[1])
 ##############################################################################################
 
 donut_size = 5
@@ -140,8 +173,9 @@ donut_5_df <- nonprdd_df %>%
   )
 
 donut_nonp_5 <- rdrobust(y = donut_5_df$received_bonus, x = donut_5_df$size_centered, c = 0,
-                          fuzzy = donut_5_df$smallholder) %>% 
-  summary()
+                          fuzzy = donut_5_df$smallholder)
+results_donut_5 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_5$bws[1], "coeff" = donut_nonp_5$coef[1], "se" = donut_nonp_5$se[1], "pval" = donut_nonp_5$pv[1])
+
 ###############################################################################################
 
 donut_size = 10
@@ -151,8 +185,9 @@ donut_10_df <- nonprdd_df %>%
   )
 
 donut_nonp_10 <- rdrobust(y = donut_10_df$received_bonus, x = donut_10_df$size_centered, c = 0,
-                    fuzzy = donut_10_df$smallholder) %>% 
-  summary()
+                    fuzzy = donut_10_df$smallholder) 
+results_donut_10 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_10$bws[1], "coeff" = donut_nonp_10$coef[1], "se" = donut_nonp_10$se[1], "pval" = donut_nonp_10$pv[1])
+
 ###############################################################################################
 
 donut_size = 25
@@ -162,9 +197,23 @@ donut_25_df <- nonprdd_df %>%
   )
 
 donut_nonp_25 <- rdrobust(y = donut_25_df$received_bonus, x = donut_25_df$size_centered, c = 0,
-                          fuzzy = donut_25_df$smallholder) %>% 
-  summary()
+                          fuzzy = donut_25_df$smallholder) 
+results_donut_25 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_25$bws[1], "coeff" = donut_nonp_25$coef[1], "se" = donut_nonp_25$se[1], "pval" = donut_nonp_25$pv[1])
 
+###############################################################################################
+
+donut_size = 50
+
+donut_50_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_50 <- rdrobust(y = donut_50_df$received_bonus, x = donut_50_df$size_centered, c = 0,
+                          fuzzy = donut_50_df$smallholder) 
+results_donut_50 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_50$bws[1], "coeff" = donut_nonp_50$coef[1], "se" = donut_nonp_50$se[1], "pval" = donut_nonp_50$pv[1])
+
+
+results_rdd <- rbind(results_donut_3, results_donut_5, results_donut_10, results_donut_25, results_donut_50)
 
 ###############################################################################
 ### EVI as outcome
@@ -184,9 +233,9 @@ length(unique(native_forest_law$rptpro_id))
 rol_priority <- native_forest_law %>%
   group_by(rptpro_id)%>%
   mutate(priority = ifelse(match_type == "rol", 1, 0),
-         max_priority = max(priority))#%>%
-  #filter(priority == max_priority)#%>%
-  #filter(area_diff == min(area_diff))
+         max_priority = max(priority))%>%
+filter(priority == max_priority)#%>%
+#filter(area_diff == min(area_diff))
 
 checking_manipulation <- rol_priority %>%
   filter(between(rptpre_superficie_predial, 175, 200))
@@ -220,7 +269,7 @@ rdplotdensity(rdd = reported_density,
               X = property_discontinuity$size_centered,
               type = "both")  # This adds both points and lines
 
-area_density <- rddensity(subset(property_discontinuity, rptpro_numero_region %in% regions_200)$true_size, c = 200)
+area_density <- rddensity(subset(property_discontinuity, rptpro_numero_region %in% regions_200 & true_size < 5000)$true_size, c = 200)
 summary(area_density)
 rdplotdensity(rdd = area_density, 
               X = subset(property_discontinuity, rptpro_numero_region %in% regions_200)$true_size,
@@ -246,6 +295,7 @@ donut_nonp_5 <- rdrobust(y = donut_5_df$evi_2020, x = donut_5_df$size_centered, 
                            donut_5_df$c_5,
                            donut_5_df$rptpro_puntaje,
                            donut_5_df$rptpro_monto_total,
+                           donut_5_df$rptpre_superficie_bonificada,
                            donut_5_df$evi_2007,
                            as.factor(donut_5_df$rptpro_tipo_presenta)
                          )

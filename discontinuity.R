@@ -43,6 +43,12 @@ plot_density_test <- rdplotdensity(rdd = test_density,
                                    X = discontinuity_main$property_size,
                                    type = "both")  # This adds both points and lines
 
+test_density_adjusted <- rddensity(subset(discontinuity_main, property_size > 200 | property_size <= 195)$property_size, c = 200)
+summary(test_density_adjusted)
+plot_density_test <- rdplotdensity(rdd = test_density_adjusted, 
+                                   X = subset(discontinuity_main, property_size > 200 | property_size <= 190)$property_size,
+                                   type = "both")  # This adds both points and lines
+
 ggplot(discontinuity_main, aes(x = property_size, y = received_bonus, color = rptpro_tipo_concurso)) +
   geom_point(alpha = 0.5) + 
   stat_summary_bin(fun = "mean", geom = "line", alpha = 0.5, bins = 50)+
@@ -61,11 +67,7 @@ model_fuzzy_150 <- iv_robust(
 )
 tidy(model_fuzzy_150)
 
-model_fuzzy_100 <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
-  data = filter(discontinuity_main, size_centered >= -100 & size_centered <= 100)# & rptpro_numero_region %in% regions_200)
-)
-tidy(model_fuzzy_100)
+
 
 model_fuzzy_75 <- iv_robust(
   received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
@@ -75,46 +77,48 @@ tidy(model_fuzzy_75)
 
 model_donut_150 <- iv_robust(
   received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
-  data = filter(discontinuity_main, between(size_centered, 15, 150) | between(size_centered, -150, -15) )# & rptpro_numero_region %in% regions_200)
+  data = filter(discontinuity_main, between(size_centered, 0, 150) | between(size_centered, -150, -5) )# & rptpro_numero_region %in% regions_200)
 )
 tidy(model_donut_150)
 
-model_donut_100 <- iv_robust(
+model_donut_150b <- iv_robust(
   received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
-  data = filter(discontinuity_main, between(size_centered, 10, 100) | between(size_centered, -100, -10) )# & rptpro_numero_region %in% regions_200)
+  data = filter(discontinuity_main, between(size_centered, 5, 150) | between(size_centered, -150, -5) )# & rptpro_numero_region %in% regions_200)
 )
-tidy(model_donut_100)
+tidy(model_donut_150b)
+
 
 model_donut_75 <- iv_robust(
   received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
-  data = filter(discontinuity_main, between(size_centered, 10, 75) | between(size_centered, -75, -10) )# & rptpro_numero_region %in% regions_200)
+  data = filter(discontinuity_main, between(size_centered, 0, 75) | between(size_centered, -75, -5) )# & rptpro_numero_region %in% regions_200)
 )
 tidy(model_donut_75)
 
 model_donut_75b <- iv_robust(
   received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
-  data = filter(discontinuity_main, between(size_centered, 15, 75) | between(size_centered, -75, -15) )# & rptpro_numero_region %in% regions_200)
+  data = filter(discontinuity_main, between(size_centered, 5, 75) | between(size_centered, -75, -5) )# & rptpro_numero_region %in% regions_200)
 )
 tidy(model_donut_75b)
 
 model_donut_75c <- iv_robust(
   received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
-  data = filter(discontinuity_main, between(size_centered, 20, 75) | between(size_centered, -75, -15) )# & rptpro_numero_region %in% regions_200)
+  data = filter(discontinuity_main, between(size_centered, 0, 75) | between(size_centered, -75, -10) )# & rptpro_numero_region %in% regions_200)
 )
 tidy(model_donut_75c)
 
+
 modelsummary(list("Bandwidth = 150" = model_fuzzy_150, 
                   "Bandwidth = 75" = model_fuzzy_75,
-                  "Bandwidth = 150, donut (15)" = model_donut_150,
-                  "Bandwidth = 75, donut (10)" = model_donut_75,
-                  "Bandwidth = 75, donut (15)" = model_donut_75b,
-                  "Bandwidth = 75, donut (20)" = model_donut_75c))
+                  "Bandwidth = 150, donut (5)" = model_donut_150,
+                  "Bandwidth = 150, donut (5, both sides)" = model_donut_150b,
+                  "Bandwidth = 75, donut (5)" = model_donut_75,
+                  "Bandwidth = 75, donut (5, both sides)" = model_donut_75b,
+                  "Bandwidth = 75, donut (10)" = model_donut_75c))
 
 # Based on this model, using below_cutoff as an instrument, 
 # we can see that the coefficient for smallholder is different now! 
 # It’s .47, which means that the smallholder contest causes an increased follow through of 47%
 # for compliers in the bandwidth.
-
 
 # non-parametric rd on full sample
 nonprdd_df <- discontinuity_main 
@@ -146,11 +150,7 @@ my_spatial_match <- data.frame(readRDS("chile_reforestation/data/analysis/my_spa
 
 native_forest_law <- NFL_df %>%
   select(-c(rptprop_nombre, rptpre_rol, rptpre_nombre))%>%
-  inner_join(bind_rows(my_spatial_match, my_rol_match), by = "rptpro_id")%>%
-  mutate(submitted_mp = ifelse( rptpro_tiene_plan_saff=="Si" | rptpro_tiene_bonificacion_saff == "Si", 1, 0),
-         treat = 1,
-         first.treat = rptpro_ano)%>%
-  filter(submitted_mp == 1)
+  inner_join(bind_rows(my_spatial_match, my_rol_match), by = "rptpro_id")
 
 length(unique(native_forest_law$rptpro_id))
 
@@ -163,4 +163,23 @@ rol_priority <- native_forest_law %>%
   ungroup()%>%
   distinct(rptpro_id, .keep_all = TRUE)
 
-evi_discontinuity <- rol_priority
+evi_discontinuity <- rol_priority %>%
+  rename(reported_size = rptpre_superficie_predial,
+         true_size = area_ha)%>%
+  mutate(size_cutoff = ifelse(
+           rptpro_numero_region %in% regions_200, 200,
+           ifelse(rptpro_numero_region %in% regions_800, 800, 500)
+         ),
+size_centered = reported_size - size_cutoff,
+below_cutoff = reported_size <= size_cutoff,
+smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1))%>%
+  filter(rptpro_tiene_bonificacion_saff == "Si")
+
+
+model_donut_150 <- iv_robust(
+  evi_2020 ~ size_centered + smallholder | size_centered + below_cutoff ,
+  fixed_effects = ~ rptpro_ano ,
+  data = filter(evi_discontinuity, between(size_centered, 0, 75) | between(size_centered, -75, -5) )# & rptpro_numero_region %in% regions_200)
+)
+tidy(model_donut_150)
+

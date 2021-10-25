@@ -156,12 +156,20 @@ length(unique(native_forest_law$rptpro_id))
 
 rol_priority <- native_forest_law %>%
   group_by(rptpro_id)%>%
-  mutate(priority = ifelse(match_type != "spatial", 1, 0),
+  mutate(priority = ifelse(match_type != "rol", 1, 0),
          max_priority = max(priority))%>%
-  filter(priority == max_priority)%>%
-  filter(area_diff == min(area_diff))%>%
-  ungroup()%>%
-  distinct(rptpro_id, .keep_all = TRUE)
+  #filter(priority == max_priority)%>%
+  filter(area_diff == min(area_diff))
+
+checking_manipulation <- rol_priority %>%
+  filter(between(rptpre_superficie_predial, 175, 200))
+
+ggplot(data = checking_manipulation) +
+  geom_histogram(aes(rptpre_superficie_predial), fill = "white", color = "red", binwidth = 1)+
+  geom_histogram(aes(area_ha), fill = "grey70", color = "green", binwidth = 1) +
+  geom_vline(xintercept = 200.5, linetype = "dashed")+
+  theme_minimal()+
+  xlim(185, 225)
 
 evi_discontinuity <- rol_priority %>%
   rename(reported_size = rptpre_superficie_predial,
@@ -172,14 +180,14 @@ evi_discontinuity <- rol_priority %>%
          ),
 size_centered = reported_size - size_cutoff,
 below_cutoff = reported_size <= size_cutoff,
-smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1))%>%
-  filter(rptpro_tiene_bonificacion_saff == "Si")
+smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1)
+)%>%
+  filter(rptpro_tiene_bonificacion_saff == "Si" | rptpro_tiene_plan_saff == "Si")
 
 
-model_donut_150 <- iv_robust(
-  evi_2020 ~ size_centered + smallholder | size_centered + below_cutoff ,
-  fixed_effects = ~ rptpro_ano ,
-  data = filter(evi_discontinuity, between(size_centered, 0, 75) | between(size_centered, -75, -5) )# & rptpro_numero_region %in% regions_200)
-)
-tidy(model_donut_150)
-
+# model_donut_75 <- iv_robust(
+#   evi_2019 ~ size_centered + smallholder | size_centered + below_cutoff ,
+#   fixed_effects = ~ rptpro_ano ,
+#   data = filter(evi_discontinuity, between(size_centered, 0, 75) | between(size_centered, -75, -5) )# & rptpro_numero_region %in% regions_200)
+# )
+# tidy(model_donut_75)

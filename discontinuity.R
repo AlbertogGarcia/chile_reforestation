@@ -39,14 +39,14 @@ ggplot(discontinuity_main, aes(x = property_size)) +
 
 test_density <- rddensity(discontinuity_main$property_size, c = 200)
 summary(test_density)
-plot_density_test <- rdplotdensity(rdd = test_density, 
+rdplotdensity(rdd = test_density, 
                                    X = discontinuity_main$property_size,
                                    type = "both")  # This adds both points and lines
 
-test_density_adjusted <- rddensity(subset(discontinuity_main, property_size > 200 | property_size <= 195)$property_size, c = 200)
+test_density_adjusted <- rddensity(subset(discontinuity_main, property_size > 200 | property_size <= 197)$property_size, c = 200)
 summary(test_density_adjusted)
-plot_density_test <- rdplotdensity(rdd = test_density_adjusted, 
-                                   X = subset(discontinuity_main, property_size > 200 | property_size <= 190)$property_size,
+rdplotdensity(rdd = test_density_adjusted, 
+                                   X = subset(discontinuity_main, property_size > 200 | property_size <= 197)$property_size,
                                    type = "both")  # This adds both points and lines
 
 ggplot(discontinuity_main, aes(x = property_size, y = received_bonus, color = rptpro_tipo_concurso)) +
@@ -122,20 +122,47 @@ modelsummary(list("Bandwidth = 150" = model_fuzzy_150,
 
 # non-parametric rd on full sample
 nonprdd_df <- discontinuity_main 
+donut_size = 3
+
+donut_3_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_3 <- rdrobust(y = donut_3_df$received_bonus, x = donut_3_df$size_centered, c = 0,
+                         fuzzy = donut_3_df$smallholder) %>% 
+  summary()
+##############################################################################################
+
+donut_size = 5
+
+donut_5_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_5 <- rdrobust(y = donut_5_df$received_bonus, x = donut_5_df$size_centered, c = 0,
+                          fuzzy = donut_5_df$smallholder) %>% 
+  summary()
+###############################################################################################
+
+donut_size = 10
+
+donut_10_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_10 <- rdrobust(y = donut_10_df$received_bonus, x = donut_10_df$size_centered, c = 0,
+                    fuzzy = donut_10_df$smallholder) %>% 
+  summary()
+###############################################################################################
 
 donut_size = 25
 
-donut_nonprdd_df <- nonprdd_df %>%
+donut_25_df <- nonprdd_df %>%
   filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
-                   )
+  )
 
-
-nonp_rd <- rdrobust(y = nonp_rd_df$received_bonus, x = nonp_rd_df$size_centered, c = 0,
-         fuzzy = nonp_rd_df$smallholder) %>% 
-  summary()
-
-donut_nonp_rd <- rdrobust(y = donut_nonprdd_df$received_bonus, x = donut_nonprdd_df$size_centered, c = 0,
-                    fuzzy = donut_nonprdd_df$smallholder) %>% 
+donut_nonp_25 <- rdrobust(y = donut_25_df$received_bonus, x = donut_25_df$size_centered, c = 0,
+                          fuzzy = donut_25_df$smallholder) %>% 
   summary()
 
 
@@ -156,10 +183,10 @@ length(unique(native_forest_law$rptpro_id))
 
 rol_priority <- native_forest_law %>%
   group_by(rptpro_id)%>%
-  mutate(priority = ifelse(match_type != "rol", 1, 0),
-         max_priority = max(priority))%>%
-  #filter(priority == max_priority)%>%
-  filter(area_diff == min(area_diff))
+  mutate(priority = ifelse(match_type == "rol", 1, 0),
+         max_priority = max(priority))#%>%
+  #filter(priority == max_priority)#%>%
+  #filter(area_diff == min(area_diff))
 
 checking_manipulation <- rol_priority %>%
   filter(between(rptpre_superficie_predial, 175, 200))
@@ -171,23 +198,56 @@ ggplot(data = checking_manipulation) +
   theme_minimal()+
   xlim(185, 225)
 
-evi_discontinuity <- rol_priority %>%
+property_discontinuity <- rol_priority %>%
   rename(reported_size = rptpre_superficie_predial,
          true_size = area_ha)%>%
   mutate(size_cutoff = ifelse(
            rptpro_numero_region %in% regions_200, 200,
            ifelse(rptpro_numero_region %in% regions_800, 800, 500)
          ),
-size_centered = reported_size - size_cutoff,
-below_cutoff = reported_size <= size_cutoff,
-smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1)
-)%>%
+         size_centered = reported_size - size_cutoff,
+         true_centered = true_size - size_cutoff,
+         below_cutoff = reported_size <= size_cutoff,
+         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1),
+         received_bonus = rptpro_tiene_bonificacion_saff == "Si"
+         )
+
+
+
+reported_density <- rddensity(property_discontinuity$size_centered, c = 0)
+summary(reported_density)
+rdplotdensity(rdd = reported_density, 
+              X = property_discontinuity$size_centered,
+              type = "both")  # This adds both points and lines
+
+area_density <- rddensity(subset(property_discontinuity, rptpro_numero_region %in% regions_200)$true_size, c = 200)
+summary(area_density)
+rdplotdensity(rdd = area_density, 
+              X = subset(property_discontinuity, rptpro_numero_region %in% regions_200)$true_size,
+              type = "both")  # This adds both points and lines
+
+
+evi_discontinuity <- property_discontinuity %>%
   filter(rptpro_tiene_bonificacion_saff == "Si" | rptpro_tiene_plan_saff == "Si")
 
 
-# model_donut_75 <- iv_robust(
-#   evi_2019 ~ size_centered + smallholder | size_centered + below_cutoff ,
-#   fixed_effects = ~ rptpro_ano ,
-#   data = filter(evi_discontinuity, between(size_centered, 0, 75) | between(size_centered, -75, -5) )# & rptpro_numero_region %in% regions_200)
-# )
-# tidy(model_donut_75)
+donut_size = 5
+
+donut_5_df <- evi_discontinuity %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_5 <- rdrobust(y = donut_5_df$evi_2020, x = donut_5_df$size_centered, c = 0,
+                          fuzzy = donut_5_df$smallholder,
+                         covs = cbind(
+                           donut_5_df$c_1,
+                           donut_5_df$c_3,
+                           donut_5_df$c_9,
+                           donut_5_df$c_5,
+                           donut_5_df$rptpro_puntaje,
+                           donut_5_df$rptpro_monto_total,
+                           donut_5_df$evi_2007,
+                           as.factor(donut_5_df$rptpro_tipo_presenta)
+                         )
+                           ) %>% 
+  summary()

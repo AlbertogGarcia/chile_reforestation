@@ -8,13 +8,41 @@ library(ggplot2)
 regions_200 <- c(5,6,7,8,9, 10,14)
 regions_500 <- c(1, 2, 3, 4, 15)
 regions_800 <- c(11, 12)
-setwd("C:/Users/garci/Dropbox")
+setwd("C:/Users/agarcia/Dropbox")
 NFL_df <- readRDS("chile_collab/input_files/NFL_df.rds")
+
+assistance_df <- NFL_df %>%
+  rename(property_size = rptpre_superficie_predial)%>%
+  mutate(size_cutoff = ifelse(
+    rptpro_numero_region %in% regions_200, 200,
+    ifelse(rptpro_numero_region %in% regions_800, 800, 500)
+  ),
+  size_centered = property_size - size_cutoff)%>%
+  drop_na(rptpro_monto_asistencia_tecnica)
+table(assistance_df$rptpro_monto_asistencia_tecnica)
+table(assistance_df$rptpre_monto_asistencia_tecnica)
+table(assistance_df$rptpro_monto_informe_ejecucion)
+table(assistance_df$rptpro_monto_asesoria_total)
+table(assistance_df$rptpro_monto_elaboracion_plan)
+
+ggplot(assistance_df, aes(x = size_centered, y = rptpro_monto_asistencia_tecnica, color = rptpro_tipo_concurso)) +
+  # Make points small and semi-transparent since there are lots of them
+  geom_point(size = 1.5, alpha = 0.5, 
+             position = position_jitter(width = 0, height = 0.25, seed = 1234)) + 
+  # Add vertical line
+  geom_vline(xintercept = 0) + 
+  # Add labels
+  labs(x = "property size", y = "received assistance") + 
+  # Turn off the color legend, since it's redundant
+  guides(color = FALSE)+
+  xlim(-200, 200)
+
+  
+
 
 discontinuity_main <- NFL_df %>%
   rename(property_size = rptpre_superficie_predial)%>%
   mutate(received_bonus = as.numeric(ifelse(rptpro_tiene_bonificacion_saff == "Si", 1, 0)),
-         sub_contest = ifelse( rptpro_tipo_presenta == "Extensionista", paste0(rptpro_tipo_concurso, " w/ extentionist"), paste0(rptpro_tipo_concurso, " w/o extentionist")),
          size_cutoff = ifelse(
            rptpro_numero_region %in% regions_200, 200,
            ifelse(rptpro_numero_region %in% regions_800, 800, 500)
@@ -22,9 +50,7 @@ discontinuity_main <- NFL_df %>%
          size_centered = property_size - size_cutoff,
          below_cutoff = property_size <= size_cutoff,
          smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1)
-  )%>%
-  drop_na(received_bonus)%>%
-  filter(rptpro_ano < 2019)
+  )
 
 discontinuity_main %>%
   group_by(rptpro_tipo_concurso, property_size <= size_cutoff) %>% 
@@ -48,7 +74,7 @@ rdplotdensity(rdd = test_density_adjusted,
 
 discontinuity_with_bins <- discontinuity_main %>% 
   filter(rptpro_numero_region %in% c(5,6,7,8,9, 10, 14))%>%
-  mutate(size_binned = cut(property_size, breaks = seq(0, 400, 20)),
+  mutate(size_binned = cut(property_size, breaks = seq(0, 500, 25)),
          smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", FALSE, TRUE)) %>% 
   # Group by each of the new bins and tutoring status
   group_by(size_binned, smallholder) %>% 
@@ -60,7 +86,7 @@ discontinuity_with_bins <- discontinuity_main %>%
   # Find the probability of tutoring in each bin by taking 
   # the count of yes / count of yes + count of no
   mutate(prob_smallholder = small_yes / (small_yes + small_no),
-         bin_end = as.numeric(size_binned)*20,
+         bin_end = as.numeric(size_binned)*25,
          below_cutoff = bin_end <= 200)%>%
   drop_na(size_binned)
 
@@ -77,17 +103,7 @@ ggplot(discontinuity_with_bins, aes(x = bin_end, y = prob_smallholder, color = b
   labs(x = "property size", y = "Proportion of properties designated as smallholders")+
   theme_minimal()
 
-ggplot(subset(discontinuity_main, rptpro_numero_region %in% regions_200), aes(x = property_size, y = rptpro_tipo_concurso, color = property_size <= 200)) +
-  # Make points small and semi-transparent since there are lots of them
-  geom_point(size = 1.5, alpha = 0.5, 
-             position = position_jitter(width = 0, height = 0.25, seed = 1234)) + 
-  # Add vertical line
-  geom_vline(xintercept = 200) + 
-  # Add labels
-  labs(x = "property size", y = "contest type") + 
-  # Turn off the color legend, since it's redundant
-  guides(color = FALSE)+
-  xlim(0, 500)
+
 
 # Now we have a new column named below_cutoff that we’ll use as an instrument. Most of the time this will be the same as the contest column, since most people are compliers. But some people didn’t comply,
 
@@ -238,14 +254,14 @@ filter(priority == max_priority)#%>%
 #filter(area_diff == min(area_diff))
 
 checking_manipulation <- rol_priority %>%
-  filter(between(rptpre_superficie_predial, 175, 200))
+  filter(between(rptpre_superficie_predial, 100, 300) & area_ha <= 400 & rptpro_tipo_concurso != "Otros Interesados")
 
 ggplot(data = checking_manipulation) +
-  geom_histogram(aes(rptpre_superficie_predial), fill = "white", color = "red", binwidth = 1)+
-  geom_histogram(aes(area_ha), fill = "grey70", color = "green", binwidth = 1) +
-  geom_vline(xintercept = 200.5, linetype = "dashed")+
+  geom_histogram(aes(rptpre_superficie_predial), fill = "white", color = "red", binwidth = 5)+
+  geom_histogram(aes(area_ha), fill = "grey70", color = "darkgreen", binwidth = 5) +
+  geom_vline(xintercept = 202.5, linetype = "dashed")+
   theme_minimal()+
-  xlim(185, 225)
+  xlim(0,400)
 
 property_discontinuity <- rol_priority %>%
   rename(reported_size = rptpre_superficie_predial,
@@ -300,4 +316,33 @@ donut_nonp_5 <- rdrobust(y = donut_5_df$evi_2020, x = donut_5_df$size_centered, 
                            as.factor(donut_5_df$rptpro_tipo_presenta)
                          )
                            ) %>% 
+  summary()
+
+###############################################################################
+### synthetic did as outcome
+###############################################################################
+
+results_df <- results_df %>%#readRDS("results_df") %>%
+  mutate(size_centered = rptpre_superficie_predial - 200)
+
+donut_size = 5
+
+donut_5_df <- results_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_5 <- rdrobust(y = donut_5_df$evi_2020, x = donut_5_df$size_centered, c = 0,
+                         fuzzy = donut_5_df$smallholder,
+                         covs = cbind(
+                           donut_5_df$c_1,
+                           donut_5_df$c_3,
+                           donut_5_df$c_9,
+                           donut_5_df$c_5,
+                           donut_5_df$rptpro_puntaje,
+                           donut_5_df$rptpro_monto_total,
+                           donut_5_df$rptpre_superficie_bonificada,
+                           donut_5_df$evi_2007,
+                           as.factor(donut_5_df$rptpro_tipo_presenta)
+                         )
+) %>% 
   summary()

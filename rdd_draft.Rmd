@@ -1,5 +1,5 @@
 ---
-title: "The benefits of being a small fish in a big pond: Manipulation around smallholder eligibility cutoffs in Chile's Native Forest Law"
+title: "The benefits of being a small fish in a big pond: benefits at smallholder eligibility cutoffs in Chile's Native Forest Law"
 author: "Alberto Garcia"
 date: "October 30, 2021"
 output:
@@ -9,7 +9,7 @@ output:
     toc: no
   html_document: default
   documentclass: article
-bibliography: draft_aug2021_ref.bib
+#bibliography: draft_aug2021_ref.bib
 header-includes: 
   \usepackage{setspace}
   \usepackage{bbm}  
@@ -60,7 +60,7 @@ CONAF defines smallholder eligibility in different ways depending on region, but
 knitr::include_graphics("figs/status_discontinuity.png")
 ```
 
-Figure XX shows how the probability of being granted smallholder status changes across this property size threshold. We see a distinct drop in the proportion of properties granted smallholder status beyond the eligibility threshold, although there is some noncompliance. Figure XX shows that this discontinuity moves as expected in regions 11 and 12, where 800 hectares is the threshold for smallholder eligibility. This time, the dicontinuity is much sharper, as almost no properties above the cutoff were granted smallholder eligibility in these two regions. Note that there is no discontinuity at 200 hectares, acting as a nice placebo test. 
+Figure XX shows how the probability of being granted smallholder status changes across this property size threshold. We see a distinct drop in the proportion of properties granted smallholder status beyond the eligibility threshold, although there is some noncompliance. Figure XX shows that this discontinuity moves as expected in regions 11 and 12, where 800 hectares is the threshold for smallholder eligibility. This time, the dicontinuity is much sharper, as almost no properties above the cutoff were granted smallholder eligibility in these two regions. Note that there is no discontinuity at 200 hectares, acting as a placebo test that shows nothing about 200 hectares should affect conditional probability of smallholder status outside of the program threshold in the relevant regions. 
 
 ```{r status-800, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
 knitr::include_graphics("figs/status_discontinuity_800.png")
@@ -70,19 +70,47 @@ knitr::include_graphics("figs/status_discontinuity_800.png")
 
 ## Bunching at the eligibility threshold
 
-Manipulation testing using local polynomial density estimation, p-value 0.0214
+Manipulation testing using local polynomial density estimation, p-value 0.039
 - evidence of manipulation at 200 hectares
+- visually clear
 ```{r rddensity-200, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
-knitr::include_graphics("figs/rddensity_200.png")
+knitr::include_graphics("figs/psize_manipulation_200.png")
 ```
 
 ## Distinguishing misreporting from selective entry
 
+We have boundaries for rural properties in Chile for the regions that comprise the main set of Native Forest Law enrollees. We match enrolled properties to property boundaries using the set of coordinates provided for each property. These matches are not always perfectly representative of the size of the enrolled parcel, as landowners sometimes are able to enroll only one parcel in an otherwise larger property. However, these matches provide a good estimate of the distribution of actual property sizes of Native Forest Law enrollees, and Figure XX shows that the distribution of reported and matched property sizes are comparable. 
+
+```{r dists, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics("figs/psize_distributions.png")
+```
+
+In an effort to determine whether the bunching below the smallholder eligibility threshold of 200 hectares is due to misreporting or an increase in the number of enrollees just below the threshold, we explore these two distributions near the eligibility cutoff. Figure XX shows the distributions of the reported and matched property sizes near the 200 hectare threshold. We again see evidence of bunching just under the cutoff. In addition, we see evidence that properties with matched (true) property sizes just over the 200 hectare threshold were less likely to report their matched property size. This is suggestive of misreporting by properties just above the threshold.  
+
+```{r dists-window, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics("figs/psize_distributions_window.png")
+```
+
+We can explore whether projects on either side of the treatment effect threshold within the manipulation range differe on application characteristics. 
+
 # Benefits of smallholder classification
+
+The benefits of being classified as a smallholder are fairly substantial. The main benefit of smallholder classification is a payment increase of 15\% for the same activities. Smallholder classification may also come with benefits related to extension services or technical assistance. 
 
 ## The policy relevant parameter
 
+We now introduce our parameter of interest. While one may be interested in the causal impact of smallholder classification on property outcomes, this is a difficult parameter to recover. Properties just under the 200 hectare threshold may not have enrolled had the payment been 15\% less, meaning that increased enrollment could have resulted just under the policy threshold. As such, properties on either side of the threshold may not be perfect counterfactuals. However, we can still recover a parameter of extreme policy relevance: the expected impact of smallholder classification on outcomes for enrolled properties. This is likely to be the parameter policymakers are interested in if the primary objective is to generate forest cover at least cost. 
+
+We define the parameter of interest below:
+
+$$CLATE = E[Y_i(1) - Y_i(0) | X = c, i \in L]$$
+, where $Y_i$ denotes the potential outcome for property $i$; $X$ is property size; $c$ is the smallholder eligibility threshold; and $L$ represents enrollment via the Native Forest Law. This is the local average treatment effect of smallholder classification, conditional on property $i$ participating in the program. 
+
 ## Fuzzy donut regression discontinuity design
+
+We know that properties just above the smallholder eligibility threshold were likely to misreport their property sizes in order to obtain the benefits alotted for smallholders. The donut hole RDD can be used to circumvent problems introduced by these situations. [@balleca2016] shows that in the sharp RD setting, the donut RDD approach leads to an unbiased estimate of the treatment effect for non-heaped types.
+
+It is important to consider whether we are interested in estimates that capture the treatment effects for those observed at heaps [@balleca2016]. We can recover unbiased estimates of the average treatment effect across the two types, weighted by the share of non-heaped data that are observed at data heaps. 
 
 ## Results
 

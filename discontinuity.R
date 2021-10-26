@@ -8,8 +8,7 @@ library(bunchr)
 regions_200 <- c(5,6,7,8,9, 10,14)
 regions_500 <- c(1, 2, 3, 4, 15)
 regions_800 <- c(11, 12)
-setwd("C:/Users/garci/Dropbox")
-NFL_df <- readRDS("chile_collab/input_files/NFL_df.rds")
+NFL_df <- readRDS("C:/Users/agarcia/Dropbox/chile_collab/input_files/NFL_df.rds")
 
 assistance_df <- NFL_df %>%
   rename(property_size = rptpre_superficie_predial)%>%
@@ -46,14 +45,18 @@ discontinuity_main %>%
   group_by(rptpro_tipo_concurso) %>% 
   mutate(prop = count / sum(count))
 
-test_density <- rddensity(discontinuity_main$property_size, c = 200)
+discontinuity_main200 <- subset(discontinuity_main, rptpro_numero_region %in% regions_200)
+discontinuity_main800 <- subset(discontinuity_main, rptpro_numero_region %in% regions_800)
+
+test_density <- rddensity(discontinuity_main200$property_size, c = 200)
 summary(test_density)
 rdplotdensity(rdd = test_density, 
-                                   X = discontinuity_main$property_size,
+                                   X = discontinuity_main200$property_size,
                                    type = "both",
               #title = "",
               xlabel = "reported property size",
               ylabel = "density")  # This adds both points and lines
+ggsave(path = "figs", filename = "psize_manipulation_200.png", width = 8, height = 5)
 
 test_density_adjusted <- rddensity(subset(discontinuity_main, property_size > 200 | property_size <= 197)$property_size, c = 200)
 summary(test_density_adjusted)
@@ -62,9 +65,7 @@ rdplotdensity(rdd = test_density_adjusted,
                                    type = "both")  # This adds both points and lines
 
 
-
-discontinuity_with_bins <- discontinuity_main %>% 
-  filter(rptpro_numero_region %in% c(5,6,7,8,9, 10, 14))%>%
+discontinuity_with_bins <- discontinuity_main200 %>% 
   mutate(size_binned = cut(property_size, breaks = seq(0, 500, 25)),
          smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", FALSE, TRUE)) %>% 
   # Group by each of the new bins and tutoring status
@@ -94,8 +95,7 @@ ggplot(discontinuity_with_bins, aes(x = bin_end, y = prob_smallholder, color = b
   labs(x = "property size", y = "Proportion of properties designated as smallholders")+
   theme_minimal()
 
-discontinuity_with_bins2 <- discontinuity_main %>% 
-  filter(rptpro_numero_region %in% c(11, 12))%>%
+discontinuity_with_bins2 <- discontinuity_main800 %>% 
   mutate(size_binned = cut(property_size, breaks = seq(0, 1000, 50)),
          smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", FALSE, TRUE)) %>% 
   # Group by each of the new bins and tutoring status
@@ -264,24 +264,56 @@ length(unique(native_forest_law$rptpro_id))
 rol_priority <- native_forest_law %>%
   group_by(rptpro_id)%>%
   mutate(priority = ifelse(match_type == "rol", 1, 0),
-         max_priority = max(priority))#%>%
-#filter(priority == max_priority)%>%
-#filter(area_diff == min(area_diff))
-
+         max_priority = max(priority))%>%
+distinct(rptpro_tipo_concurso, rptpro_id, NOM_PREDIO, PROPIETARI, rptpre_nombre, rptprop_nombre, evi_2007, evi_2020, rptpre_superficie_predial, area_ha, .keep_all = TRUE)%>%
+  filter(priority == max(priority)) %>%
+  filter(area_diff == min(area_diff))%>%
+  ungroup()
 
 
 checking_manipulation <- rol_priority %>%
-  filter(between(rptpre_superficie_predial, 175, 225) & rptpro_tipo_concurso != "Otros Interesados")%>%
-  select(rptpro_id, NOM_PREDIO, PROPIETARI, rptpre_nombre, rptprop_nombre, evi_2007, evi_2020)
+  filter( area_diff/rptpre_superficie_predial < 1)%>%
+  select(rptpro_tipo_concurso, rptpre_superficie_predial, area_ha, NOM_PREDIO, PROPIETARI, rptpre_nombre, rptprop_nombre, rptpro_id, evi_2007, evi_2020)
 
-write.csv(checking_manipulation, "checking_manipulation.csv")
+#write.csv(checking_manipulation, "checking_manipulation.csv")
+size_reported <- checking_manipulation$rptpre_superficie_predial
+size_true <- checking_manipulation$area_ha
 
-ggplot(data = checking_manipulation) +
-  geom_histogram(aes(rptpre_superficie_predial), fill = "white", color = "red", binwidth = 5)+
-  geom_histogram(aes(area_ha), fill = "grey70", color = "darkgreen", binwidth = 5) +
-  geom_vline(xintercept = 202.5, linetype = "dashed")+
+### first, we'll see whether these distributions are different to one another
+ks.test(size_reported, size_true)
+# D = 0.021268, p-value = 0.06798
+
+ggplot(data = subset(checking_manipulation)) +
+  geom_histogram(aes(rptpre_superficie_predial,  fill = "rptpre_superficie_predial"), binwidth = 5, alpha = .7 ,color = "white", size = 1, boundary = 0)+
+  geom_histogram(aes(area_ha, fill = "area_ha",), binwidth = 5,  alpha = .8, boundary = 0) +
+  geom_vline(xintercept = 200, linetype = "dashed", , size = 1.25)+
+  #scale_fill_manual(values=c("grey20", "grey60")) + 
   theme_minimal()+
-  xlim(150,300)
+  scale_fill_manual(name="", 
+                     labels = c("reported", 
+                                "matched"), 
+                     values = c("rptpre_superficie_predial"="#E69F00", 
+                                "area_ha"="grey40"))+
+  xlab("property size (ha)")+
+  xlim(179, 226)
+ggsave(#path = "figs", 
+  filename = "psize_distributions_window.png", width = 8, height = 5)
+
+ggplot(data = subset(checking_manipulation)) +
+  geom_histogram(aes(rptpre_superficie_predial,  fill = "rptpre_superficie_predial"), binwidth = 10, alpha = .7, color = "white", size = 1, boundary = 0)+
+  geom_histogram(aes(area_ha, fill = "area_ha",), binwidth = 10,  alpha = .7, boundary = 0) +
+  geom_vline(xintercept = 200, linetype = "dashed", , size = 1.25)+
+  #scale_fill_manual(values=c("grey20", "grey60")) + 
+  theme_minimal()+
+  scale_fill_manual(name="", 
+                    labels = c("reported", 
+                               "matched"), 
+                    values = c("rptpre_superficie_predial"="#E69F00", 
+                               "area_ha"="grey40"))+
+  xlab("property size (ha)")+
+  xlim(0, 600)
+ggsave(#path = "figs", 
+  filename = "psize_distributions.png", width = 8, height = 5)
 
 property_discontinuity <- rol_priority %>%
   rename(reported_size = rptpre_superficie_predial,
@@ -381,9 +413,10 @@ donut_size = 5
 
 donut_5_df <- results_df %>%
   filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
-  )
+  )%>%
+  filter(first.treat < 2011)
 
-donut_nonp_5 <- rdrobust(y = donut_5_df$evi_2020, x = donut_5_df$size_centered, c = 0,
+donut_nonp_5 <- rdrobust(y = donut_5_df$tau.2020, x = donut_5_df$size_centered, c = 0,
                          fuzzy = donut_5_df$smallholder,
                          covs = cbind(
                            donut_5_df$c_1,
@@ -393,7 +426,6 @@ donut_nonp_5 <- rdrobust(y = donut_5_df$evi_2020, x = donut_5_df$size_centered, 
                            donut_5_df$rptpro_puntaje,
                            donut_5_df$rptpro_monto_total,
                            donut_5_df$rptpre_superficie_bonificada,
-                           donut_5_df$evi_2007,
                            as.factor(donut_5_df$rptpro_tipo_presenta)
                          )
 ) %>% 

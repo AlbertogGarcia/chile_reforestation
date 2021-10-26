@@ -1,0 +1,93 @@
+---
+title: "The benefits of being a small fish in a big pond: Manipulation around smallholder eligibility cutoffs in Chile's Native Forest Law"
+author: "Alberto Garcia"
+date: "October 30, 2021"
+output:
+  bookdown::pdf_document2:
+    latex_engine: xelatex
+    number_sections: yes
+    toc: no
+  html_document: default
+  documentclass: article
+bibliography: draft_aug2021_ref.bib
+header-includes: 
+  \usepackage{setspace}
+  \usepackage{bbm}  
+  \usepackage{graphicx}
+  \usepackage{amsmath}
+  \usepackage{amssymb}
+  \usepackage{sectsty}
+  \usepackage{float}
+  \usepackage{color}
+  \usepackage{outlines}
+---
+\doublespacing
+\sectionfont{\fontsize{11}{11}\selectfont}
+\subsectionfont{\fontsize{11}{11}\selectfont}
+
+```{r setup, include=FALSE}
+
+library(knitr)
+#library(dplyr)
+library(ggplot2)
+library(stringi)
+library(stargazer)
+library(kableExtra)
+library(tidyverse)
+
+
+knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, messages = FALSE, out.width="49%", fig.align = "center")
+
+options(scipen = 999)
+```
+
+# Abstract {-}
+
+
+\clearpage
+
+# Motivation
+
+In an attempt to encourage the recovery and protection of native forests, Chile sought to pass the Ley de Recuperación del Bosque Nativo y Fomento Forestal (Native Forest Law). In addition to protections for native forests, the law established an annual competition for grants to support private landowners in their efforts to manage, restore, or reforest their land using native species. Since 2009, more than $58 million have been allocated through these competitions for projects covering 235 thousand hectares. Much of this allocated funding has not been paid to landowners, however, as program follow-through is relatively low. Program administrators are unsure exactly why enrolled applicants fail to complete projects at such high rates [@conaf_2019]. 
+
+Initially expected in 1994, the Native Forest Law became frozen in legislature before finally passing in 2008. The Native Forest Law acted as a successor to DL701 [@clapp1998], a law that largely subsidized afforestation with monocultures of eucalyptus and pine [@heilmayr_impacts_2020]. In response to concerns that large companies benefited disproportionately from the DL701 subsidies, Native Forest Law bonuses place an emphasis upon supporting smallholders. 
+
+In practice, the contest benefits smallholders in several ways. First, CONAF holds separate contests for smallholders and other interested parties, where awards in the smalholder contest are worth 15\% more than awards in the other interested parties contest for the same set of activities. Further, participating in the smallholder contest essentially guarantees project approval and funding. When distributing funds, CONAF approves projects in the smallholder contest in order from the highest to lowest score, before moving to the other interested party contest. As such, other interested party applicants may not receive an award if their project score falls below the point at which the available funding has been distributed. To date, funding has never run out prior to awarding all eligible smallholder projects. 
+
+CONAF defines smallholder eligibility in different ways depending on region, but with some exceptions, eligibility is determined by property size. In the regions of Chile in which forestry plays a major role, this cutoff is 200 hectares, and it is larger in other regions of the country. Further, these landowners cannot have assets exceeding the equivalent of 3,500 development units. Some exceptions apply to these rules, such as for indigenous communities. 
+
+```{r status-200, fig.pos="H", out.width = '70%', fig.cap = "conditional probability of being granted smallholder status drops distinctly across main 200 hectare eligibility threshold", echo=FALSE}
+knitr::include_graphics("figs/status_discontinuity.png")
+```
+
+Figure XX shows how the probability of being granted smallholder status changes across this property size threshold. We see a distinct drop in the proportion of properties granted smallholder status beyond the eligibility threshold, although there is some noncompliance. Figure XX shows that this discontinuity moves as expected in regions 11 and 12, where 800 hectares is the threshold for smallholder eligibility. This time, the dicontinuity is much sharper, as almost no properties above the cutoff were granted smallholder eligibility in these two regions. Note that there is no discontinuity at 200 hectares, acting as a nice placebo test. 
+
+```{r status-800, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics("figs/status_discontinuity_800.png")
+```
+
+# Manipulation around the cutoff
+
+## Bunching at the eligibility threshold
+
+Manipulation testing using local polynomial density estimation, p-value 0.0214
+- evidence of manipulation at 200 hectares
+```{r rddensity-200, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics("figs/rddensity_200.png")
+```
+
+## Distinguishing misreporting from selective entry
+
+# Benefits of smallholder classification
+
+## The policy relevant parameter
+
+## Fuzzy donut regression discontinuity design
+
+## Results
+
+### Follow-through
+
+### Accumulation of forest biomass
+
+# Discussion

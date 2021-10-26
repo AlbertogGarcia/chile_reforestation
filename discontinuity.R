@@ -4,11 +4,11 @@ library(rdrobust)  # For robust nonparametric regression discontinuity
 library(rddensity)  # For nonparametric regression discontinuity density tests
 library(modelsummary)  # Create side-by-side regression tables
 library(ggplot2)
-
+library(bunchr)
 regions_200 <- c(5,6,7,8,9, 10,14)
 regions_500 <- c(1, 2, 3, 4, 15)
 regions_800 <- c(11, 12)
-setwd("C:/Users/agarcia/Dropbox")
+setwd("C:/Users/garci/Dropbox")
 NFL_df <- readRDS("chile_collab/input_files/NFL_df.rds")
 
 assistance_df <- NFL_df %>%
@@ -25,21 +25,6 @@ table(assistance_df$rptpro_monto_informe_ejecucion)
 table(assistance_df$rptpro_monto_asesoria_total)
 table(assistance_df$rptpro_monto_elaboracion_plan)
 
-ggplot(assistance_df, aes(x = size_centered, y = rptpro_monto_asistencia_tecnica, color = rptpro_tipo_concurso)) +
-  # Make points small and semi-transparent since there are lots of them
-  geom_point(size = 1.5, alpha = 0.5, 
-             position = position_jitter(width = 0, height = 0.25, seed = 1234)) + 
-  # Add vertical line
-  geom_vline(xintercept = 0) + 
-  # Add labels
-  labs(x = "property size", y = "received assistance") + 
-  # Turn off the color legend, since it's redundant
-  guides(color = FALSE)+
-  xlim(-200, 200)
-
-  
-
-
 discontinuity_main <- NFL_df %>%
   rename(property_size = rptpre_superficie_predial)%>%
   mutate(received_bonus = as.numeric(ifelse(rptpro_tiene_bonificacion_saff == "Si", 1, 0)),
@@ -52,6 +37,9 @@ discontinuity_main <- NFL_df %>%
          smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1)
   )
 
+bunch_viewer(subset(discontinuity_main, rptpro_numero_region %in% regions_200 & property_size < 300 & property_size > 50 )$property_size, 200, cf_start = 10, cf_end = 10, exclude_before = 3,
+             exclude_after = 3, binw = 5)
+
 discontinuity_main %>%
   group_by(rptpro_tipo_concurso, property_size <= size_cutoff) %>% 
   summarize(count = n()) %>% 
@@ -62,7 +50,10 @@ test_density <- rddensity(discontinuity_main$property_size, c = 200)
 summary(test_density)
 rdplotdensity(rdd = test_density, 
                                    X = discontinuity_main$property_size,
-                                   type = "both")  # This adds both points and lines
+                                   type = "both",
+              #title = "",
+              xlabel = "reported property size",
+              ylabel = "density")  # This adds both points and lines
 
 test_density_adjusted <- rddensity(subset(discontinuity_main, property_size > 200 | property_size <= 197)$property_size, c = 200)
 summary(test_density_adjusted)
@@ -94,7 +85,7 @@ discontinuity_with_bins <- discontinuity_main %>%
 ggplot(discontinuity_with_bins, aes(x = bin_end, y = prob_smallholder, color = below_cutoff)) +
   geom_col(fill = "grey90") +
   geom_vline(xintercept = 210)+
-  labs(x = "property size", y = "Proportion of properties designated as smallholders")+
+  labs(x = "reported property size", y = "Proportion of properties designated as smallholders")+
   theme_minimal()
 
 ggplot(discontinuity_with_bins, aes(x = bin_end, y = prob_smallholder, color = below_cutoff)) +
@@ -103,7 +94,31 @@ ggplot(discontinuity_with_bins, aes(x = bin_end, y = prob_smallholder, color = b
   labs(x = "property size", y = "Proportion of properties designated as smallholders")+
   theme_minimal()
 
+discontinuity_with_bins2 <- discontinuity_main %>% 
+  filter(rptpro_numero_region %in% c(11, 12))%>%
+  mutate(size_binned = cut(property_size, breaks = seq(0, 1000, 50)),
+         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", FALSE, TRUE)) %>% 
+  # Group by each of the new bins and tutoring status
+  group_by(size_binned, smallholder) %>% 
+  # Count how many people are in each test bin + used/didn't use tutoring
+  summarize(n = n()) %>% 
+  # Make this summarized data wider so that there's a column for tutoring and no tutoring
+  pivot_wider(names_from = "smallholder", values_from = "n", values_fill = 0) %>% 
+  rename(small_yes = `TRUE`, small_no = `FALSE`) %>% 
+  # Find the probability of tutoring in each bin by taking 
+  # the count of yes / count of yes + count of no
+  mutate(prob_smallholder = small_yes / (small_yes + small_no),
+         bin_end = as.numeric(size_binned)*50,
+         below_cutoff = bin_end <= 200)%>%
+  drop_na(size_binned)
 
+# Plot this puppy
+ggplot(discontinuity_with_bins2, aes(x = bin_end, y = prob_smallholder)) +
+  geom_col(fill = "grey90", color = "orange") +
+  geom_vline(xintercept = 225, linetype = "dashed")+
+  geom_vline(xintercept = 825)+
+  labs(x = "reported property size", y = "Proportion of properties designated as smallholders")+
+  theme_minimal()
 
 # Now we have a new column named below_cutoff that we’ll use as an instrument. Most of the time this will be the same as the contest column, since most people are compliers. But some people didn’t comply,
 
@@ -249,19 +264,24 @@ length(unique(native_forest_law$rptpro_id))
 rol_priority <- native_forest_law %>%
   group_by(rptpro_id)%>%
   mutate(priority = ifelse(match_type == "rol", 1, 0),
-         max_priority = max(priority))%>%
-filter(priority == max_priority)#%>%
+         max_priority = max(priority))#%>%
+#filter(priority == max_priority)%>%
 #filter(area_diff == min(area_diff))
 
+
+
 checking_manipulation <- rol_priority %>%
-  filter(between(rptpre_superficie_predial, 100, 300) & area_ha <= 400 & rptpro_tipo_concurso != "Otros Interesados")
+  filter(between(rptpre_superficie_predial, 175, 225) & rptpro_tipo_concurso != "Otros Interesados")%>%
+  select(rptpro_id, NOM_PREDIO, PROPIETARI, rptpre_nombre, rptprop_nombre, evi_2007, evi_2020)
+
+write.csv(checking_manipulation, "checking_manipulation.csv")
 
 ggplot(data = checking_manipulation) +
   geom_histogram(aes(rptpre_superficie_predial), fill = "white", color = "red", binwidth = 5)+
   geom_histogram(aes(area_ha), fill = "grey70", color = "darkgreen", binwidth = 5) +
   geom_vline(xintercept = 202.5, linetype = "dashed")+
   theme_minimal()+
-  xlim(0,400)
+  xlim(150,300)
 
 property_discontinuity <- rol_priority %>%
   rename(reported_size = rptpre_superficie_predial,
@@ -276,6 +296,38 @@ property_discontinuity <- rol_priority %>%
          smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1),
          received_bonus = rptpro_tiene_bonificacion_saff == "Si"
          )
+
+
+
+
+discontinuity_with_bins <- property_discontinuity %>% 
+  filter(rptpro_numero_region %in% c(5,6,7,8,9, 10, 14))%>%
+  mutate(size_binned = cut(true_size, breaks = seq(0, 500, 25)),
+         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", FALSE, TRUE)
+         ) %>% 
+  # Group by each of the new bins and tutoring status
+  group_by(size_binned, smallholder) %>% 
+  # Count how many people are in each test bin + used/didn't use tutoring
+  summarize(n = n()) %>% 
+  # Make this summarized data wider so that there's a column for tutoring and no tutoring
+  pivot_wider(names_from = "smallholder", values_from = "n", values_fill = 0) %>% 
+  rename(small_yes = `TRUE`, small_no = `FALSE`) %>% 
+  # Find the probability of tutoring in each bin by taking 
+  # the count of yes / count of yes + count of no
+  mutate(prob_smallholder = small_yes / (small_yes + small_no),
+         bin_end = as.numeric(size_binned)*25,
+         below_cutoff = bin_end <= 200)%>%
+  drop_na(size_binned)
+
+# Plot this puppy
+ggplot(discontinuity_with_bins, aes(x = bin_end, y = prob_smallholder, color = below_cutoff)) +
+  geom_col(fill = "grey90") +
+  geom_vline(xintercept = 210)+
+  labs(x = "reported property size", y = "Proportion of properties designated as smallholders")+
+  theme_minimal()
+
+
+
 
 
 

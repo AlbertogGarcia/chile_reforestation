@@ -8,21 +8,7 @@ library(bunchr)
 regions_200 <- c(5,6,7,8,9, 10,14)
 regions_500 <- c(1, 2, 3, 4, 15)
 regions_800 <- c(11, 12)
-NFL_df <- readRDS("C:/Users/agarcia/Dropbox/chile_collab/input_files/NFL_df.rds")
-
-assistance_df <- NFL_df %>%
-  rename(property_size = rptpre_superficie_predial)%>%
-  mutate(size_cutoff = ifelse(
-    rptpro_numero_region %in% regions_200, 200,
-    ifelse(rptpro_numero_region %in% regions_800, 800, 500)
-  ),
-  size_centered = property_size - size_cutoff)%>%
-  drop_na(rptpro_monto_asistencia_tecnica)
-table(assistance_df$rptpro_monto_asistencia_tecnica)
-table(assistance_df$rptpre_monto_asistencia_tecnica)
-table(assistance_df$rptpro_monto_informe_ejecucion)
-table(assistance_df$rptpro_monto_asesoria_total)
-table(assistance_df$rptpro_monto_elaboracion_plan)
+NFL_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/input_files/NFL_df.rds")
 
 discontinuity_main <- NFL_df %>%
   rename(property_size = rptpre_superficie_predial)%>%
@@ -36,17 +22,22 @@ discontinuity_main <- NFL_df %>%
          smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1)
   )
 
-bunch_viewer(subset(discontinuity_main, rptpro_numero_region %in% regions_200 & property_size < 300 & property_size > 50 )$property_size, 200, cf_start = 10, cf_end = 10, exclude_before = 3,
-             exclude_after = 3, binw = 5)
-
+#################################################################################################
+### table shows compliance across the threshold for all properties
+#################################################################################################
 discontinuity_main %>%
   group_by(rptpro_tipo_concurso, property_size <= size_cutoff) %>% 
   summarize(count = n()) %>% 
   group_by(rptpro_tipo_concurso) %>% 
   mutate(prop = count / sum(count))
 
+
 discontinuity_main200 <- subset(discontinuity_main, rptpro_numero_region %in% regions_200)
 discontinuity_main800 <- subset(discontinuity_main, rptpro_numero_region %in% regions_800)
+
+#################################################################################################
+### Density tests show that there is manipulation at the 200 hectare threshold
+#################################################################################################
 
 test_density <- rddensity(discontinuity_main200$property_size, c = 200)
 summary(test_density)
@@ -58,12 +49,9 @@ rdplotdensity(rdd = test_density,
               ylabel = "density")  # This adds both points and lines
 ggsave(path = "figs", filename = "psize_manipulation_200.png", width = 8, height = 5)
 
-test_density_adjusted <- rddensity(subset(discontinuity_main, property_size > 200 | property_size <= 197)$property_size, c = 200)
-summary(test_density_adjusted)
-rdplotdensity(rdd = test_density_adjusted, 
-                                   X = subset(discontinuity_main, property_size > 200 | property_size <= 197)$property_size,
-                                   type = "both")  # This adds both points and lines
-
+#################################################################################################
+### Showing that smallholder probability changes across thresholds
+#################################################################################################
 
 discontinuity_with_bins <- discontinuity_main200 %>% 
   mutate(size_binned = cut(property_size, breaks = seq(0, 500, 25)),
@@ -89,11 +77,7 @@ ggplot(discontinuity_with_bins, aes(x = bin_end, y = prob_smallholder, color = b
   labs(x = "reported property size", y = "Proportion of properties designated as smallholders")+
   theme_minimal()
 
-ggplot(discontinuity_with_bins, aes(x = bin_end, y = prob_smallholder, color = below_cutoff)) +
-  geom_line(fill = "grey90") +
-  geom_vline(xintercept = 210)+
-  labs(x = "property size", y = "Proportion of properties designated as smallholders")+
-  theme_minimal()
+## We see something similar for the 800 hectare regions
 
 discontinuity_with_bins2 <- discontinuity_main800 %>% 
   mutate(size_binned = cut(property_size, breaks = seq(0, 1000, 50)),
@@ -120,9 +104,18 @@ ggplot(discontinuity_with_bins2, aes(x = bin_end, y = prob_smallholder)) +
   labs(x = "reported property size", y = "Proportion of properties designated as smallholders")+
   theme_minimal()
 
+#################################################################################################
+### Implementing fuzzy rdd
+#################################################################################################
+
+
 # Now we have a new column named below_cutoff that we’ll use as an instrument. Most of the time this will be the same as the contest column, since most people are compliers. But some people didn’t comply,
 
 library(estimatr)
+
+#################################################################################################
+### parametric fuzzy rdd w/ received_bonus outcome
+#################################################################################################
 
 model_fuzzy_150 <- iv_robust(
   received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
@@ -176,7 +169,8 @@ modelsummary(list("Bandwidth = 150" = model_fuzzy_150,
                   "Bandwidth = 150, donut (5, both sides)" = model_donut_150b,
                   "Bandwidth = 75, donut (5)" = model_donut_75,
                   "Bandwidth = 75, donut (5, both sides)" = model_donut_75b,
-                  "Bandwidth = 75, donut (10)" = model_donut_75c))
+                  "Bandwidth = 75, donut (10)" = model_donut_75c) ,
+             stars = TRUE)
 
 # Based on this model, using below_cutoff as an instrument, 
 # we can see that the coefficient for smallholder is different now! 
@@ -184,7 +178,24 @@ modelsummary(list("Bandwidth = 150" = model_fuzzy_150,
 # for compliers in the bandwidth.
 
 # non-parametric rd on full sample
-nonprdd_df <- discontinuity_main 
+nonprdd_df <- discontinuity_main %>%
+  mutate(reforestation = (regeneracion + `siembra-directa` + plantacion + `plantacion-suplementaria` + enriquecimiento
+                          # + `corta-regeneracion` 
+  ) > 0
+  )
+
+donut_size = 0
+
+donut_0_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_0 <- rdrobust(y = donut_0_df$received_bonus, x = donut_0_df$size_centered, c = 0,
+                         fuzzy = donut_0_df$smallholder) 
+
+results_donut_0 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_0$bws[1], "coeff" = donut_nonp_0$coef[1], "se" = donut_nonp_0$se[1], "pval" = donut_nonp_0$pv[1])
+##############################################################################################
+
 donut_size = 3
 
 donut_3_df <- nonprdd_df %>%
@@ -244,7 +255,239 @@ donut_nonp_50 <- rdrobust(y = donut_50_df$received_bonus, x = donut_50_df$size_c
 results_donut_50 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_50$bws[1], "coeff" = donut_nonp_50$coef[1], "se" = donut_nonp_50$se[1], "pval" = donut_nonp_50$pv[1])
 
 
-results_rdd <- rbind(results_donut_3, results_donut_5, results_donut_10, results_donut_25, results_donut_50)
+results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_25, results_donut_50)
+
+###############################################################################
+### rptpre_superficie_bonificada as outcome
+###############################################################################
+
+donut_size = 0
+
+donut_0_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_0 <- rdrobust(y = donut_0_df$rptpre_superficie_bonificada, x = donut_0_df$size_centered, c = 0,
+                         fuzzy = donut_0_df$smallholder) 
+
+results_donut_0 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_0$bws[1], "coeff" = donut_nonp_0$coef[1], "se" = donut_nonp_0$se[1], "pval" = donut_nonp_0$pv[1])
+##############################################################################################
+
+donut_size = 3
+
+donut_3_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_3 <- rdrobust(y = donut_3_df$rptpre_superficie_bonificada, x = donut_3_df$size_centered, c = 0,
+                         fuzzy = donut_3_df$smallholder) 
+
+results_donut_3 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_3$bws[1], "coeff" = donut_nonp_3$coef[1], "se" = donut_nonp_3$se[1], "pval" = donut_nonp_3$pv[1])
+##############################################################################################
+
+donut_size = 5
+
+donut_5_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_5 <- rdrobust(y = donut_5_df$rptpre_superficie_bonificada, x = donut_5_df$size_centered, c = 0,
+                         fuzzy = donut_5_df$smallholder)
+results_donut_5 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_5$bws[1], "coeff" = donut_nonp_5$coef[1], "se" = donut_nonp_5$se[1], "pval" = donut_nonp_5$pv[1])
+
+###############################################################################################
+
+donut_size = 10
+
+donut_10_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_10 <- rdrobust(y = donut_10_df$rptpre_superficie_bonificada, x = donut_10_df$size_centered, c = 0,
+                          fuzzy = donut_10_df$smallholder) 
+results_donut_10 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_10$bws[1], "coeff" = donut_nonp_10$coef[1], "se" = donut_nonp_10$se[1], "pval" = donut_nonp_10$pv[1])
+
+###############################################################################################
+
+donut_size = 25
+
+donut_25_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_25 <- rdrobust(y = donut_25_df$rptpre_superficie_bonificada, x = donut_25_df$size_centered, c = 0,
+                          fuzzy = donut_25_df$smallholder) 
+results_donut_25 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_25$bws[1], "coeff" = donut_nonp_25$coef[1], "se" = donut_nonp_25$se[1], "pval" = donut_nonp_25$pv[1])
+
+###############################################################################################
+
+donut_size = 50
+
+donut_50_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_50 <- rdrobust(y = donut_50_df$rptpre_superficie_bonificada, x = donut_50_df$size_centered, c = 0,
+                          fuzzy = donut_50_df$smallholder) 
+results_donut_50 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_50$bws[1], "coeff" = donut_nonp_50$coef[1], "se" = donut_nonp_50$se[1], "pval" = donut_nonp_50$pv[1])
+
+
+results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_25, results_donut_50)
+
+###############################################################################
+### rptpro_monto_total as outcome
+###############################################################################
+
+donut_size = 0
+
+donut_0_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_0 <- rdrobust(y = donut_0_df$rptpro_monto_total, x = donut_0_df$size_centered, c = 0,
+                         fuzzy = donut_0_df$smallholder) 
+
+results_donut_0 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_0$bws[1], "coeff" = donut_nonp_0$coef[1], "se" = donut_nonp_0$se[1], "pval" = donut_nonp_0$pv[1])
+##############################################################################################
+
+donut_size = 3
+
+donut_3_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_3 <- rdrobust(y = donut_3_df$rptpro_monto_total, x = donut_3_df$size_centered, c = 0,
+                         fuzzy = donut_3_df$smallholder) 
+
+results_donut_3 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_3$bws[1], "coeff" = donut_nonp_3$coef[1], "se" = donut_nonp_3$se[1], "pval" = donut_nonp_3$pv[1])
+##############################################################################################
+
+donut_size = 5
+
+donut_5_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_5 <- rdrobust(y = donut_5_df$rptpro_monto_total, x = donut_5_df$size_centered, c = 0,
+                         fuzzy = donut_5_df$smallholder)
+results_donut_5 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_5$bws[1], "coeff" = donut_nonp_5$coef[1], "se" = donut_nonp_5$se[1], "pval" = donut_nonp_5$pv[1])
+
+###############################################################################################
+
+donut_size = 10
+
+donut_10_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_10 <- rdrobust(y = donut_10_df$rptpro_monto_total, x = donut_10_df$size_centered, c = 0,
+                          fuzzy = donut_10_df$smallholder) 
+results_donut_10 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_10$bws[1], "coeff" = donut_nonp_10$coef[1], "se" = donut_nonp_10$se[1], "pval" = donut_nonp_10$pv[1])
+
+###############################################################################################
+
+donut_size = 25
+
+donut_25_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_25 <- rdrobust(y = donut_25_df$rptpro_monto_total, x = donut_25_df$size_centered, c = 0,
+                          fuzzy = donut_25_df$smallholder) 
+results_donut_25 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_25$bws[1], "coeff" = donut_nonp_25$coef[1], "se" = donut_nonp_25$se[1], "pval" = donut_nonp_25$pv[1])
+
+###############################################################################################
+
+donut_size = 50
+
+donut_50_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_50 <- rdrobust(y = donut_50_df$rptpro_monto_total, x = donut_50_df$size_centered, c = 0,
+                          fuzzy = donut_50_df$smallholder) 
+results_donut_50 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_50$bws[1], "coeff" = donut_nonp_50$coef[1], "se" = donut_nonp_50$se[1], "pval" = donut_nonp_50$pv[1])
+
+
+results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_25, results_donut_50)
+
+###############################################################################
+### rptpro_monto_total as outcome
+###############################################################################
+
+donut_size = 0
+
+donut_0_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_0 <- rdrobust(y = donut_0_df$reforestation, x = donut_0_df$size_centered, c = 0,
+                         fuzzy = donut_0_df$smallholder) 
+
+results_donut_0 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_0$bws[1], "coeff" = donut_nonp_0$coef[1], "se" = donut_nonp_0$se[1], "pval" = donut_nonp_0$pv[1])
+##############################################################################################
+
+donut_size = 3
+
+donut_3_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_3 <- rdrobust(y = donut_3_df$reforestation, x = donut_3_df$size_centered, c = 0,
+                         fuzzy = donut_3_df$smallholder) 
+
+results_donut_3 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_3$bws[1], "coeff" = donut_nonp_3$coef[1], "se" = donut_nonp_3$se[1], "pval" = donut_nonp_3$pv[1])
+##############################################################################################
+
+donut_size = 5
+
+donut_5_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_5 <- rdrobust(y = donut_5_df$reforestation, x = donut_5_df$size_centered, c = 0,
+                         fuzzy = donut_5_df$smallholder)
+results_donut_5 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_5$bws[1], "coeff" = donut_nonp_5$coef[1], "se" = donut_nonp_5$se[1], "pval" = donut_nonp_5$pv[1])
+
+###############################################################################################
+
+donut_size = 10
+
+donut_10_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_10 <- rdrobust(y = donut_10_df$reforestation, x = donut_10_df$size_centered, c = 0,
+                          fuzzy = donut_10_df$smallholder) 
+results_donut_10 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_10$bws[1], "coeff" = donut_nonp_10$coef[1], "se" = donut_nonp_10$se[1], "pval" = donut_nonp_10$pv[1])
+
+###############################################################################################
+
+donut_size = 25
+
+donut_25_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_25 <- rdrobust(y = donut_25_df$reforestation, x = donut_25_df$size_centered, c = 0,
+                          fuzzy = donut_25_df$smallholder) 
+results_donut_25 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_25$bws[1], "coeff" = donut_nonp_25$coef[1], "se" = donut_nonp_25$se[1], "pval" = donut_nonp_25$pv[1])
+
+###############################################################################################
+
+donut_size = 50
+
+donut_50_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp_50 <- rdrobust(y = donut_50_df$reforestation, x = donut_50_df$size_centered, c = 0,
+                          fuzzy = donut_50_df$smallholder) 
+results_donut_50 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp_50$bws[1], "coeff" = donut_nonp_50$coef[1], "se" = donut_nonp_50$se[1], "pval" = donut_nonp_50$pv[1])
+
+
+results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_25, results_donut_50)
+
 
 ###############################################################################
 ### EVI as outcome

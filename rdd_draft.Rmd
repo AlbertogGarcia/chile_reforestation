@@ -108,14 +108,34 @@ $$CLATE = E[Y_i(1) - Y_i(0) | X = c, i \in L]$$
 
 ## Fuzzy donut regression discontinuity design
 
-We know that properties just above the smallholder eligibility threshold were likely to misreport their property sizes in order to obtain the benefits alotted for smallholders. The donut hole RDD can be used to circumvent problems introduced by these situations. [@balleca2016] shows that in the sharp RD setting, the donut RDD approach leads to an unbiased estimate of the treatment effect for non-heaped types.
+Smallholder eligibility is largely determined by property size in the Native Forest Law contest. If properties fall below the regional property size cutoff, they are eligible for additional program benefits. While this size theshold determines smallholder status for the vast majority of properties, some can lose or gain eligibility through other means. Table XX shows the non-compliers in this setting. While a property size exceeding the threshold essentially disqualifies a property from smallholder benefits, a sizeable proportion of properties under the cutoff still get classified as other interested parties. 
 
-It is important to consider whether we are interested in estimates that capture the treatment effects for those observed at heaps [@balleca2016]. We can recover unbiased estimates of the average treatment effect across the two types, weighted by the share of non-heaped data that are observed at data heaps. 
+We know that properties just above the smallholder eligibility threshold were likely to misreport their property sizes in order to obtain the benefits alotted for smallholders. The donut hole RDD can be used to circumvent problems introduced by these situations. [@balleca2016] shows that in the sharp RD setting, the donut RDD approach leads to an unbiased estimate of the treatment effect for non-heaped types. If we do not drop properties within the manipulation zone, a sharp RDD would recover unbiased estimates of the average treatment effect across the two types, weighted by the share of non-heaped data that are observed at data heaps. Because of the non-compliance observed in Table XX, we have a fuzzy setting, and with instrumental variables, we are estimating the CLATE for compliers only. That means our fuzzy regression discontinuity result is doubly robust. 
+
+I use both parametric and nonparametric approaches in order to ensure the research design is robust. For the parametric case, we create an instrumental variable that indicates if a property is above or below the smallholder eligibility threshold. Note that this variable should easily meet the necessary conditions for a successful instrument:
+
+Relevance: The cutoff determines smallholder eligibility
+
+Exclusion: The cutoff impacts outcomes of interest only through smallholder eligibility
+
+Exogeneity: Unobserved confounders between smallholder eligibility and outcomes are unrelated to the cutoff
+
+
+## Outcomes of interest
+
+Policy makers are interested in the impact of these smallholder benefits for several reasons. First, the primary program objective seeks to protect and recover native forest. An increased payment may incentivize landowners to give more effort or simply attract better talent. Second, program administators have prioritized the participation of smallholders and indigenous communities. This is evidenced by both the application process, which prioritizes the funding of smallholders, and the increased payments. 
+
+One of the primary challenges faced by program administrators is a lack of follow through. The average follow-through rate for projects in the program was -\% through 2018. Low follow through affects both of the above program goals. If projects are not completed, forest cover benefits are unrealized, and smallholders do not receive any payment. 
+
+An interesting component of our data is the ability to access specific project activities. Increased payments may make previously unprofitable activities desirable choices. There may also be landowner benefits to scaling up the size of the reforestation project when payments increase. 
+
 
 ## Results
 
 ### Follow-through
 
 ### Accumulation of forest biomass
+
+### Project selection
 
 # Discussion

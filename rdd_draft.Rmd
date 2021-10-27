@@ -1,5 +1,5 @@
 ---
-title: "The benefits of being a small fish in a big pond: benefits at smallholder eligibility cutoffs in Chile's Native Forest Law"
+title: "Big fish in the small pond: benefits at smallholder eligibility cutoffs in Chile's Native Forest Law"
 author: "Alberto Garcia"
 date: "October 30, 2021"
 output:
@@ -43,6 +43,7 @@ options(scipen = 999)
 
 # Abstract {-}
 
+Public programs often seek to encourage private landowners to provide environmental benefits through incentives that correspond to specific activities. However, the design of these programs as well as the incentives they provide can have consequences for how landowners choose to participate and the resulting tradeoff faced by program administrators. We explore these tradeoffs in the context of a Chilean program that pays private landowners to engage in reforestation and native forest management. The program's smallholder contest eligibility threshold provides increased payments to landowners below a certain size cutoff, which we are able to leverage for a fuzzy regression discontinuity design. We find evidence that this increased payment to smallholders leads to increased follow through in a program where attrition is relatively common. Further, to explore the mechanisms behind this increased follow-through, we explore how application decisions change across the threshold and find that this payment increase leads landowners to undertake more reforestation projects and enroll less land overall. We also find evidence of misreporting by properties just above the smallholder eligibility threshold and seek to disentangle the decisions made by these "heapers" and the non-heaping landowners of interest. 
 
 \clearpage
 
@@ -106,22 +107,20 @@ We define the parameter of interest below:
 $$CLATE = E[Y_i(1) - Y_i(0) | X = c, i \in L]$$
 , where $Y_i$ denotes the potential outcome for property $i$; $X$ is property size; $c$ is the smallholder eligibility threshold; and $L$ represents enrollment via the Native Forest Law. This is the local average treatment effect of smallholder classification, conditional on property $i$ participating in the program. 
 
-## Fuzzy donut regression discontinuity design
+## Fuzzy regression discontinuity design
+
+### Disentangling misreporting heapers from non-heapers
 
 Smallholder eligibility is largely determined by property size in the Native Forest Law contest. If properties fall below the regional property size cutoff, they are eligible for additional program benefits. While this size theshold determines smallholder status for the vast majority of properties, some can lose or gain eligibility through other means. Table XX shows the non-compliers in this setting. While a property size exceeding the threshold essentially disqualifies a property from smallholder benefits, a sizeable proportion of properties under the cutoff still get classified as other interested parties. 
 
 We know that properties just above the smallholder eligibility threshold were likely to misreport their property sizes in order to obtain the benefits alotted for smallholders. The donut hole RDD can be used to circumvent problems introduced by these situations. [@balleca2016] shows that in the sharp RD setting, the donut RDD approach leads to an unbiased estimate of the treatment effect for non-heaped types. If we do not drop properties within the manipulation zone, a sharp RDD would recover unbiased estimates of the average treatment effect across the two types, weighted by the share of non-heaped data that are observed at data heaps. Because of the non-compliance observed in Table XX, we have a fuzzy setting, and with instrumental variables, we are estimating the CLATE for compliers only. That means our fuzzy regression discontinuity result is doubly robust. 
 
-I use both parametric and nonparametric approaches in order to ensure the research design is robust. For the parametric case, we create an instrumental variable that indicates if a property is above or below the smallholder eligibility threshold. Note that this variable should easily meet the necessary conditions for a successful instrument:
-
-Relevance: The cutoff determines smallholder eligibility
-
-Exclusion: The cutoff impacts outcomes of interest only through smallholder eligibility
-
-Exogeneity: Unobserved confounders between smallholder eligibility and outcomes are unrelated to the cutoff
+I use a nonparametric approach to explore the impact of the smallholder benefits on follow-through rates, application decisions, and forest cover outcomes. 
 
 
-## Outcomes of interest
+## Results
+
+### Follow through
 
 Policy makers are interested in the impact of these smallholder benefits for several reasons. First, the primary program objective seeks to protect and recover native forest. An increased payment may incentivize landowners to give more effort or simply attract better talent. Second, program administators have prioritized the participation of smallholders and indigenous communities. This is evidenced by both the application process, which prioritizes the funding of smallholders, and the increased payments. 
 
@@ -129,13 +128,8 @@ One of the primary challenges faced by program administrators is a lack of follo
 
 An interesting component of our data is the ability to access specific project activities. Increased payments may make previously unprofitable activities desirable choices. There may also be landowner benefits to scaling up the size of the reforestation project when payments increase. 
 
-
-## Results
-
-### Follow-through
+### Application decisions
 
 ### Accumulation of forest biomass
-
-### Project selection
 
 # Discussion

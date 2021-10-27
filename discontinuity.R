@@ -263,9 +263,10 @@ modelsummary(list("Full sample (5ha)" = model_donut_full,
 # for compliers in the bandwidth.
 
 # non-parametric rd
-nonprdd_df <- discontinuity_main %>%
+nonprdd_df <- discontinuity_main200 %>%
   mutate(reforestation = (regeneracion + `siembra-directa` + plantacion + `plantacion-suplementaria` + enriquecimiento) > 0,
-         cutting = (`corta-liberacion` + `corta-mejoramiento` + `corta-recuperacion` +`corta-regeneracion` + `corta-selectiva` + `corta-sanitaria`) > 0
+         cutting = (`corta-liberacion` + `corta-mejoramiento` + `corta-recuperacion` +`corta-regeneracion` + `corta-selectiva` + `corta-sanitaria`) > 0,
+         timber = ifelse(rptpro_objetivo_manejo == "PRODUCCION MADERERA", 1, 0)
   )
 
 donut_size = 0
@@ -476,7 +477,8 @@ results_donut_30 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 
 ##############################################################################################
 results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_15, results_donut_20, results_donut_30)%>%
-  mutate(outcome = "rptpre_superficie_bonificada")
+  mutate(outcome = "rptpre_superficie_bonificada")%>%
+  bind_rows(results_rdd)
 
 ###############################################################################
 ### rptpro_monto_total as outcome
@@ -582,7 +584,8 @@ results_donut_30 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 
 ##############################################################################################
 results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_15, results_donut_20, results_donut_30)%>%
-  mutate(outcome = "rptpro_monto_total")
+  mutate(outcome = "rptpro_monto_total")%>%
+  bind_rows(results_rdd)
 
 ###############################################################################
 ### reforestation as outcome
@@ -689,7 +692,8 @@ results_donut_30 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 
 ##############################################################################################
 results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_15, results_donut_20, results_donut_30)%>%
-  mutate(outcome = "reforestation")
+  mutate(outcome = "reforestation")%>%
+  bind_rows(results_rdd)
 
 ###############################################################################
 ### harvesting projects as outcome
@@ -796,13 +800,124 @@ results_donut_30 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 
 ##############################################################################################
 results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_15, results_donut_20, results_donut_30)%>%
-  mutate(outcome = "cutting")
+  mutate(outcome = "cutting")%>%
+  bind_rows(results_rdd)
 
 
 
 ###############################################################################
-### non-timber or ecologically valuable projects as outcome
+### timber production projects as outcome
 ###############################################################################
+
+
+donut_size = 0
+
+donut_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
+                       fuzzy = donut_df$smallholder
+) 
+
+results_donut_0 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
+##############################################################################################
+
+donut_size = 3
+
+donut_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
+                       fuzzy = donut_df$smallholder
+) 
+
+results_donut_3 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
+
+##############################################################################################
+
+donut_size = 5
+
+donut_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
+                       fuzzy = donut_df$smallholder
+) 
+
+results_donut_5 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
+
+
+##############################################################################################
+
+donut_size = 10
+
+donut_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
+                       fuzzy = donut_df$smallholder
+) 
+
+results_donut_10 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
+
+
+##############################################################################################
+
+donut_size = 15
+
+donut_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
+                       fuzzy = donut_df$smallholder
+) 
+
+results_donut_15 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
+##############################################################################################
+
+
+donut_size = 20
+
+donut_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
+                       fuzzy = donut_df$smallholder
+) 
+
+results_donut_20 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
+
+
+
+##############################################################################################
+donut_size = 30
+
+donut_df <- nonprdd_df %>%
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  )
+
+donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
+                       fuzzy = donut_df$smallholder
+) 
+
+results_donut_30 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
+
+
+##############################################################################################
+results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_15, results_donut_20, results_donut_30)%>%
+  mutate(outcome = "timber")%>%
+  bind_rows(results_rdd)
+
+library(rio)
+export(results_rdd, "rdd_200_results.rds")
+
+
 
 
 ###############################################################################

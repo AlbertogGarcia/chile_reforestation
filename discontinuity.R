@@ -39,7 +39,7 @@ discontinuity_main800 <- subset(discontinuity_main, rptpro_numero_region %in% re
 ### Density tests show that there is manipulation at the 200 hectare threshold
 #################################################################################################
 
-test_density <- rddensity(discontinuity_main200$property_size, c = 200)
+test_density <- rddensity(discontinuity_main$property_size, c = 200)
 summary(test_density)
 rdplotdensity(rdd = test_density, 
                                    X = discontinuity_main200$property_size,
@@ -49,6 +49,15 @@ rdplotdensity(rdd = test_density,
               ylabel = "density")  # This adds both points and lines
 
 #ggsave(path = "figs", filename = "psize_manipulation_200.png", width = 8, height = 5)
+
+# plot zooming in on manipulation at 200
+
+ggplot(data = discontinuity_main200) +
+  geom_histogram(aes(property_size), binwidth = 1, alpha = .7 ,fill = "#E69F00", color = "white", size = 1, boundary = 0)+
+  geom_vline(xintercept = 200, linetype = "dashed", size = 1.25)+
+  #scale_fill_manual(values=c("grey20", "grey60")) + 
+  theme_minimal()+
+  xlim(190, 210)
 
 #################################################################################################
 ### Showing that smallholder probability changes across thresholds
@@ -946,9 +955,9 @@ export(results_rdd, "rdd_main_results_Wcovs.rds")
 ### EVI as outcome
 ###############################################################################
 library(sf)
-my_rol_match <- data.frame(readRDS("chile_reforestation/data/analysis/my_rol_match.rds"))%>%
+my_rol_match <- data.frame(readRDS("C:/Users/agarcia/Dropbox/chile_reforestation/data/analysis/my_rol_match.rds"))%>%
   mutate(match_type = "rol")
-my_spatial_match <- data.frame(readRDS("chile_reforestation/data/analysis/my_spatial_match.rds"))%>%
+my_spatial_match <- data.frame(readRDS("C:/Users/agarcia/Dropbox/chile_reforestation/data/analysis/my_spatial_match.rds"))%>%
   mutate(match_type = "spatial")
 
 native_forest_law <- NFL_df %>%

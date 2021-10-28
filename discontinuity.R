@@ -126,163 +126,53 @@ library(estimatr)
 #################################################################################################
 ### parametric fuzzy rdd w/ received_bonus outcome
 #################################################################################################
-
-analysis_df <- discontinuity_main %>%
-  mutate(reforestation = (regeneracion + `siembra-directa` + plantacion + `plantacion-suplementaria` 
-                          + enriquecimiento
-                          ) > 0,
-         cutting = (`corta-liberacion` + `corta-mejoramiento` + `corta-recuperacion` +`corta-regeneracion` + `corta-selectiva` + `corta-sanitaria`) > 0,
-         timber = ifelse(rptpro_objetivo_manejo == "PRODUCCION MADERERA", 1, 0)
-  )
-
-
-bw_list = c(100, 75, 50)
-  
-
-model_fuzzy_full <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region, 
-  data = analysis_df
-)
-tidy(model_fuzzy_full)
-
-model_fuzzy_80 <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, size_centered >= -bw_list[1] & size_centered <= bw_list[1])# & rptpro_numero_region %in% regions_200)
-)
-tidy(model_fuzzy_80)
-
-model_fuzzy_60 <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, size_centered >= -bw_list[2] & size_centered <= bw_list[2])# & rptpro_numero_region %in% regions_200)
-)
-tidy(model_fuzzy_60)
-
-model_fuzzy_40 <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, size_centered >= -bw_list[3] & size_centered <= bw_list[3])# & rptpro_numero_region %in% regions_200)
-)
-tidy(model_fuzzy_40)
-
-### adding 5 ha donuts
-#################################################################################################
-donut_size = 1
-
-model_donut_full <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, between(size_centered, donut_size, max(size_centered)) | between(size_centered, min(size_centered), -donut_size) ))
-tidy(model_donut_full)
-
-model_donut_80 <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[1]) | between(size_centered, - donut_size - bw_list[1], -donut_size ) )# & rptpro_numero_region %in% regions_200)
-)
-tidy(model_donut_80)
-
-model_donut_60 <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[2]) | between(size_centered, - donut_size - bw_list[2], -donut_size ) )
-)
-tidy(model_donut_60)
-
-model_donut_40 <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[3]) | between(size_centered, - donut_size - bw_list[3], -donut_size ) )
-)
-tidy(model_donut_40)
-
-### adding 10 ha donuts
-#################################################################################################
-donut_size = 5
-
-model_donut_fullb <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, between(size_centered, donut_size, max(size_centered)) | between(size_centered, min(size_centered), -donut_size) ))
-tidy(model_donut_fullb)
-
-model_donut_80b <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[1]) | between(size_centered, - donut_size - bw_list[1], -donut_size ) )# & rptpro_numero_region %in% regions_200)
-)
-tidy(model_donut_80b)
-
-model_donut_60b <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[2]) | between(size_centered, - donut_size - bw_list[2], -donut_size ) )
-)
-tidy(model_donut_60b)
-
-model_donut_40b <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[3]) | between(size_centered, - donut_size - bw_list[3], -donut_size ) )
-)
-tidy(model_donut_40b)
-
-
-### adding 20 ha donuts
-#################################################################################################
-donut_size = 10
-
-model_donut_fullc <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, between(size_centered, donut_size, max(size_centered)) | between(size_centered, min(size_centered), -donut_size) ))
-tidy(model_donut_fullc)
-
-model_donut_80c <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[1]) | between(size_centered, - donut_size - bw_list[1], -donut_size ) )# & rptpro_numero_region %in% regions_200)
-)
-tidy(model_donut_80c)
-
-model_donut_60c <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[2]) | between(size_centered, - donut_size - bw_list[2], -donut_size ) )
-)
-tidy(model_donut_60c)
-
-model_donut_40c <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[3]) | between(size_centered, - donut_size - bw_list[3], -donut_size ) )
-)
-tidy(model_donut_40c)
-
-
-modelsummary(list("Full sample" = model_fuzzy_full, 
-                  "Bandwidth = 120" = model_fuzzy_80, 
-                  "Bandwidth = 80" = model_fuzzy_60,
-                  "Bandwidth = 40" = model_fuzzy_40) ,
-             stars = TRUE)
-
-
-modelsummary(list("Full sample (5ha)" = model_donut_full, 
-                  "BW = 80 (5ha)" = model_donut_80, 
-                  "BW = 60 (5ha)" = model_donut_60,
-                  "BW = 40 (5ha)" = model_donut_40, 
-                  "Full sample (10ha)" = model_donut_fullb, 
-                  "BW = 80 (10ha)" = model_donut_80b, 
-                  "BW = 60 (10ha)" = model_donut_60b,
-                  "BW = 40 (10ha)" = model_donut_40b, 
-                  "Full sample (20ha)" = model_donut_fullc, 
-                  "BW = 80 (20ha)" = model_donut_80c, 
-                  "BW = 60 (20ha)" = model_donut_60c,
-                  "BW = 40 (20ha)" = model_donut_40c
-                  ) ,
-             stars = TRUE)
+# 
+# analysis_df <- discontinuity_main %>%
+#   mutate(reforestation = (regeneracion + `siembra-directa` + plantacion + `plantacion-suplementaria` 
+#                           + enriquecimiento
+#                           ) > 0,
+#          cutting = (`corta-liberacion` + `corta-mejoramiento` + `corta-recuperacion` +`corta-regeneracion` + `corta-selectiva` + `corta-sanitaria`) > 0,
+#          timber = ifelse(rptpro_objetivo_manejo == "PRODUCCION MADERERA", 1, 0)
+#   )
+# 
+# 
+# bw_list = c(100, 75, 50)
+#   
+# 
+# model_fuzzy_full <- iv_robust(
+#   received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+#   fixed_effects = ~ rptpre_region, 
+#   data = analysis_df
+# )
+# tidy(model_fuzzy_full)
+# 
+# model_fuzzy_80 <- iv_robust(
+#   received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+#   fixed_effects = ~ rptpre_region,
+#   data = filter(analysis_df, size_centered >= -bw_list[1] & size_centered <= bw_list[1])# & rptpro_numero_region %in% regions_200)
+# )
+# tidy(model_fuzzy_80)
+# 
+# model_fuzzy_60 <- iv_robust(
+#   received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+#   fixed_effects = ~ rptpre_region,
+#   data = filter(analysis_df, size_centered >= -bw_list[2] & size_centered <= bw_list[2])# & rptpro_numero_region %in% regions_200)
+# )
+# tidy(model_fuzzy_60)
+# 
+# model_fuzzy_40 <- iv_robust(
+#   received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+#   fixed_effects = ~ rptpre_region,
+#   data = filter(analysis_df, size_centered >= -bw_list[3] & size_centered <= bw_list[3])# & rptpro_numero_region %in% regions_200)
+# )
+# tidy(model_fuzzy_40)
+# 
+# 
+# modelsummary(list("Full sample" = model_fuzzy_full, 
+#                   "Bandwidth = 120" = model_fuzzy_80, 
+#                   "Bandwidth = 80" = model_fuzzy_60,
+#                   "Bandwidth = 40" = model_fuzzy_40) ,
+#              stars = TRUE)
 
 # Based on this model, using below_cutoff as an instrument, 
 # we can see that the coefficient for smallholder is different now! 
@@ -295,11 +185,13 @@ nonprdd_df <- discontinuity_main200 %>%
          cutting = (`corta-liberacion` + `corta-mejoramiento` + `corta-recuperacion` +`corta-regeneracion` + `corta-selectiva` + `corta-sanitaria`) > 0,
          timber = ifelse(rptpro_objetivo_manejo == "PRODUCCION MADERERA", 1, 0)
   )
+right_donut_size = 0
 
 donut_size = 0
 
+
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$received_bonus, x = donut_df$size_centered, c = 0,
@@ -316,7 +208,7 @@ results_donut_0 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 3
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$received_bonus, x = donut_df$size_centered, c = 0,
@@ -333,7 +225,7 @@ results_donut_3 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 5
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$received_bonus, x = donut_df$size_centered, c = 0,
@@ -351,7 +243,7 @@ results_donut_5 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 10
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$received_bonus, x = donut_df$size_centered, c = 0,
@@ -369,7 +261,7 @@ results_donut_10 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 donut_size = 15
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$received_bonus, x = donut_df$size_centered, c = 0,
@@ -383,10 +275,10 @@ results_donut_15 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 ##############################################################################################
 
 
-donut_size = 20
+donut_size = 1
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$received_bonus, x = donut_df$size_centered, c = 0,
@@ -396,13 +288,13 @@ donut_nonp <- rdrobust(y = donut_df$received_bonus, x = donut_df$size_centered, 
                          1)
 ) 
 
-results_donut_20 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
+results_donut_1 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
 
 
 
 
 ##############################################################################################
-results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_15, results_donut_20)%>%
+results_rdd <- rbind(results_donut_0, results_donut_1, results_donut_3, results_donut_5, results_donut_10, results_donut_15)%>%
   mutate(outcome = "received_bonus")
 
 ###############################################################################
@@ -412,7 +304,7 @@ results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_
 donut_size = 0
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$rptpre_superficie_bonificada, x = donut_df$size_centered, c = 0,
@@ -425,7 +317,7 @@ results_donut_0 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 3
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$rptpre_superficie_bonificada, x = donut_df$size_centered, c = 0,
@@ -442,7 +334,7 @@ results_donut_3 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 5
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$rptpre_superficie_bonificada, x = donut_df$size_centered, c = 0,
@@ -460,7 +352,7 @@ results_donut_5 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 10
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$rptpre_superficie_bonificada, x = donut_df$size_centered, c = 0,
@@ -478,7 +370,7 @@ results_donut_10 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 donut_size = 15
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$rptpre_superficie_bonificada, x = donut_df$size_centered, c = 0,
@@ -492,10 +384,10 @@ results_donut_15 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 ##############################################################################################
 
 
-donut_size = 20
+donut_size = 1
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$rptpre_superficie_bonificada, x = donut_df$size_centered, c = 0,
@@ -505,12 +397,12 @@ donut_nonp <- rdrobust(y = donut_df$rptpre_superficie_bonificada, x = donut_df$s
                          1)
 ) 
 
-results_donut_20 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
+results_donut_1 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
 
 
 
 ##############################################################################################
-results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_15, results_donut_20)%>%
+results_rdd <- rbind(results_donut_0, results_donut_1, results_donut_3, results_donut_5, results_donut_10, results_donut_15)%>%
   mutate(outcome = "rptpre_superficie_bonificada")%>%
   bind_rows(results_rdd)
 
@@ -520,7 +412,7 @@ results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_
 donut_size = 0
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$rptpro_monto_total, x = donut_df$size_centered, c = 0,
@@ -536,7 +428,7 @@ results_donut_0 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 3
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$rptpro_monto_total, x = donut_df$size_centered, c = 0,
@@ -553,7 +445,7 @@ results_donut_3 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 5
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$rptpro_monto_total, x = donut_df$size_centered, c = 0,
@@ -571,7 +463,7 @@ results_donut_5 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 10
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$rptpro_monto_total, x = donut_df$size_centered, c = 0,
@@ -589,7 +481,7 @@ results_donut_10 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 donut_size = 15
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$rptpro_monto_total, x = donut_df$size_centered, c = 0,
@@ -603,10 +495,10 @@ results_donut_15 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 ##############################################################################################
 
 
-donut_size = 20
+donut_size = 1
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$rptpro_monto_total, x = donut_df$size_centered, c = 0,
@@ -616,13 +508,13 @@ donut_nonp <- rdrobust(y = donut_df$rptpro_monto_total, x = donut_df$size_center
                          1)
 ) 
 
-results_donut_20 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
+results_donut_1 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
 
 
 
 
 ##############################################################################################
-results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_15, results_donut_20)%>%
+results_rdd <- rbind(results_donut_0, results_donut_1, results_donut_3, results_donut_5, results_donut_10, results_donut_15)%>%
   mutate(outcome = "rptpro_monto_total")%>%
   bind_rows(results_rdd)
 
@@ -633,7 +525,7 @@ results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_
 donut_size = 0
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$reforestation, x = donut_df$size_centered, c = 0,
@@ -649,7 +541,7 @@ results_donut_0 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 3
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$reforestation, x = donut_df$size_centered, c = 0,
@@ -666,7 +558,7 @@ results_donut_3 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 5
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$reforestation, x = donut_df$size_centered, c = 0,
@@ -684,7 +576,7 @@ results_donut_5 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 10
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$reforestation, x = donut_df$size_centered, c = 0,
@@ -702,7 +594,7 @@ results_donut_10 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 donut_size = 15
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$reforestation, x = donut_df$size_centered, c = 0,
@@ -716,10 +608,10 @@ results_donut_15 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 ##############################################################################################
 
 
-donut_size = 20
+donut_size = 1
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$reforestation, x = donut_df$size_centered, c = 0,
@@ -729,11 +621,11 @@ donut_nonp <- rdrobust(y = donut_df$reforestation, x = donut_df$size_centered, c
                          1)
 ) 
 
-results_donut_20 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
+results_donut_1 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
 
 
 ##############################################################################################
-results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_15, results_donut_20)%>%
+results_rdd <- rbind(results_donut_0, results_donut_1, results_donut_3, results_donut_5, results_donut_10, results_donut_15)%>%
   mutate(outcome = "reforestation")%>%
   bind_rows(results_rdd)
 
@@ -744,7 +636,7 @@ results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_
 donut_size = 0
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$cutting, x = donut_df$size_centered, c = 0,
@@ -760,7 +652,7 @@ results_donut_0 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 3
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$cutting, x = donut_df$size_centered, c = 0,
@@ -777,7 +669,7 @@ results_donut_3 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 5
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$cutting, x = donut_df$size_centered, c = 0,
@@ -795,7 +687,7 @@ results_donut_5 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 10
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$cutting, x = donut_df$size_centered, c = 0,
@@ -813,7 +705,7 @@ results_donut_10 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 donut_size = 15
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$cutting, x = donut_df$size_centered, c = 0,
@@ -827,10 +719,10 @@ results_donut_15 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 ##############################################################################################
 
 
-donut_size = 20
+donut_size = 1
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$cutting, x = donut_df$size_centered, c = 0,
@@ -840,12 +732,12 @@ donut_nonp <- rdrobust(y = donut_df$cutting, x = donut_df$size_centered, c = 0,
                          1)
 ) 
 
-results_donut_20 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
+results_donut_1 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
 
 
 
 ##############################################################################################
-results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_15, results_donut_20)%>%
+results_rdd <- rbind(results_donut_0, results_donut_1, results_donut_3, results_donut_5, results_donut_10, results_donut_15)%>%
   mutate(outcome = "cutting")%>%
   bind_rows(results_rdd)
 
@@ -859,7 +751,7 @@ results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_
 donut_size = 0
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
@@ -875,7 +767,7 @@ results_donut_0 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 3
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
@@ -892,7 +784,7 @@ results_donut_3 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 5
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
@@ -910,7 +802,7 @@ results_donut_5 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 donut_size = 10
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
@@ -928,7 +820,7 @@ results_donut_10 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 donut_size = 15
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
@@ -942,10 +834,10 @@ results_donut_15 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[
 ##############################################################################################
 
 
-donut_size = 20
+donut_size = 1
 
 donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, donut_size, max(size_centered))
+  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
   )
 
 donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
@@ -955,11 +847,11 @@ donut_nonp <- rdrobust(y = donut_df$timber, x = donut_df$size_centered, c = 0,
                          1)
 ) 
 
-results_donut_20 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
+results_donut_1 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1], "coeff" = donut_nonp$coef[1], "se" = donut_nonp$se[1], "pval" = donut_nonp$pv[1])
 
 
 ##############################################################################################
-results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_donut_10, results_donut_15, results_donut_20)%>%
+results_rdd <- rbind(results_donut_0, results_donut_1, results_donut_3, results_donut_5, results_donut_10, results_donut_15)%>%
   mutate(outcome = "timber")%>%
   bind_rows(results_rdd)
 

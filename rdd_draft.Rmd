@@ -1,5 +1,5 @@
 ---
-title: "Big fish in the small pond: benefits at smallholder eligibility cutoffs in Chile's Native Forest Law"
+title: "Chapter 2: Big fish in the small pond: benefits at smallholder eligibility cutoffs in Chile's Native Forest Law"
 author: "Alberto Garcia"
 date: "October 30, 2021"
 output:
@@ -43,31 +43,41 @@ options(scipen = 999)
 
 # Abstract {-}
 
-Public programs often seek to encourage private landowners to provide environmental benefits through incentives that correspond to specific activities. However, the design of these programs as well as the incentives they provide can have consequences for how landowners choose to participate and the resulting tradeoff faced by program administrators. We explore these tradeoffs in the context of a Chilean program that pays private landowners to engage in reforestation and native forest management. The program's smallholder contest eligibility threshold provides increased payments to landowners below a certain size cutoff, which we are able to leverage for a fuzzy regression discontinuity design. We find evidence that this increased payment to smallholders leads to increased follow through in a program where attrition is relatively common. Further, to explore the mechanisms behind this increased follow-through, we explore how application decisions change across the threshold and find that this payment increase leads landowners to undertake more reforestation projects and enroll less land overall. We also find evidence of misreporting by properties just above the smallholder eligibility threshold and seek to disentangle the decisions made by these "heapers" and the non-heaping landowners of interest. 
+Public programs often seek to encourage private landowners to provide environmental benefits through incentive payments that correspond to specific activities. However, the design of these incentives has consequences for how landowners choose to participate and the resulting tradeoffs faced by program administrators. We explore these tradeoffs in the context of a Chilean program that pays private landowners to engage in reforestation and native forest recovery. The program's smallholder contest eligibility threshold provides increased payments and near certainty of project approval to landowners below a certain size cutoff. We use a fuzzy regression discontinuity design, taking advantage of the eligibility cutoff. We find evidence that this increased payment to smallholders leads to increased follow through in a program where attrition is relatively common. Further, to explore the mechanisms behind this increased follow-through, we explore how application decisions change across the threshold and find that this payment increase leads landowners to undertake more projects likely to generate biomass and enroll less land overall. We also find evidence of misreporting by properties just below the smallholder eligibility threshold and seek to disentangle the decisions made by these "heapers" and the non-heaping landowners of interest. 
 
 \clearpage
 
 # Motivation
 
+- PES
+
+In practice, program administrators face decisions over the level of incentives to offer in order to acheive environmental benefits at least cost. The incentives offered, however, affect program outcomes through both the direct payment increase as well as program selection. 
+
+# Chile's Native Forest Law
+
 In an attempt to encourage the recovery and protection of native forests, Chile sought to pass the Ley de Recuperación del Bosque Nativo y Fomento Forestal (Native Forest Law). In addition to protections for native forests, the law established an annual competition for grants to support private landowners in their efforts to manage, restore, or reforest their land using native species. Since 2009, more than $58 million have been allocated through these competitions for projects covering 235 thousand hectares. Much of this allocated funding has not been paid to landowners, however, as program follow-through is relatively low. Program administrators are unsure exactly why enrolled applicants fail to complete projects at such high rates [@conaf_2019]. 
 
-Initially expected in 1994, the Native Forest Law became frozen in legislature before finally passing in 2008. The Native Forest Law acted as a successor to DL701 [@clapp1998], a law that largely subsidized afforestation with monocultures of eucalyptus and pine [@heilmayr_impacts_2020]. In response to concerns that large companies benefited disproportionately from the DL701 subsidies, Native Forest Law bonuses place an emphasis upon supporting smallholders. 
+Initially expected in 1994, the Native Forest Law became frozen in legislature before finally passing in 2008. the new law acted as a successor to DL701 [@clapp1998], a law that largely subsidized afforestation with monocultures of eucalyptus and pine [@heilmayr_impacts_2020]. In response to concerns that large companies benefited disproportionately from the DL701 subsidies, Native Forest Law bonuses place an emphasis upon supporting smallholders. 
 
-In practice, the contest benefits smallholders in several ways. First, CONAF holds separate contests for smallholders and other interested parties, where awards in the smalholder contest are worth 15\% more than awards in the other interested parties contest for the same set of activities. Further, participating in the smallholder contest essentially guarantees project approval and funding. When distributing funds, CONAF approves projects in the smallholder contest in order from the highest to lowest score, before moving to the other interested party contest. As such, other interested party applicants may not receive an award if their project score falls below the point at which the available funding has been distributed. To date, funding has never run out prior to awarding all eligible smallholder projects. 
+In practice, the contest benefits smallholders in several ways. First, CONAF holds separate contests for smallholders and other interested parties, where awards in the smalholder contest are worth 15\% more than awards in the other interested parties contest for the same set of activities. Further, participating in the smallholder contest essentially guarantees project approval and funding. When distributing funds, CONAF approves projects in the smallholder contest in order from the highest to lowest score, before moving to the other interested party contest. As such, other interested party applicants may not receive an award if their project score falls below the point at which the available funding has been distributed. To date, funding has never run out prior to awarding all eligible smallholder projects, so participating in the smallholder contest all but guarantees project approval and funding. 
 
-CONAF defines smallholder eligibility in different ways depending on region, but with some exceptions, eligibility is determined by property size. In the regions of Chile in which forestry plays a major role, this cutoff is 200 hectares, and it is larger in other regions of the country. Further, these landowners cannot have assets exceeding the equivalent of 3,500 development units. Some exceptions apply to these rules, such as for indigenous communities. 
+## Smallholder eligibility
+
+CONAF defines smallholder eligibility in different ways depending on region, but with some exceptions, eligibility is determined by property size. In the regions of Chile in which forestry plays a major role, this cutoff is 200 hectares, and it is larger in other regions of the country. Further, these landowners cannot have assets exceeding the equivalent of 3,500 development units. Some exceptions apply to these rules, such as for indigenous communities, who are eligible for the smallholder contest regardless of property size. 
 
 ```{r status-200, fig.pos="H", out.width = '70%', fig.cap = "conditional probability of being granted smallholder status drops distinctly across main 200 hectare eligibility threshold", echo=FALSE}
 knitr::include_graphics("figs/status_discontinuity.png")
 ```
 
-Figure XX shows how the probability of being granted smallholder status changes across this property size threshold. We see a distinct drop in the proportion of properties granted smallholder status beyond the eligibility threshold, although there is some noncompliance. Figure XX shows that this discontinuity moves as expected in regions 11 and 12, where 800 hectares is the threshold for smallholder eligibility. This time, the dicontinuity is much sharper, as almost no properties above the cutoff were granted smallholder eligibility in these two regions. Note that there is no discontinuity at 200 hectares, acting as a placebo test that shows nothing about 200 hectares should affect conditional probability of smallholder status outside of the program threshold in the relevant regions. 
+Figure XX shows how the probability of being granted smallholder status changes discontinuously across this property size threshold. We see a distinct drop in the proportion of properties granted smallholder status beyond the eligibility threshold, although there is some noncompliance. Figure XX shows that this discontinuity moves as expected in regions 11 and 12, where 800 hectares is the threshold for smallholder eligibility. This time, almost no properties above the cutoff were granted smallholder eligibility in these two regions. Note that there is no discontinuity at 200 hectares for properties in regions 11 and 12. Nothing about 200 hectares should affect conditional probability of smallholder status outside of the program threshold in the relevant regions, and the lack of a discontinuity at 200 ha for these regions confirms this.   
 
 ```{r status-800, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
 knitr::include_graphics("figs/status_discontinuity_800.png")
 ```
 
-# Manipulation around the cutoff
+# Research design
+
+We utilize the discontinuity in smallholder eligibility to explore the affect of higher payments and certainty of application success on program outcomes. We disentangle the impacts on 
 
 ## Bunching at the eligibility threshold
 
@@ -94,11 +104,9 @@ knitr::include_graphics("figs/psize_distributions_window.png")
 
 We can explore whether projects on either side of the treatment effect threshold within the manipulation range differe on application characteristics. 
 
-# Benefits of smallholder classification
+## Benefits of smallholder classification and the policy relevant parameter
 
 The benefits of being classified as a smallholder are fairly substantial. The main benefit of smallholder classification is a payment increase of 15\% for the same activities. Smallholder classification may also come with benefits related to extension services or technical assistance. 
-
-## The policy relevant parameter
 
 We now introduce our parameter of interest. While one may be interested in the causal impact of smallholder classification on property outcomes, this is a difficult parameter to recover. Properties just under the 200 hectare threshold may not have enrolled had the payment been 15\% less, meaning that increased enrollment could have resulted just under the policy threshold. As such, properties on either side of the threshold may not be perfect counterfactuals. However, we can still recover a parameter of extreme policy relevance: the expected impact of smallholder classification on outcomes for enrolled properties. This is likely to be the parameter policymakers are interested in if the primary objective is to generate forest cover at least cost. 
 
@@ -107,15 +115,17 @@ We define the parameter of interest below:
 $$CLATE = E[Y_i(1) - Y_i(0) | X = c, i \in L]$$
 , where $Y_i$ denotes the potential outcome for property $i$; $X$ is property size; $c$ is the smallholder eligibility threshold; and $L$ represents enrollment via the Native Forest Law. This is the local average treatment effect of smallholder classification, conditional on property $i$ participating in the program. 
 
-## Fuzzy regression discontinuity design
-
-### Disentangling misreporting heapers from non-heapers
+## Estimation
 
 Smallholder eligibility is largely determined by property size in the Native Forest Law contest. If properties fall below the regional property size cutoff, they are eligible for additional program benefits. While this size theshold determines smallholder status for the vast majority of properties, some can lose or gain eligibility through other means. Table XX shows the non-compliers in this setting. While a property size exceeding the threshold essentially disqualifies a property from smallholder benefits, a sizeable proportion of properties under the cutoff still get classified as other interested parties. 
 
-We know that properties just above the smallholder eligibility threshold were likely to misreport their property sizes in order to obtain the benefits alotted for smallholders. The donut hole RDD can be used to circumvent problems introduced by these situations. [@balleca2016] shows that in the sharp RD setting, the donut RDD approach leads to an unbiased estimate of the treatment effect for non-heaped types. If we do not drop properties within the manipulation zone, a sharp RDD would recover unbiased estimates of the average treatment effect across the two types, weighted by the share of non-heaped data that are observed at data heaps. Because of the non-compliance observed in Table XX, we have a fuzzy setting, and with instrumental variables, we are estimating the CLATE for compliers only. That means our fuzzy regression discontinuity result is doubly robust. 
+We know that properties just above the smallholder eligibility threshold were likely to misreport their property sizes in order to obtain the benefits alotted for smallholders. The donut hole RDD can be used to circumvent problems introduced by these situations. [@balleca2016] shows that in the sharp RD setting, the donut RDD approach leads to an unbiased estimate of the treatment effect for non-heaped types. If we do not drop properties within the manipulation zone, a sharp RDD would recover the average treatment effect across the two types, weighted by the share of non-heaped properties that are observed at the heap. Because of the non-compliance observed in Table XX, we have a fuzzy setting, and with instrumental variables, we are estimating the CLATE for compliers only. 
 
-I use a nonparametric approach to explore the impact of the smallholder benefits on follow-through rates, application decisions, and forest cover outcomes. 
+I use a nonparametric approach to explore the impact of the smallholder benefits on follow-through rates, application decisions, and forest cover outcomes. blah blah- benefits on nonparametrics
+
+Local linear and quadratic polynomial estimation. 
+
+In order to minimize concern surrounding the misreporting of property size at the threshold, I report estimates with a variety of donut sizes. 
 
 
 ## Results
@@ -132,4 +142,4 @@ An interesting component of our data is the ability to access specific project a
 
 ### Accumulation of forest biomass
 
-# Discussion
+# Extensions/paths forward

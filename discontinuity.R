@@ -8,7 +8,7 @@ library(bunchr)
 regions_200 <- c(5,6,7,8,9, 10,14)
 regions_500 <- c(1, 2, 3, 4, 15)
 regions_800 <- c(11, 12)
-NFL_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/input_files/NFL_df.rds")
+NFL_df <- readRDS("C:/Users/agarcia/Dropbox/chile_collab/input_files/NFL_df.rds")
 
 discontinuity_main <- NFL_df %>%
   rename(property_size = rptpre_superficie_predial)%>%
@@ -180,7 +180,7 @@ library(estimatr)
 # for compliers in the bandwidth.
 
 # non-parametric rd
-nonprdd_df <- discontinuity_main200 %>%
+nonprdd_df <- discontinuity_main %>%
   mutate(reforestation = (regeneracion + `siembra-directa` + plantacion + `plantacion-suplementaria` + enriquecimiento) > 0,
          cutting = (`corta-liberacion` + `corta-mejoramiento` + `corta-recuperacion` +`corta-regeneracion` + `corta-selectiva` + `corta-sanitaria`) > 0,
          timber = ifelse(rptpro_objetivo_manejo == "PRODUCCION MADERERA", 1, 0)

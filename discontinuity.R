@@ -8,7 +8,7 @@ library(bunchr)
 regions_200 <- c(5,6,7,8,9, 10,14)
 regions_500 <- c(1, 2, 3, 4, 15)
 regions_800 <- c(11, 12)
-NFL_df <- readRDS("C:/Users/agarcia/Dropbox/chile_collab/input_files/NFL_df.rds")
+NFL_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/input_files/NFL_df.rds")
 
 discontinuity_main <- NFL_df %>%
   rename(property_size = rptpre_superficie_predial)%>%
@@ -127,89 +127,104 @@ library(estimatr)
 ### parametric fuzzy rdd w/ received_bonus outcome
 #################################################################################################
 
-analysis_df <- discontinuity_main200 %>%
-  mutate(reforestation = (regeneracion + `siembra-directa` + plantacion + `plantacion-suplementaria` + enriquecimiento
-                          # + `corta-regeneracion` 
-  ) > 0
+analysis_df <- discontinuity_main %>%
+  mutate(reforestation = (regeneracion + `siembra-directa` + plantacion + `plantacion-suplementaria` 
+                          + enriquecimiento
+                          ) > 0,
+         cutting = (`corta-liberacion` + `corta-mejoramiento` + `corta-recuperacion` +`corta-regeneracion` + `corta-selectiva` + `corta-sanitaria`) > 0,
+         timber = ifelse(rptpro_objetivo_manejo == "PRODUCCION MADERERA", 1, 0)
   )
 
-bw_list = c(75, 50, 25)
+
+bw_list = c(100, 75, 50)
   
 
 model_fuzzy_full <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region, 
   data = analysis_df
 )
 tidy(model_fuzzy_full)
 
 model_fuzzy_80 <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, size_centered >= -bw_list[1] & size_centered <= bw_list[1])# & rptpro_numero_region %in% regions_200)
 )
 tidy(model_fuzzy_80)
 
 model_fuzzy_60 <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, size_centered >= -bw_list[2] & size_centered <= bw_list[2])# & rptpro_numero_region %in% regions_200)
 )
 tidy(model_fuzzy_60)
 
 model_fuzzy_40 <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, size_centered >= -bw_list[3] & size_centered <= bw_list[3])# & rptpro_numero_region %in% regions_200)
 )
 tidy(model_fuzzy_40)
 
 ### adding 5 ha donuts
 #################################################################################################
-donut_size = 5
+donut_size = 1
 
 model_donut_full <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, between(size_centered, donut_size, max(size_centered)) | between(size_centered, min(size_centered), -donut_size) ))
 tidy(model_donut_full)
 
 model_donut_80 <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[1]) | between(size_centered, - donut_size - bw_list[1], -donut_size ) )# & rptpro_numero_region %in% regions_200)
 )
 tidy(model_donut_80)
 
 model_donut_60 <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[2]) | between(size_centered, - donut_size - bw_list[2], -donut_size ) )
 )
 tidy(model_donut_60)
 
 model_donut_40 <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[3]) | between(size_centered, - donut_size - bw_list[3], -donut_size ) )
 )
 tidy(model_donut_40)
 
 ### adding 10 ha donuts
 #################################################################################################
-donut_size = 10
+donut_size = 5
 
 model_donut_fullb <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, between(size_centered, donut_size, max(size_centered)) | between(size_centered, min(size_centered), -donut_size) ))
 tidy(model_donut_fullb)
 
 model_donut_80b <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[1]) | between(size_centered, - donut_size - bw_list[1], -donut_size ) )# & rptpro_numero_region %in% regions_200)
 )
 tidy(model_donut_80b)
 
 model_donut_60b <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[2]) | between(size_centered, - donut_size - bw_list[2], -donut_size ) )
 )
 tidy(model_donut_60b)
 
 model_donut_40b <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[3]) | between(size_centered, - donut_size - bw_list[3], -donut_size ) )
 )
 tidy(model_donut_40b)
@@ -217,36 +232,39 @@ tidy(model_donut_40b)
 
 ### adding 20 ha donuts
 #################################################################################################
-donut_size = 20
+donut_size = 10
 
 model_donut_fullc <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, between(size_centered, donut_size, max(size_centered)) | between(size_centered, min(size_centered), -donut_size) ))
 tidy(model_donut_fullc)
 
 model_donut_80c <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[1]) | between(size_centered, - donut_size - bw_list[1], -donut_size ) )# & rptpro_numero_region %in% regions_200)
 )
 tidy(model_donut_80c)
 
 model_donut_60c <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[2]) | between(size_centered, - donut_size - bw_list[2], -donut_size ) )
 )
 tidy(model_donut_60c)
 
 model_donut_40c <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+  fixed_effects = ~ rptpre_region,
   data = filter(analysis_df, between(size_centered, donut_size, donut_size + bw_list[3]) | between(size_centered, - donut_size - bw_list[3], -donut_size ) )
 )
 tidy(model_donut_40c)
 
 
-
 modelsummary(list("Full sample" = model_fuzzy_full, 
-                  "Bandwidth = 120" = model_fuzzy_120, 
-                  "Bandwidth = 80" = model_fuzzy_80,
+                  "Bandwidth = 120" = model_fuzzy_80, 
+                  "Bandwidth = 80" = model_fuzzy_60,
                   "Bandwidth = 40" = model_fuzzy_40) ,
              stars = TRUE)
 
@@ -272,7 +290,7 @@ modelsummary(list("Full sample (5ha)" = model_donut_full,
 # for compliers in the bandwidth.
 
 # non-parametric rd
-nonprdd_df <- discontinuity_main %>%
+nonprdd_df <- discontinuity_main200 %>%
   mutate(reforestation = (regeneracion + `siembra-directa` + plantacion + `plantacion-suplementaria` + enriquecimiento) > 0,
          cutting = (`corta-liberacion` + `corta-mejoramiento` + `corta-recuperacion` +`corta-regeneracion` + `corta-selectiva` + `corta-sanitaria`) > 0,
          timber = ifelse(rptpro_objetivo_manejo == "PRODUCCION MADERERA", 1, 0)
@@ -946,7 +964,7 @@ results_rdd <- rbind(results_donut_0, results_donut_3, results_donut_5, results_
   bind_rows(results_rdd)
 
 library(rio)
-export(results_rdd, "rdd_main_results_Wcovs.rds")
+export(results_rdd, "rdd_200_results_Wcovs.rds")
 
 
 

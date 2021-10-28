@@ -402,14 +402,14 @@ In our case, program administrators target on property and landowner characteris
 
 To understand better understand whether Native Forest Law targeting was efficient, we generate property specific treatment effects and explore their relationship with the program's targeting mechanisms. Our matched control group along with synthetic difference-in-differences allow us to estimate property specific treatment effects. Program documents detailing the payment and scoring rules allow us to recreate project scores and bonus amounts, before adjusting them to exclude the score and payment bonuses given to smallholders and indigenous peoples. We then explore treatment effect heterogeneity and explore how this heterogeneity corresponds to projects scores and lanowner payments, both before and after adjusting for program targeting goals. 
 
-### Synthetic DID
+<!-- ### Synthetic DID -->
 
-Need to outline methods still. Figure \@ref(fig:sdid_example) shows synthetic difference-in-differences results for one treated property. The left panel shows the trajectory of the synthetic control property's EVI alongside that of the treated property. The right panel overlays these trajectories in order to get a sense of the true treatment effect and examine pre-trends. 
+<!-- Need to outline methods still. Figure \@ref(fig:sdid_example) shows synthetic difference-in-differences results for one treated property. The left panel shows the trajectory of the synthetic control property's EVI alongside that of the treated property. The right panel overlays these trajectories in order to get a sense of the true treatment effect and examine pre-trends.  -->
 
-```{r sdid-example, fig.show="hold", out.width = '49%', fig.cap = "This figure shows the results of our synthetic difference-in-differences procedure for one treated property.", echo=FALSE}
-knitr::include_graphics(c("figs/sdid.png", "figs/sdid_overlay.png"))
+<!-- ```{r sdid-example, fig.show="hold", out.width = '49%', fig.cap = "This figure shows the results of our synthetic difference-in-differences procedure for one treated property.", echo=FALSE} -->
+<!-- knitr::include_graphics(c("figs/sdid.png", "figs/sdid_overlay.png")) -->
 
-```
+<!-- ``` -->
 
 ### Adjusting scores and payments for targeting goals
 

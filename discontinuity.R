@@ -8,7 +8,7 @@ library(bunchr)
 regions_200 <- c(5,6,7,8,9, 10,14)
 regions_500 <- c(1, 2, 3, 4, 15)
 regions_800 <- c(11, 12)
-NFL_df <- readRDS("C:/Users/agarcia/Dropbox/chile_collab/input_files/NFL_df.rds")
+NFL_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/input_files/NFL_df.rds")
 
 discontinuity_main <- NFL_df %>%
   rename(property_size = rptpre_superficie_predial)%>%
@@ -136,57 +136,114 @@ analysis_df <- discontinuity_main %>%
   )
 
 
-bw = 75
-
-donut_size = 3
+bw_list = c(200, 120, 60)
+donut_size_list = c(3, 5, 10)
 right_donut_size = 0  
+
+
+rdd_results <- data.frame()
+for(i in donut_size_list){
+
+  donut_size = i
+    
+  for(k in bw_list){
+    
+    bw = k + donut_size
+    
+    donut_df <- analysis_df %>%
+    filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
+    )
+    
+    rdd <- iv_robust(
+      received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
+      fixed_effects = ~ rptpre_region + rptpro_ano, 
+      #diagnostics = TRUE,
+      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+    )
+    
+    rdd_results <- data.frame(
+      "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
+      "bw" = k, "donut" = i
+    )%>%
+      rbind(rdd_results)
+    
+    rdd <- iv_robust(
+      reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+      #fixed_effects = ~ rptpre_region,
+      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+    )
+    rdd_results <- data.frame(
+      "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
+      "bw" = k, "donut" = i
+    )%>%
+      rbind(rdd_results)
+    
+    rdd <- iv_robust(
+      rptpro_monto_total ~ size_centered + smallholder | size_centered + below_cutoff,
+      fixed_effects = ~ rptpre_region,
+      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+    )
+    rdd_results <- data.frame(
+      "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
+      "bw" = k, "donut" = i
+    )%>%
+      rbind(rdd_results)
+    
+    rdd <- iv_robust(
+      rptpre_superficie_bonificada ~ size_centered + smallholder | size_centered + below_cutoff,
+      #fixed_effects = ~ rptpre_region,
+      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+    )
+    rdd_results <- data.frame(
+      "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
+      "bw" = k, "donut" = i
+    )%>%
+      rbind(rdd_results)
+    
+    rdd <- iv_robust(
+      timber ~ size_centered + smallholder | size_centered + below_cutoff,
+      #fixed_effects = ~ rptpre_region,
+      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+    )
+    rdd_results <- data.frame(
+      "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
+      "bw" = k, "donut" = i
+    )%>%
+      rbind(rdd_results)
+    
+    rdd <- iv_robust(
+      cutting ~ size_centered + smallholder | size_centered + below_cutoff,
+      fixed_effects = ~ rptpre_region,
+      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+    )
+    rdd_results <- data.frame(
+      "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
+      "bw" = k, "donut" = i
+    )%>%
+      rbind(rdd_results)
   
-donut_df <- nonprdd_df %>%
-  filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
-  )
+  
+  
+  }
+  
+}
 
 
-rdd_bonus <- iv_robust(
-  received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region + rptpro_ano,
-  data = filter(donut_df, size_centered >= -bw & size_centered <= bw)# & rptpro_numero_region %in% regions_200)
-)
-tidy(rdd_bonus)
-
-rdd_reforest <- iv_robust(
-  reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(donut_df, size_centered >= -bw & size_centered <= bw)# & rptpro_numero_region %in% regions_200)
-)
-tidy(rdd_reforest)
-
-rdd_payment <- iv_robust(
-  rptpro_monto_total ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(donut_df, size_centered >= -bw & size_centered <= bw)# & rptpro_numero_region %in% regions_200)
-)
-tidy(rdd_payment)
-
-rdd_projectarea <- iv_robust(
-  rptpre_superficie_bonificada ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(donut_df, size_centered >= -bw & size_centered <= bw)# & rptpro_numero_region %in% regions_200)
-)
-tidy(rdd_projectarea)
-
-rdd_timber <- iv_robust(
-  timber ~ size_centered + smallholder | size_centered + below_cutoff,
-  fixed_effects = ~ rptpre_region,
-  data = filter(donut_df, size_centered >= -bw & size_centered <= bw)# & rptpro_numero_region %in% regions_200)
-)
-tidy(rdd_timber)
 
 modelsummary(list("received bonus" = rdd_bonus,
                   "reforestation" = rdd_reforest,
-                  "payment" = rdd_payment,
-                  "project area" = rdd_projectarea,
-                  "timber" = rdd_timber) ,
+                  "timber" = rdd_timber,
+                  "received bonus" = rdd_bonus_10,
+                  "reforestation" = rdd_reforest_10,
+                  "timber" = rdd_timber_10) ,
              stars = TRUE)
+
+modelsummary(list("payment" = rdd_payment,
+                  "project area" = rdd_projectarea,
+                  "payment (10)" = rdd_payment_10,
+                  "project area (10)" = rdd_projectarea_10) ,
+             stars = TRUE)
+
 
 # Based on this model, using below_cutoff as an instrument, 
 # we can see that the coefficient for smallholder is different now! 
@@ -200,7 +257,7 @@ nonprdd_df <- discontinuity_main200 %>%
          timber = ifelse(rptpro_objetivo_manejo == "PRODUCCION MADERERA", 1, 0)
   )
 right_donut_size = 0
-bandwidth = 50
+bandwidth = 40
 
 donut_size = 0
 

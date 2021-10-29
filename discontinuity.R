@@ -128,8 +128,10 @@ library(estimatr)
 #################################################################################################
 
 analysis_df <- discontinuity_main %>%
-  mutate(reforestation = (regeneracion + `siembra-directa` + plantacion + `plantacion-suplementaria`
-                          + enriquecimiento
+  mutate(regeneration = (regeneracion ) > 0,
+         planting = (`siembra-directa`
+                     + plantacion + `plantacion-suplementaria`
+                      + enriquecimiento
                           ) > 0,
          cutting = (`corta-liberacion` + `corta-mejoramiento` + `corta-recuperacion` +`corta-regeneracion` + `corta-selectiva` + `corta-sanitaria`) > 0,
          timber = ifelse(rptpro_objetivo_manejo == "PRODUCCION MADERERA", 1, 0),
@@ -170,7 +172,18 @@ for(i in donut_size_list){
       rbind(rdd_results)
     
     rdd <- iv_robust(
-      reforestation ~ size_centered + smallholder | size_centered + below_cutoff,
+      regeneration ~ size_centered + smallholder | size_centered + below_cutoff,
+      fixed_effects = ~ rptpre_region,
+      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+    )
+    rdd_results <- data.frame(
+      "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
+      "bw" = k, "donut" = i
+    )%>%
+      rbind(rdd_results)
+    
+    rdd <- iv_robust(
+      planting ~ size_centered + smallholder | size_centered + below_cutoff,
       fixed_effects = ~ rptpre_region,
       data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
     )

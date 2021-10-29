@@ -136,7 +136,7 @@ analysis_df <- discontinuity_main %>%
   )
 
 
-bw_list = c(200, 120, 60)
+bw_list = c(120, 80, 60)
 donut_size_list = c(3, 5, 10)
 right_donut_size = 0  
 
@@ -227,7 +227,8 @@ for(i in donut_size_list){
   }
   
 }
-
+library(rio)
+export(rdd_results, "rdresults_main.rds")
 
 
 modelsummary(list("received bonus" = rdd_bonus,

@@ -65,7 +65,7 @@ CONAF defines smallholder eligibility in different ways depending on region, but
 knitr::include_graphics("figs/status_discontinuity.png")
 ```
 
-Figure XX shows how the probability of being granted smallholder status changes discontinuously across this property size threshold. We see a distinct drop in the proportion of properties granted smallholder status beyond the eligibility threshold, although there is some noncompliance. Figure XX shows that this discontinuity moves as expected in regions 11 and 12, where 800 hectares is the threshold for smallholder eligibility. This time, almost no properties above the cutoff were granted smallholder eligibility in these two regions. Note that there is no discontinuity at 200 hectares for properties in regions 11 and 12. Nothing about 200 hectares should affect conditional probability of smallholder status outside of the program threshold in the relevant regions, and the lack of a discontinuity at 200 ha for these regions confirms this.   
+Figure \@ref(fig:status-200) shows how the probability of being granted smallholder status changes discontinuously across this property size threshold. We see a distinct drop in the proportion of properties granted smallholder status beyond the eligibility threshold, although there is some noncompliance. Figure \@ref(fig:status-800) shows that this discontinuity moves as expected in regions 11 and 12, where 800 hectares is the threshold for smallholder eligibility. This time, almost no properties above the cutoff were granted smallholder eligibility in these two regions. Note that there is no discontinuity at 200 hectares for properties in regions 11 and 12. Nothing about 200 hectares should affect conditional probability of smallholder status outside of the program threshold in the relevant regions, and the lack of a discontinuity at 200 ha for these regions confirms this.   
 
 ```{r status-800, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
 knitr::include_graphics("figs/status_discontinuity_800.png")
@@ -86,13 +86,13 @@ knitr::include_graphics("figs/psize_manipulation_200.png")
 
 ## Distinguishing misreporting from selective entry
 
-We have boundaries for rural properties in Chile for the regions that comprise the main set of Native Forest Law enrollees. We match enrolled properties to property boundaries using the set of coordinates provided for each property. These matches are not always perfectly representative of the size of the enrolled parcel, as landowners sometimes are able to enroll only one parcel in an otherwise larger property. However, these matches provide a good estimate of the distribution of actual property sizes of Native Forest Law enrollees, and Figure XX shows that the distribution of reported and matched property sizes are comparable. 
+We have boundaries for rural properties in Chile for the regions that comprise the main set of Native Forest Law enrollees. We match enrolled properties to property boundaries using the set of coordinates provided for each property. These matches are not always perfectly representative of the size of the enrolled parcel, as landowners sometimes are able to enroll only one parcel in an otherwise larger property. However, these matches provide a good estimate of the distribution of actual property sizes of Native Forest Law enrollees, and Figure \@ref(fig:dists) shows that the distribution of reported and matched property sizes are comparable. 
 
 ```{r dists, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
 knitr::include_graphics("figs/psize_distributions.png")
 ```
 
-In an effort to determine whether the bunching below the smallholder eligibility threshold of 200 hectares is due to misreporting or an increase in the number of enrollees just below the threshold, we explore these two distributions near the eligibility cutoff. Figure XX shows the distributions of the reported and matched property sizes near the 200 hectare threshold. We again see evidence of bunching just under the cutoff. In addition, we see evidence that properties with matched (true) property sizes just over the 200 hectare threshold were less likely to report their matched property size. This is suggestive of misreporting by properties just above the threshold.  
+In an effort to determine whether the bunching below the smallholder eligibility threshold of 200 hectares is due to misreporting or an increase in the number of enrollees just below the threshold, we explore these two distributions near the eligibility cutoff. Figure \@ref(fig:dists-window) shows the distributions of the reported and matched property sizes near the 200 hectare threshold. We again see evidence of bunching just under the cutoff. In addition, we see evidence that properties with matched (true) property sizes just over the 200 hectare threshold were less likely to report their matched property size. This is suggestive of misreporting by properties just above the threshold.  
 
 ```{r dists-window, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
 knitr::include_graphics("figs/psize_distributions_window.png")
@@ -137,7 +137,7 @@ Smallholder eligibility is largely determined by property size in the Native For
 
 We know that properties just above the smallholder eligibility threshold were likely to misreport their property sizes in order to obtain the benefits alotted for smallholders. The donut hole RDD can be used to circumvent problems introduced by these situations. [@balleca2016] shows that in the sharp RD setting, the donut RDD approach leads to an unbiased estimate of the treatment effect for non-heaped types. If we do not drop properties within the manipulation zone, a sharp RDD would recover the average treatment effect across the two types, weighted by the share of non-heaped properties that are observed at the heap.
 
-Because of the non-compliance observed in Table XX, we have a fuzzy setting, and with instrumental variables, we are estimating the CLATE for compliers only. We estimate the following 2sls set of equations:
+Because of the non-compliance observed in Figure \@ref(fig:status-200), we have a fuzzy setting, and with instrumental variables, we are estimating the CLATE for compliers only. We estimate the following 2sls set of equations:
 
 $$ \widehat{smallholder}_i = \gamma_0 + \gamma_1 hectares_{i, centered} + \gamma_2 belowcutoff_i + \omega$$
 $$ Y_i = \beta_0 + \beta_1 hectares_{i, centered} +\beta_2 \widehat{smallholder}_i + \epsilon$$
@@ -157,7 +157,7 @@ One of the primary challenges faced by program administrators is a lack of follo
 knitr::include_graphics("figs/received_bonus_plot.png")
 ```
 
-Figure XX shows that although all estimates are positive, smallholder status did not increase follow through rates at a statistically significant level for compliers at the eligibility cutoff.  
+Figure \@ref(fig:received-bonus) shows that although all estimates are positive, smallholder status did not increase follow through rates at a statistically significant level for compliers at the eligibility cutoff.  
 
 ## Application decisions
 
@@ -169,7 +169,7 @@ In this section, we explore the impact of smallholder status at the threshold on
 knitr::include_graphics(c("figs/payment_plot.png", "figs/area_enrolled_plot.png", "figs/timber_plot.png"))
 ```
 
-Figure XX shows that smallholder status decreases the average project area, total payment amount, and probability of undartaking projects with the objective of timber production for compliers at the cutoff. 
+Figure \@ref(fig:applications) shows that smallholder status decreases the average project area, total payment amount, and probability of undartaking projects with the objective of timber production for compliers at the cutoff. 
 
 I need to further work to understand the tradeoffs discussed above. 
 

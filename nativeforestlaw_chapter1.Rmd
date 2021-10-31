@@ -1,7 +1,7 @@
 ---
-title: Chapter 1: Targeting for additionality in Chilean payments for native reforestation
+title: "Chapter 1: Targeting for additionality in Chilean payments for native reforestation"
 author: "Alberto Garcia and Robert Heilmayr"
-date: "October 17, 2021"
+date: "October 30, 2021"
 output:
   bookdown::pdf_document2:
     latex_engine: xelatex
@@ -115,7 +115,7 @@ We need to make an appropriate common trends assumption in order to make inferen
 
 \textbf{Conditional common trends based on unawarded properties:}
 For all $g, t = 2,...,\Tau,$ such that $t\geq g$, 
-$$  E[evi_t(0)-evi_{t-1}(0)|X_i, G_g=1] = E[evi_t(0)-evi_{t-1}(0)|X_i, C=1] $$
+$$  E[evi_{it}(0)-evi_{it-1}(0)|X_i, G_g=1] = E[evi_{it}(0)-evi_{it-1}(0)|X_i, C=1] $$
 This amounts to assuming that without enrolling in the Native Forest Law contest, awarded properties would have continued to follow the same evolution in EVI as matched control properties, after conditioning on pre-treatment covariates. In order to rely on this common trends assumption, we must have a relatively large set of properties that do not experience treatment, or inference procedures may not be as precise as procedures that align with an alternative assumption. However, it is important to stress that this potential “loss of efficiency” is a direct consequence of not exploiting restrictions on pretreatment trends across cohorts [@marcus2021]. Luckily, in our case, we can take advantage of our matching procedure, which uses an extremely large pool of unawarded properties, detailed covariates including pre-program land uses, and explicit pre-trends. As such, we benefit from the fact that our common trends assumption does not restrict pre-trends across cohorts and does not presume that later cohorts are viable counterfactuals for early cohorts. Settling on this specific common trends assumption helps us to determine the appropriate estimator. The estimator developed in @callaway_did_2020 relies on the common trends assumption above, which we believe is reasonable to make. Robustness checks do include the use of not yet treated observations (and thus, a stronger common trends assumption).
 
 One concern may be our decision to exclude rejected applicants from the control group. Given that these properties have revealed their intention to enroll in the program, it seems that they may have opportunity costs similar to program enrollees. However, the composition of the rejected applicants differs between smallholders and other interested parties depending on year, and many rejected applicants are able to reapply and be awarded in later years. This means that the composition of the rejected applicant group is relatively unstable through time. Further, it would be difficult to make claims about the differences between the smallholders and other interested parties, because the rejected group differs through time for each. We discuss the rejected applicants in more detail in the Appendix and give creedence to our analysis by using the rejected group in a placebo test. 
@@ -192,29 +192,47 @@ In this section, we will estimate the payment per hectare necessary to increase 
 
 PES programs are designed to offset this expected increase in agricultural rents by offering a corresponding increase in forest rents [@alix-garcia_payment_2014]. However, regulators may also target the program to land with certain characteristics [@alix-garcia_only_2015]. In the case of the Native Forest Law, this is done in two main ways: 1) holding separate contests for smallholders and larger properties, where the smallholder contest pays 15\% higher and 2) a scoring mechanism that prioritizes indigenous peoples, smaller properties, and other landowner and property characteristics.
 
-Much research has addressed targeting in PES programs in the context of avoided deforestation. The key to gaining high environmental effectiveness at least cost is to enroll only the parcels at risk of deforestation [@alix-garcia_only_2015]. This can be achieved by providing adequate payments and focusing on parcels in areas of high deforestation. This is not the case in the reforestation context, where high environmental effectiveness is determined by whether landowners can generate and maintain new forest cover. The characteristics likely to determine effectiveness in the reforestation setting may thus be less easily targeted than in the deforestation setting.
+Much research has addressed targeting in PES programs in the context of avoided deforestation. The key to gaining high environmental effectiveness at least cost is to enroll only the parcels at risk of deforestation [@alix-garcia_only_2015]. This can be achieved by providing adequate payments and focusing on parcels in areas of high deforestation. This is not the case in the reforestation context, where high environmental effectiveness is determined by whether landowners can generate and maintain new forest cover. The characteristics likely to determine effectiveness in the reforestation setting may thus be less easily targeted than in the deforestation setting. We briefly outline the program's scoring mechanism here, but more detailed explanation can be found in the appendix. 
 
-We briefly outline the program's scoring mechanism here, but more detailed explanation can be found in the appendix. 
+Applications in both the smallholder and other interested party contest are scored based on a predetermined set of criteria, that include factors related both to landowner, property, and project characteristics. This mechanism determinses funding priority. Funding is allocated first to the smallholder contest with the highest scoring smallholders awarded first. After funding has been allocated to qualifying smallholders, the remaining funds are given to other interested parties with the highest scores until funding runs out. In some yyears, a second contest was held only for smallholders, and these are the only contests in which smallholders were not granted funding due to the scoring mechanism. This score, although not always critical for smallholder applicants, provides insight to program administrators' preferences for project prioritization. 
 
+Smallholders are scored according to:
 
-
-
-
-
-
-
-
-
-
+$$ score_{smallholder} =   $$
+, where 
+- $VI$ = 
+- $VP$ = 
+- $VPS$ = 
+- $VT$ = 
 
 
+The parameters $\beta_1$ ; $\beta_2$; $\beta_3$; $\beta_4$ vary slightly across contest. For reference, in the 2018 contest, $\beta_1 = 0.$ , $\beta_2 = 0.$; $\beta_3 =0.$, and $\beta_4 =0.$. 
+
+Other interested parties are scored according to:
+
+$$ score_{other} =   $$ 
+
+For reference, the 2018 contest used $\gamma_1 = 0.$ , $\gamma_2 = 0.$, and $\\gamma_3 =0.$. 
+
+Figure XX plots the treatment effects, $ATT_{ovr}$ for each score quartile. Note that score quartiles are determined by cohort, so each quartile contains equal cohort representation. In order for the score to be a good predictor of additionality, a primary goal of the program, we should see that treatment effect estimates increase across each quartile of the score. We see that 
+
+```{r contest-qdid1, fig.show="hold", fig.pos="H", out.width = '49%', fig.cap = "This figure shows event time treatment effects by assigned score quartile for awards granted in Left: the smallholder contest; and Right: the other interested parties contest", echo=FALSE}
+knitr::include_graphics(c("figs/small_qdid1.png", "figs/other_qdid1.png"))
+```
+
+
+Targeting based on social factors such as indigenous status or property size may come with costs or benefits in terms of additionality. In order to understand how the social component influences the score's association with our treatment effect estimates, we recalculate project scores, excluding the influence of $VPS$ and $VI$. Now, each score only consits of elements from $VT$ and $VP$. Figure XX shows that the association of our adjusted score with the treatment effect estimates is not clearly different than that of the true score. 
+
+
+```{r contest-qdid2, fig.show="hold", fig.pos="H", out.width = '49%', fig.cap = "This figure shows event time treatment effects by both assigned and adjusted score quartile for awards granted in Left: the smallholder contest; and Right: the other interested parties contest", echo=FALSE}
+knitr::include_graphics(c("figs/small_qdid2.png", "figs/other_qdid2.png"))
+```
+
+Explanation: even aspects of the project score are determined by political economy factors such as blah blah. In the next section, we explore how observables drive treatment effect heterogeneity before showing that accounting for these factors when scoring projects could result in significantly better prediction of additionality. 
 
 
 
-
-
-
-# Observables drive treatment effect heterogeneity 
+# Drivers of treatment effect heterogeneity 
 
 On average, the Native Forest Law is effective in increasing vegetation on awarded properties. In the context of avoided deforestation, program additionality is likely to be highest in areas with high levels of deforestation risk. This is not applicable in the reforestation case, however, as additionality is driven by landowners that generate new forest cover at least cost and maintain it through time. Here, we explore the factors that drive program impacts and how targeting for co-benefits might have affected program effectiveness.
 
@@ -420,10 +438,15 @@ $ATT_{ovr}$    &     `r df_timber$ATT[1]`*** & `r df_not_timber$ATT[1]`         
 
 # Generating an informative score
 
+In section XX, we showed that the program's scoring criteria had a positive but slight association with treatment effect estimates. Based on the drivers of treatment effect heterogeneity, we construct an alternative scoring mechanism. We show that targeting based on these observables outperforms both the true and adjusted scores assigned by the program. 
 
+We begin with a simple score that multiplies the estimated coefficient from each covariate by each property's value of the covariate. As such, the score is created as follows:
 
+$$ score_{observable} = \sum^n_{k=1} \beta_{k, ovr} Z_i$$
 
+, where ...
 
+Figure XX plots the treatment effect estimates against $score_{observable}$. We see that ...
 
 
 ## Results and implications for social development goals

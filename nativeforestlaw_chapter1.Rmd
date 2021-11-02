@@ -1,7 +1,7 @@
 ---
 title: "Chapter 1: Targeting for additionality in Chilean payments for native reforestation"
 author: "Alberto Garcia and Robert Heilmayr"
-date: "October 30, 2021"
+date: "November 3, 2021"
 output:
   bookdown::pdf_document2:
     latex_engine: xelatex
@@ -41,6 +41,12 @@ knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, messages = FALSE, out.widt
 
 options(scipen = 999)
 ```
+
+<!-- TO DO: -->
+<!-- - cohort level event studies -->
+<!-- - cohort level analysis -->
+<!-- - new score -->
+
 
 # Abstract {-}
 Widespread reforestation has become an important part of global efforts to address the intertwined challenges posed by climate change, biodiversity loss, and rural poverty. In response to concerns that plantations of exotic species may undermine objectives of increased carbon storage, biodiversity, and community involvement, some policies have sought to reforest with native species. We evaluate land cover impacts of a Chilean federal program that pays landowners to reforest their property with native species and prioritizes program co-benefits such as erosion mitigation and the engagement of smallholders, women, and indigenous peoples. Panel data for program beneficiaries and comparable unawarded properties allow us to control for fixed differences and time trends affecting both groups. While follow-through is low, we find that the program increased vegetation cover on the properties of both smallholders and larger landowners. A number of factors including pre-program land use and project objective are major determinants of additionality. In contrast to avoided deforestation, where additionality is driven by deforestation risk, this indicates the importance of targeting based on individual and property characteristics for reforestation success. Finally, we evaluate whether targeting for co-benefits comes at the cost of environmental effectiveness. 
@@ -489,8 +495,16 @@ knitr::include_graphics(c("figs/female_did.png", "figs/male_did.png"))
 
 ## Robustness of overall treatment effects
 
+### Cohort level event studies
+```{r cohort-es, fig.show="hold", fig.pos="H",  out.width = '33%', fig.cap = "This figure shows event time treatment effects for Left: female landowners; and Right: male landowners.", echo=FALSE}
+knitr::include_graphics(c("figs/cohort_2009.png", "figs/cohort_2010.png", "figs/cohort_2011.png", "figs/cohort_2012.png", "figs/cohort_2013.png", "figs/cohort_2014.png", "figs/cohort_2015.png", "figs/cohort_2016.png", "figs/cohort_2017.png", "figs/cohort_2018.png"))
+```
 
+```{r good-cohorts-es, fig.pos="H", out.width = '100%', fig.cap = "This figure shows event time treatment effects of the native forest law for awarded properties.", echo=FALSE}
+knitr::include_graphics("figs/good_cohorts_es.png")
 
+n = 8556
+```
 \clearpage
 
 ## Smallholders vs. other interested parties on observables

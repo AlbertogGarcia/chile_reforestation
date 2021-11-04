@@ -103,55 +103,55 @@ matched_2010 <- matchit(treat ~ evi_trend0908 + evi_trend0807 + evi_trend0706  +
                         data = subset(pool_wide, first.treat == 0 | first.treat == 2010),
                         method = my_match_method, ratio = r, distance = my_distance)
 
-matched_2011 <- matchit(treat ~ evi_trend1009 + evi_trend0908 + evi_trend0807 + evi_trend0706 #+ evi_trend0605
+matched_2011 <- matchit(treat ~ evi_trend1009 + evi_trend0908 + evi_trend0807 + evi_trend0706 + evi_trend0605
                         + evi_2008
                         + forest + plantation + baresoil + pasture + shrub + proportion_erosion+ slope + elev + lat  + area + road_dist + industry_dist + native_industry_dist,
                         data = subset(pool_wide, first.treat == 0 | first.treat == 2011),
                         method = my_match_method, ratio = r, distance = my_distance)
 
-matched_2012 <- matchit(treat ~ evi_trend1110 + evi_trend1009 + evi_trend0908 + evi_trend0807#+ evi_trend0706 +evi_trend0605
+matched_2012 <- matchit(treat ~ evi_trend1110 + evi_trend1009 + evi_trend0908 + evi_trend0807+ evi_trend0706# +evi_trend0605
                         + evi_2008
                         + forest + plantation + baresoil + pasture + shrub + proportion_erosion+ slope + elev + lat  + area + road_dist + industry_dist + native_industry_dist,
                         data = subset(pool_wide, first.treat == 0 | first.treat == 2012),
                         method = my_match_method, ratio = r, distance = my_distance)
 
-matched_2013 <- matchit(treat ~ evi_trend1211 + evi_trend1110 + evi_trend1009 + evi_trend0908 #+ evi_trend0807+ evi_trend0706 + evi_trend0605
+matched_2013 <- matchit(treat ~ evi_trend1211 + evi_trend1110 + evi_trend1009 + evi_trend0908 + evi_trend0807#+ evi_trend0706 + evi_trend0605
                         + evi_2008
                         + forest + plantation + baresoil + pasture + shrub +proportion_erosion+ slope + elev + lat  + area + road_dist + industry_dist + native_industry_dist,
                         data = subset(pool_wide, first.treat == 0 | first.treat == 2013),
                         method = my_match_method, ratio = r, distance = my_distance)
 
-matched_2014 <- matchit(treat ~ evi_trend1312 + evi_trend1211 + evi_trend1110 + evi_trend1009 #+ evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
+matched_2014 <- matchit(treat ~ evi_trend1312 + evi_trend1211 + evi_trend1110 + evi_trend1009 + evi_trend0908#+ evi_trend0807+ evi_trend0706 + evi_trend0605
                         + evi_2008
                         + forest + plantation + baresoil + pasture + shrub +proportion_erosion+ slope + elev + lat  + area + road_dist + industry_dist + native_industry_dist,
                         data = subset(pool_wide, first.treat == 0 | first.treat == 2014),
                         method = my_match_method, ratio = r, distance = my_distance)
 
-matched_2015 <- matchit(treat ~ evi_trend1413 + evi_trend1312 + evi_trend1211 + evi_trend1110 #+ evi_trend1009 + evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
+matched_2015 <- matchit(treat ~ evi_trend1413 + evi_trend1312 + evi_trend1211 + evi_trend1110 + evi_trend1009 #+ evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
                         + evi_2008
                         + forest + plantation + baresoil + pasture + shrub +proportion_erosion+ slope + elev + lat  + area + road_dist + industry_dist + native_industry_dist,
                         data = subset(pool_wide, first.treat == 0 | first.treat == 2015),
                         method = my_match_method, ratio = r, distance = my_distance)
 
-matched_2016 <- matchit(treat ~ evi_trend1514 + evi_trend1413 + evi_trend1312 + evi_trend1211 #+ evi_trend1110+ evi_trend1009 + evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
+matched_2016 <- matchit(treat ~ evi_trend1514 + evi_trend1413 + evi_trend1312 + evi_trend1211 + evi_trend1110#+ evi_trend1009 + evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
                         +  evi_2008
                         + forest + plantation + baresoil + pasture + shrub + proportion_erosion+ slope + elev + lat  + area + road_dist + industry_dist + native_industry_dist,
                         data = subset(pool_wide, first.treat == 0 | first.treat == 2016),
                         method = my_match_method, ratio = r, distance = my_distance)
 
-matched_2017 <- matchit(treat ~ evi_trend1615 + evi_trend1514 + evi_trend1413 + evi_trend1312 #+ evi_trend1211+ evi_trend1110+ evi_trend1009 + evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
+matched_2017 <- matchit(treat ~ evi_trend1615 + evi_trend1514 + evi_trend1413 + evi_trend1312 + evi_trend1211#+ evi_trend1110+ evi_trend1009 + evi_trend0908+ evi_trend0807+ evi_trend0706 + evi_trend0605
                         +  evi_2008
                         + forest + plantation + baresoil + pasture + shrub +proportion_erosion+ slope + elev + lat  + area + road_dist + industry_dist + native_industry_dist,
                         data = subset(pool_wide, first.treat == 0 | first.treat == 2017),
                         method = my_match_method, ratio = r, distance = my_distance)
 
-matched_2018 <- matchit(treat ~ evi_trend1716 + evi_trend1615 + evi_trend1514 + evi_trend1413 #+ evi_trend1312 + evi_trend1211+ evi_trend1110+ evi_trend1009 + evi_trend0908+evi_trend0807+ evi_trend0706 +evi_trend0605
+matched_2018 <- matchit(treat ~ evi_trend1716 + evi_trend1615 + evi_trend1514 + evi_trend1413 + evi_trend1312 #+ evi_trend1211+ evi_trend1110+ evi_trend1009 + evi_trend0908+evi_trend0807+ evi_trend0706 +evi_trend0605
                         +  evi_2008
                         + forest + plantation + baresoil + pasture + shrub + proportion_erosion+ slope + elev + lat  + area + road_dist + industry_dist + native_industry_dist,
                         data = subset(pool_wide, first.treat == 0 | first.treat == 2018),
                         method = my_match_method, ratio = r, distance = my_distance)
 
-matched_2019 <- matchit(treat ~ evi_trend1817 + evi_trend1716 + evi_trend1615 + evi_trend1514 #+ evi_trend1413 + evi_trend1312 + evi_trend1211+ evi_trend1110+ evi_trend1009 + evi_trend0908+evi_trend0807+ evi_trend0706 + evi_trend0605
+matched_2019 <- matchit(treat ~ evi_trend1817 + evi_trend1716 + evi_trend1615 + evi_trend1514 + evi_trend1413 #+ evi_trend1312 + evi_trend1211+ evi_trend1110+ evi_trend1009 + evi_trend0908+evi_trend0807+ evi_trend0706 + evi_trend0605
                         + evi_2008
                         + forest + plantation + baresoil + pasture + shrub + proportion_erosion+ slope + elev + lat  + area + road_dist + industry_dist + native_industry_dist,
                         data = subset(pool_wide, first.treat == 0 | first.treat == 2019),
@@ -163,9 +163,10 @@ map_covars <- function(df){
   
   return_df <- df %>%
     group_by(subclass)%>%
+    arrange(treat)%>%
     mutate(
-      control_contest = rptpro_tipo_concurso,
-      control_year = max(first.treat)
+     control_contest = rptpro_tipo_concurso[2],
+     control_year = max(first.treat)
     )%>%
     ungroup()
   
@@ -198,8 +199,30 @@ data <- matched_long %>%
          Y = EVI2,
          id = as.numeric(id))
 
-data <- subset(data, first.treat == 2009 | treat == 0)
-data_2 <- subset(data, control_year == 2009)
+data_2009 <- subset(data, first.treat == 2009 | treat == 0)
+data_2010 <- subset(data, first.treat == 2010 | treat == 0)
+data_2011 <- subset(data, first.treat == 2011 | treat == 0)
+data_2012 <- subset(data, first.treat == 2012 | treat == 0)
+data_2013 <- subset(data, first.treat == 2013 | treat == 0)
+data_2014 <- subset(data, first.treat == 2014 | treat == 0)
+data_2015 <- subset(data, first.treat == 2015 | treat == 0)
+data_2016 <- subset(data, first.treat == 2016 | treat == 0)
+data_2017 <- subset(data, first.treat == 2017 | treat == 0)
+data_2018 <- subset(data, first.treat == 2018 | treat == 0)
+data_2019 <- subset(data, first.treat == 2019 | treat == 0)
+
+data_2009b <- subset(data, control_year == 2009 )
+data_2010b <- subset(data, control_year == 2010 )
+data_2011b <- subset(data, control_year == 2011 )
+data_2012b <- subset(data, control_year == 2012 )
+data_2013b <- subset(data, control_year == 2013 )
+data_2014b <- subset(data, control_year == 2014 )
+data_2015b <- subset(data, control_year == 2015 )
+data_2016b <- subset(data, control_year == 2016 )
+data_2017b <- subset(data, control_year == 2017 )
+data_2018b <- subset(data, control_year == 2018 )
+data_2019b <- subset(data, control_year == 2019 )
+#data_2 <- subset(data, control_year == 2009 & (rptpro_tipo_concurso != "Otros Interesados"|treat == 0))
 
 library(did)
 did <- att_gt(yname="EVI2",
@@ -209,12 +232,60 @@ did <- att_gt(yname="EVI2",
               est_method = "reg",
               xformla= ~ road_dist + proportion_erosion + industry_dist +native_industry_dist + water +urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev  
               ,
-              weightsname = "area", 
-              data=data, clustervars = "id"
+              #weightsname = "area", 
+              data=data_2019, clustervars = "id"
               , panel=TRUE, bstrap = TRUE,
               print_details=TRUE
 )
 
-did.es <- aggte(did, type="dynamic")
-did.ovr <- aggte(did, type="simple")
-ggdid(did.es)
+
+
+did.es <- aggte(did, type="dynamic", min_e = -5)
+#did.ovr <- aggte(did, type="simple")
+
+dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$egt, "crit.val" = did.es$crit.val.egt)%>%
+  mutate(period = ifelse(e >= 0 , "post", "pre"))
+
+plot_mgmt <- ggplot(data=dyn.es, aes(x=e, y=att, color = period)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), width=0.1) +
+  ggtitle("2019 cohort treatment effects") +
+  xlab("years since property enrollment") + ylab("EVI")+ ylim(-.02, 0.035)
+plot_mgmt
+
+ggsave(path = "figs", filename = "cohort_2019.png", width = 8, height = 5)
+
+pretrend_data <- subset(data, treat == 0 | first.treat == 2010 | first.treat == 2009 | first.treat == 2015 | first.treat == 2016 | first.treat == 2017)
+#11, 12, 13, 14, 18, 19 violate pretrends 
+# drop these cohorts
+
+did <- att_gt(yname="EVI2",
+              tname="Year",
+              idname="id",
+              gname="first.treat",
+              est_method = "reg",
+              xformla= ~ road_dist + proportion_erosion + industry_dist +native_industry_dist + water +urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev  
+              ,
+              #weightsname = "area", 
+              data=pretrend_data, clustervars = "id"
+              , panel=TRUE, bstrap = TRUE,
+              print_details=TRUE
+)
+
+
+
+did.es <- aggte(did, type="dynamic", min_e = -10, max_e = 10)
+#did.ovr <- aggte(did, type="simple")
+
+dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$egt, "crit.val" = did.es$crit.val.egt)%>%
+  mutate(period = ifelse(e >= 0 , "post", "pre"))
+
+plot_mgmt <- ggplot(data=dyn.es, aes(x=e, y=att, color = period)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), width=0.1) +
+  #ggtitle("treatment effects") +
+  xlab("years since property enrollment") + ylab("EVI")+ ylim(-.01, 0.025)+
+  theme_minimal()
+plot_mgmt
+ggsave(path = "figs", filename = "good_cohorts_es.png", width = 8, height = 5)
+

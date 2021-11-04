@@ -351,7 +351,7 @@ length(unique(native_forest_law$rptpro_id))
 
 rol_priority <- native_forest_law %>%
   group_by(rptpro_id)%>%
-  mutate(priority = ifelse(match_type == "rol", 1, 0),
+  mutate(priority = ifelse(match_type != "rol", 1, 0),
          max_priority = max(priority))%>%
 distinct(rptpro_tipo_concurso, rptpro_id, NOM_PREDIO, PROPIETARI, rptpre_nombre, rptprop_nombre, evi_2007, evi_2020, rptpre_superficie_predial, area_ha, .keep_all = TRUE)%>%
   filter(priority == max(priority)) %>%
@@ -360,18 +360,24 @@ distinct(rptpro_tipo_concurso, rptpro_id, NOM_PREDIO, PROPIETARI, rptpre_nombre,
 
 
 checking_manipulation <- rol_priority %>%
-  filter( area_diff/rptpre_superficie_predial < 1)%>%
+  #filter( area_diff/rptpre_superficie_predial < 1)%>%
   select(rptpro_tipo_concurso, rptpre_superficie_predial, area_ha, NOM_PREDIO, PROPIETARI, rptpre_nombre, rptprop_nombre, rptpro_id, evi_2007, evi_2020)
 
+checking_manipulation2 <- rol_priority %>%
+  filter(between(rptpre_superficie_predial, 198, 200) )%>%
+  #filter( area_diff/rptpre_superficie_predial < 1)%>%
+  select(rptpro_tipo_concurso, rptpre_superficie_predial, area_ha, NOM_PREDIO, PROPIETARI, rptpre_nombre, rptprop_nombre, rptpro_id, evi_2007, evi_2020)
+
+
 #write.csv(checking_manipulation, "checking_manipulation.csv")
-size_reported <- checking_manipulation$rptpre_superficie_predial
-size_true <- checking_manipulation$area_ha
+size_reported <- checking_manipulation2$rptpre_superficie_predial
+size_true <- checking_manipulation2$area_ha
 
 ### first, we'll see whether these distributions are different to one another
 ks.test(size_reported, size_true)
 # D = 0.021268, p-value = 0.06798
 
-ggplot(data = subset(checking_manipulation)) +
+ggplot(data = subset(checking_manipulation2)) +
   geom_histogram(aes(rptpre_superficie_predial,  fill = "rptpre_superficie_predial"), binwidth = 5, alpha = .7 ,color = "white", size = 1, boundary = 0)+
   geom_histogram(aes(area_ha, fill = "area_ha",), binwidth = 5,  alpha = .8, boundary = 0) +
   geom_vline(xintercept = 200, linetype = "dashed", , size = 1.25)+
@@ -383,7 +389,7 @@ ggplot(data = subset(checking_manipulation)) +
                      values = c("rptpre_superficie_predial"="#E69F00", 
                                 "area_ha"="grey40"))+
   xlab("property size (ha)")+
-  xlim(179, 226)
+  xlim(100, 500)
 ggsave(#path = "figs", 
   filename = "psize_distributions_window.png", width = 8, height = 5)
 

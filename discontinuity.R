@@ -20,7 +20,12 @@ discontinuity_main <- NFL_df %>%
          size_centered = property_size - size_cutoff,
          below_cutoff = property_size <= size_cutoff,
          smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1)
-  )
+  )%>%
+  group_by(rptpro_id)%>%
+  mutate_at(.vars = vars(anillado:zanja),
+            .funs = list(~ max(.)))
+  ungroup()%>%
+distinct(rptpro_id)
 
 #################################################################################################
 ### table shows compliance across the threshold for all properties
@@ -34,7 +39,8 @@ discontinuity_main %>%
 
 discontinuity_main200 <- subset(discontinuity_main, rptpro_numero_region %in% regions_200)
 discontinuity_main800 <- subset(discontinuity_main, rptpro_numero_region %in% regions_800)
-
+reported_200 <- subset(discontinuity_main, between(property_size, 198, 200))%>%
+  select(rptpro_id, rptpro_ano, property_size, rptpro_tipo_presenta, rptpro_tipo_concurso)
 #################################################################################################
 ### Density tests show that there is manipulation at the 200 hectare threshold
 #################################################################################################
@@ -137,32 +143,24 @@ analysis_df <- discontinuity_main %>%
          timber = ifelse(rptpro_objetivo_manejo == "PRODUCCION MADERERA", 1, 0),
          ecological_recovery = ifelse(rptpro_objetivo_manejo != "PRODUCCION MADERERA" & rptpro_objetivo_manejo != "PRODUCCION NO MADERERA", 1, 0),
          nontimber = ifelse(rptpro_objetivo_manejo == "PRODUCCION NO MADERERA", 1, 0)
-  )
+  )%>%
+  filter(property_size != 200 & property_size != 150 & property_size != 250 & property_size != 100)
 
 
-bw_list = c(120, 80, 60)
-donut_size_list = c(3, 5, 10)
-right_donut_size = 0  
-
+bw_list = c(75, 50, 30)
 
 rdd_results <- data.frame()
-for(i in donut_size_list){
 
-  donut_size = i
+for(k in bw_list){
     
-  for(k in bw_list){
-    
-    bw = k + donut_size
-    
-    donut_df <- analysis_df %>%
-    filter(between(size_centered, min(size_centered), - donut_size) | between(size_centered, right_donut_size, max(size_centered))
-    )
-    
+    i = "drop heap points"
+    bw = k 
+
     rdd <- iv_robust(
       received_bonus ~ size_centered + smallholder | size_centered + below_cutoff,
       fixed_effects = ~ rptpre_region , 
       #diagnostics = TRUE,
-      data = filter(donut_df, size_centered >= -bw & size_centered <= bw & rptpro_ano < 2019)
+      data = filter(analysis_df, size_centered >= -bw & size_centered <= bw & rptpro_ano < 2019)
     )
     
     rdd_results <- data.frame(
@@ -174,7 +172,7 @@ for(i in donut_size_list){
     rdd <- iv_robust(
       regeneration ~ size_centered + smallholder | size_centered + below_cutoff,
       fixed_effects = ~ rptpre_region,
-      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+      data = filter(analysis_df, size_centered >= -bw & size_centered <= bw)
     )
     rdd_results <- data.frame(
       "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
@@ -185,7 +183,7 @@ for(i in donut_size_list){
     rdd <- iv_robust(
       planting ~ size_centered + smallholder | size_centered + below_cutoff,
       fixed_effects = ~ rptpre_region,
-      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+      data = filter(analysis_df, size_centered >= -bw & size_centered <= bw)
     )
     rdd_results <- data.frame(
       "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
@@ -196,7 +194,7 @@ for(i in donut_size_list){
     rdd <- iv_robust(
       rptpro_monto_total ~ size_centered + smallholder | size_centered + below_cutoff,
       fixed_effects = ~ rptpre_region,
-      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+      data = filter(analysis_df, size_centered >= -bw & size_centered <= bw)
     )
     rdd_results <- data.frame(
       "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
@@ -207,7 +205,7 @@ for(i in donut_size_list){
     rdd <- iv_robust(
       rptpre_superficie_bonificada ~ size_centered + smallholder | size_centered + below_cutoff,
       fixed_effects = ~ rptpre_region,
-      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+      data = filter(analysis_df, size_centered >= -bw & size_centered <= bw)
     )
     rdd_results <- data.frame(
       "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
@@ -218,7 +216,7 @@ for(i in donut_size_list){
     rdd <- iv_robust(
       timber ~ size_centered + smallholder | size_centered + below_cutoff,
       fixed_effects = ~ rptpre_region,
-      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+      data = filter(analysis_df, size_centered >= -bw & size_centered <= bw)
     )
     rdd_results <- data.frame(
       "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
@@ -229,7 +227,7 @@ for(i in donut_size_list){
     rdd <- iv_robust(
       nontimber ~ size_centered + smallholder | size_centered + below_cutoff,
       fixed_effects = ~ rptpre_region,
-      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+      data = filter(analysis_df, size_centered >= -bw & size_centered <= bw)
     )
     rdd_results <- data.frame(
       "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
@@ -240,19 +238,18 @@ for(i in donut_size_list){
     rdd <- iv_robust(
       ecological_recovery ~ size_centered + smallholder | size_centered + below_cutoff,
       fixed_effects = ~ rptpre_region,
-      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+      data = filter(analysis_df, size_centered >= -bw & size_centered <= bw)
     )
     rdd_results <- data.frame(
       "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
       "bw" = k, "donut" = i
     )%>%
       rbind(rdd_results)
-    
     
     rdd <- iv_robust(
       cutting ~ size_centered + smallholder | size_centered + below_cutoff,
       fixed_effects = ~ rptpre_region,
-      data = filter(donut_df, size_centered >= -bw & size_centered <= bw)
+      data = filter(analysis_df, size_centered >= -bw & size_centered <= bw)
     )
     rdd_results <- data.frame(
       "outcome" = rdd$outcome, "coeff" = rdd$coefficients['smallholder'], "se" = rdd$std.error['smallholder'], "p.val" = rdd$p.value['smallholder'],
@@ -260,11 +257,8 @@ for(i in donut_size_list){
     )%>%
       rbind(rdd_results)
   
-  
-  
   }
-  
-}
+
 library(rio)
 export(rdd_results, "rdresults_main.rds")
 
@@ -360,27 +354,38 @@ distinct(rptpro_tipo_concurso, rptpro_id, NOM_PREDIO, PROPIETARI, rptpre_nombre,
 
 
 checking_manipulation <- rol_priority %>%
+  filter( rptpre_superficie_predial < 1500)%>%
+  select(rptpro_tipo_concurso, rptpre_superficie_predial, area_ha, NOM_PREDIO, PROPIETARI, rptpre_nombre, rptprop_nombre, rptpro_id, evi_2007, evi_2020)
+
+bunchers_200 <- rol_priority %>%
+  filter(between(rptpre_superficie_predial, 195, 200) )%>%
   #filter( area_diff/rptpre_superficie_predial < 1)%>%
   select(rptpro_tipo_concurso, rptpre_superficie_predial, area_ha, NOM_PREDIO, PROPIETARI, rptpre_nombre, rptprop_nombre, rptpro_id, evi_2007, evi_2020)
 
-checking_manipulation2 <- rol_priority %>%
-  filter(between(rptpre_superficie_predial, 198, 200) )%>%
-  #filter( area_diff/rptpre_superficie_predial < 1)%>%
-  select(rptpro_tipo_concurso, rptpre_superficie_predial, area_ha, NOM_PREDIO, PROPIETARI, rptpre_nombre, rptprop_nombre, rptpro_id, evi_2007, evi_2020)
-
+x <- nrow(subset(bunchers_200, area_ha <= 200))
+y <- nrow(subset(bunchers_200, area_ha > 200))
+y/(y+x)
 
 #write.csv(checking_manipulation, "checking_manipulation.csv")
-size_reported <- checking_manipulation2$rptpre_superficie_predial
-size_true <- checking_manipulation2$area_ha
+size_reported <- checking_manipulation$rptpre_superficie_predial
+full_size_reported <- discontinuity_main$property_size
+size_true <- checking_manipulation$area_ha
+
+ggplot() +
+  geom_density(aes(size_reported))+
+  geom_density(aes(full_size_reported), color = "red")+
+  geom_density(aes(size_true), color = "blue")+
+  xlim(0, 1000)
 
 ### first, we'll see whether these distributions are different to one another
-ks.test(size_reported, size_true)
+ks.test(size_reported, full_size_reported)
 # D = 0.021268, p-value = 0.06798
 
-ggplot(data = subset(checking_manipulation2)) +
+ggplot(data = subset(bunchers_200)) +
   geom_histogram(aes(rptpre_superficie_predial,  fill = "rptpre_superficie_predial"), binwidth = 5, alpha = .7 ,color = "white", size = 1, boundary = 0)+
   geom_histogram(aes(area_ha, fill = "area_ha",), binwidth = 5,  alpha = .8, boundary = 0) +
-  geom_vline(xintercept = 200, linetype = "dashed", , size = 1.25)+
+  geom_density(aes(area_ha)) +
+  geom_vline(xintercept = 200, linetype = "dashed", size = 1.25)+
   #scale_fill_manual(values=c("grey20", "grey60")) + 
   theme_minimal()+
   scale_fill_manual(name="", 
@@ -389,7 +394,7 @@ ggplot(data = subset(checking_manipulation2)) +
                      values = c("rptpre_superficie_predial"="#E69F00", 
                                 "area_ha"="grey40"))+
   xlab("property size (ha)")+
-  xlim(100, 500)
+  xlim(100, 400)
 ggsave(#path = "figs", 
   filename = "psize_distributions_window.png", width = 8, height = 5)
 

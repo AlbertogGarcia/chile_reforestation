@@ -71,22 +71,17 @@ Figure \@ref(fig:status-200) shows how the probability of being granted smallhol
 knitr::include_graphics("figs/status_discontinuity_800.png")
 ```
 
-# Research design
+# Bunching at the eligibility threshold
 
-We utilize the discontinuity in smallholder eligibility to explore the affect of higher payments and certainty of application success on program outcomes. 
+Testing for manipulation at the 200 hectare threshold reveals clear evidence of bunching right below the cutoff. A Mccrary density test rejects the null of a smooth distribution at this point. This ability to manipulate the running variable poses a threat to identification in an RDD design unless properly addressed. 
 
-## Bunching at the eligibility threshold
-
-Manipulation testing using local polynomial density estimation, p-value 0.039
-- evidence of manipulation at 200 hectares
-- visually clear
 ```{r rddensity-200, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
 knitr::include_graphics("figs/psize_manipulation_200.png")
 ```
 
 ## Distinguishing misreporting from selective entry
 
-We have boundaries for rural properties in Chile for the regions that comprise the main set of Native Forest Law enrollees. We match enrolled properties to property boundaries using the set of coordinates provided for each property. These matches are not always perfectly representative of the size of the enrolled parcel, as landowners sometimes are able to enroll only one parcel in an otherwise larger property. However, these matches provide a good estimate of the distribution of actual property sizes of Native Forest Law enrollees, and Figure \@ref(fig:dists) shows that the distribution of reported and matched property sizes are comparable. 
+We have boundaries for rural properties in Chile for the regions that comprise the main set of Native Forest Law enrollees. We match enrolled properties to property boundaries using the set of coordinates provided for each property. The property boundaries are sourced from the Centro de Informacion de Recursos Naturales (CIREN), who provide property boundaries based on the property divisions sent by the Internal Revenue Service (SII). As such, there is no reason to believe that these boundaries are minipulable. These matches provide a good estimate of the distribution of actual property sizes of Native Forest Law enrollees, and Figure \@ref(fig:dists) shows that the distribution of reported and matched true property sizes are comparable. 
 
 ```{r dists, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
 knitr::include_graphics("figs/psize_distributions.png")
@@ -98,20 +93,24 @@ In an effort to determine whether the bunching below the smallholder eligibility
 knitr::include_graphics("figs/psize_distributions_window.png")
 ```
 
-We can explore whether projects on either side of the treatment effect threshold within the manipulation range differe on application characteristics. 
+Lastly, we explore the properties who have reported property sizes just under the threshold. Figure XX shows the reported and true property sizes for these properties after limiting the sample to only matched properties with a reported property size between 198 to 200 hectares. We see that not all of the properties are underreporting their property size. Some are likely unsure of their exact property size and simply round to the nearest 10 hectares or so. Roughly half of the properties bunching below the threshold had true property sizes below the threshold. 
 
 ## Benefits of smallholder classification and the policy relevant parameter
 
 The benefits of being classified as a smallholder are fairly substantial. The main benefit of smallholder classification is a payment increase of 15\% for the same activities. Smallholder classification may also come with benefits related to extension services or technical assistance. 
 
-We now introduce our parameter of interest. While one may be interested in the causal impact of smallholder classification on property outcomes, this is a difficult parameter to recover. Properties just under the 200 hectare threshold may not have enrolled had the payment been 15\% less, meaning that increased enrollment could have resulted just under the policy threshold. As such, properties on either side of the threshold may not be perfect counterfactuals. However, we can still recover a parameter of extreme policy relevance: the expected impact of smallholder classification on outcomes for enrolled properties. This is likely to be the parameter policymakers are interested in if the primary objective is to generate forest cover at least cost. 
+<!-- We now introduce our parameter of interest. While one may be interested in the causal impact of smallholder classification on property outcomes, this is a difficult parameter to recover. Properties just under the 200 hectare threshold may not have enrolled had the payment been 15\% less, meaning that increased enrollment could have resulted just under the policy threshold. As such, properties on either side of the threshold may not be perfect counterfactuals. However, we can still recover a parameter of extreme policy relevance: the expected impact of smallholder classification on outcomes for enrolled properties. This is likely to be the parameter policymakers are interested in if the primary objective is to generate forest cover at least cost.  -->
 
-We define the parameter of interest below:
+<!-- We define the parameter of interest below: -->
 
-$$CLATE = E[Y_i(1) - Y_i(0) | X = c, i \in L]$$
-, where $Y_i$ denotes the potential outcome for property $i$; $X$ is property size; $c$ is the smallholder eligibility threshold; and $L$ represents enrollment via the Native Forest Law. This is the local average treatment effect of smallholder classification, conditional on property $i$ participating in the program. 
+<!-- $$CLATE = E[Y_i(1) - Y_i(0) | X = c, i \in L]$$ -->
+<!-- , where $Y_i$ denotes the potential outcome for property $i$; $X$ is property size; $c$ is the smallholder eligibility threshold; and $L$ represents enrollment via the Native Forest Law. This is the local average treatment effect of smallholder classification, conditional on property $i$ participating in the program.  -->
 
-## Mechanisms driving selection and project decisions at the threshold
+# Possible research questions and design
+
+I see two paths forward with this project. The first surrounds the manipulation and misreporting at the thresholds. 
+
+The second path would overcome the heaping to conduct a regression discontinuity design analysis. I still believe this is possible, as several papers in the economics literature have sought to overcome and analyze this issue in similar settings. @barreca2016 explore heaping in the context of birth weights. While extremely unlikely in "nature", reports show heaping at perfect 100 gram levels. They conduct monte carlo analyses to show that dropping data at heap points provides unbiased estimates of the LATE. 
 
 \textbf{certainty of funding:}
 - other interested parties face the risk of not being funded
@@ -131,54 +130,54 @@ application decisions:
 
 
 
-## Estimation
+<!-- ## Estimation -->
 
-Smallholder eligibility is largely determined by property size in the Native Forest Law contest. If properties fall below the regional property size cutoff, they are eligible for additional program benefits. While this size theshold determines smallholder status for the vast majority of properties, some can lose or gain eligibility through other means. Table XX shows the non-compliers in this setting. While a property size exceeding the threshold essentially disqualifies a property from smallholder benefits, a sizeable proportion of properties under the cutoff still get classified as other interested parties. 
+<!-- Smallholder eligibility is largely determined by property size in the Native Forest Law contest. If properties fall below the regional property size cutoff, they are eligible for additional program benefits. While this size theshold determines smallholder status for the vast majority of properties, some can lose or gain eligibility through other means. Table XX shows the non-compliers in this setting. While a property size exceeding the threshold essentially disqualifies a property from smallholder benefits, a sizeable proportion of properties under the cutoff still get classified as other interested parties.  -->
 
-We know that properties just above the smallholder eligibility threshold were likely to misreport their property sizes in order to obtain the benefits alotted for smallholders. The donut hole RDD can be used to circumvent problems introduced by these situations. [@balleca2016] shows that in the sharp RD setting, the donut RDD approach leads to an unbiased estimate of the treatment effect for non-heaped types. If we do not drop properties within the manipulation zone, a sharp RDD would recover the average treatment effect across the two types, weighted by the share of non-heaped properties that are observed at the heap.
+<!-- We know that properties just above the smallholder eligibility threshold were likely to misreport their property sizes in order to obtain the benefits alotted for smallholders. The donut hole RDD can be used to circumvent problems introduced by these situations. [@balleca2016] shows that in the sharp RD setting, the donut RDD approach leads to an unbiased estimate of the treatment effect for non-heaped types. If we do not drop properties within the manipulation zone, a sharp RDD would recover the average treatment effect across the two types, weighted by the share of non-heaped properties that are observed at the heap. -->
 
-Because of the non-compliance observed in Figure \@ref(fig:status-200), we have a fuzzy setting, and with instrumental variables, we are estimating the CLATE for compliers only. We estimate the following 2sls set of equations:
+<!-- Because of the non-compliance observed in Figure \@ref(fig:status-200), we have a fuzzy setting, and with instrumental variables, we are estimating the CLATE for compliers only. We estimate the following 2sls set of equations: -->
 
-$$ \widehat{smallholder}_i = \gamma_0 + \gamma_1 hectares_{i, centered} + \gamma_2 belowcutoff_i + \omega$$
-$$ Y_i = \beta_0 + \beta_1 hectares_{i, centered} +\beta_2 \widehat{smallholder}_i + \epsilon$$
+<!-- $$ \widehat{smallholder}_i = \gamma_0 + \gamma_1 hectares_{i, centered} + \gamma_2 belowcutoff_i + \omega$$ -->
+<!-- $$ Y_i = \beta_0 + \beta_1 hectares_{i, centered} +\beta_2 \widehat{smallholder}_i + \epsilon$$ -->
 
-In order to minimize concern surrounding the misreporting of property size at the threshold, I report estimates with a variety of donut sizes. I aslo ensure that the estimates are robust to several different bandwidths. 
+<!-- In order to minimize concern surrounding the misreporting of property size at the threshold, I report estimates with a variety of donut sizes. I aslo ensure that the estimates are robust to several different bandwidths.  -->
 
 
-# Results
+<!-- # Results -->
 
-## Follow through
+<!-- ## Follow through -->
 
-Policy makers are interested in the impact of these smallholder benefits for several reasons. First, the primary program objective seeks to protect and recover native forest. An increased payment is likely to attract landowners with a higher opportunity cost. Second, program administators have prioritized the participation of smallholders and indigenous communities. This is evidenced by both the application process, which prioritizes the funding of smallholders, and the increased payments. 
+<!-- Policy makers are interested in the impact of these smallholder benefits for several reasons. First, the primary program objective seeks to protect and recover native forest. An increased payment is likely to attract landowners with a higher opportunity cost. Second, program administators have prioritized the participation of smallholders and indigenous communities. This is evidenced by both the application process, which prioritizes the funding of smallholders, and the increased payments.  -->
 
-One of the primary challenges faced by program administrators is a lack of follow through. The average follow-through rate for projects in the program was 33.91\% through 2018. The follow through rate for smallholders was 37.66\% and 26.63\% for other interested parties. Smallholders have a significantly higher follow through rate, which could be due to the increased payment. Low follow through affects both of the above program goals. If projects are not completed, forest cover benefits are unrealized, and landowners do not receive any benefits.  
+<!-- One of the primary challenges faced by program administrators is a lack of follow through. The average follow-through rate for projects in the program was 33.91\% through 2018. The follow through rate for smallholders was 37.66\% and 26.63\% for other interested parties. Smallholders have a significantly higher follow through rate, which could be due to the increased payment. Low follow through affects both of the above program goals. If projects are not completed, forest cover benefits are unrealized, and landowners do not receive any benefits.   -->
 
-```{r received-bonus, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
-knitr::include_graphics("figs/received_bonus_plot.png")
-```
+<!-- ```{r received-bonus, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE} -->
+<!-- knitr::include_graphics("figs/received_bonus_plot.png") -->
+<!-- ``` -->
 
-Figure \@ref(fig:received-bonus) shows that although all estimates are positive, smallholder status did not increase follow through rates at a statistically significant level for compliers at the eligibility cutoff.  
+<!-- Figure \@ref(fig:received-bonus) shows that although all estimates are positive, smallholder status did not increase follow through rates at a statistically significant level for compliers at the eligibility cutoff.   -->
 
-## Application decisions
+<!-- ## Application decisions -->
 
-An interesting component of our data is access to specific project details, activities, and objectives. Increased payments may make previously unprofitable activities desirable choices. There may also be landowner benefits to scaling up the size of the reforestation project when payments increase. 
+<!-- An interesting component of our data is access to specific project details, activities, and objectives. Increased payments may make previously unprofitable activities desirable choices. There may also be landowner benefits to scaling up the size of the reforestation project when payments increase.  -->
 
-In this section, we explore the impact of smallholder status at the threshold on components of the project applications. Recall that these estimates the impact of both the direct payment increase and selection into the program. 
+<!-- In this section, we explore the impact of smallholder status at the threshold on components of the project applications. Recall that these estimates the impact of both the direct payment increase and selection into the program.  -->
 
-```{r applications,  fig.show="hold", fig.pos="H", out.width = '49%', fig.cap = "test", echo=FALSE}
-knitr::include_graphics(c("figs/payment_plot.png", "figs/area_enrolled_plot.png", "figs/timber_plot.png"))
-```
+<!-- ```{r applications,  fig.show="hold", fig.pos="H", out.width = '49%', fig.cap = "test", echo=FALSE} -->
+<!-- knitr::include_graphics(c("figs/payment_plot.png", "figs/area_enrolled_plot.png", "figs/timber_plot.png")) -->
+<!-- ``` -->
 
-Figure \@ref(fig:applications) shows that smallholder status decreases the average project area, total payment amount, and probability of undartaking projects with the objective of timber production for compliers at the cutoff. 
+<!-- Figure \@ref(fig:applications) shows that smallholder status decreases the average project area, total payment amount, and probability of undartaking projects with the objective of timber production for compliers at the cutoff.  -->
 
-I need to further work to understand the tradeoffs discussed above. 
+<!-- I need to further work to understand the tradeoffs discussed above.  -->
 
-## Specific activities undertaken
+<!-- ## Specific activities undertaken -->
 
-In progress
+<!-- In progress -->
 
-## Accumulation of forest biomass
+<!-- ## Accumulation of forest biomass -->
 
-In progress
+<!-- In progress -->
 
-# Evidence of application construction to maximize score for other interested parties
+<!-- # Evidence of application construction to maximize score for other interested parties -->

@@ -1,7 +1,7 @@
 ---
-title: "Chapter 2: Big fish in the small pond: benefits at smallholder eligibility cutoffs in Chile's Native Forest Law"
+title: "Chapter 3: Big fish in the small pond: benefits at smallholder eligibility cutoffs in Chile's Native Forest Law"
 author: "Alberto Garcia"
-date: "October 30, 2021"
+date: "November 4th, 2021"
 output:
   bookdown::pdf_document2:
     latex_engine: xelatex
@@ -26,7 +26,7 @@ header-includes:
 \subsectionfont{\fontsize{11}{11}\selectfont}
 
 ```{r setup, include=FALSE}
-
+source('summarySE.R')
 library(knitr)
 #library(dplyr)
 library(ggplot2)
@@ -43,7 +43,6 @@ options(scipen = 999)
 
 # Abstract {-}
 
-Public programs often seek to encourage private landowners to provide environmental benefits through incentive payments that correspond to specific activities. However, the design of these incentives has consequences for how landowners choose to participate and the resulting tradeoffs faced by program administrators. We explore these tradeoffs in the context of a Chilean program that pays private landowners to engage in reforestation and native forest recovery. The program's smallholder contest eligibility threshold provides increased payments and near certainty of project approval to landowners below a certain size cutoff. We use a fuzzy regression discontinuity design to understand how selection into the program and application decisions affect program outcomes at the eligibility cutoff. We find evidence that smallholder status leads landowners who enroll in the program to enroll less land overall and to apply for smaller total payments. They are also less likely to undertake profitable projects with the objective of timber production. We also find evidence of misreporting by properties just below the smallholder eligibility threshold and seek to disentangle the decisions made by these "heapers" and the non-heaping landowners of interest. 
 
 \clearpage
 
@@ -95,9 +94,9 @@ knitr::include_graphics("figs/psize_distributions_window.png")
 
 Lastly, we explore the properties who have reported property sizes just under the threshold. Figure XX shows the reported and true property sizes for these properties after limiting the sample to only matched properties with a reported property size between 198 to 200 hectares. We see that not all of the properties are underreporting their property size. Some are likely unsure of their exact property size and simply round to the nearest 10 hectares or so. Roughly half of the properties bunching below the threshold had true property sizes below the threshold. 
 
-## Benefits of smallholder classification and the policy relevant parameter
+<!-- ## Benefits of smallholder classification and the policy relevant parameter -->
 
-The benefits of being classified as a smallholder are fairly substantial. The main benefit of smallholder classification is a payment increase of 15\% for the same activities. Smallholder classification may also come with benefits related to extension services or technical assistance. 
+<!-- The benefits of being classified as a smallholder are fairly substantial. The main benefit of smallholder classification is a payment increase of 15\% for the same activities. Smallholder classification may also come with benefits related to extension services or technical assistance.  -->
 
 <!-- We now introduce our parameter of interest. While one may be interested in the causal impact of smallholder classification on property outcomes, this is a difficult parameter to recover. Properties just under the 200 hectare threshold may not have enrolled had the payment been 15\% less, meaning that increased enrollment could have resulted just under the policy threshold. As such, properties on either side of the threshold may not be perfect counterfactuals. However, we can still recover a parameter of extreme policy relevance: the expected impact of smallholder classification on outcomes for enrolled properties. This is likely to be the parameter policymakers are interested in if the primary objective is to generate forest cover at least cost.  -->
 
@@ -110,22 +109,84 @@ The benefits of being classified as a smallholder are fairly substantial. The ma
 
 I see two paths forward with this project. The first surrounds the manipulation and misreporting at the thresholds. 
 
-The second path would overcome the heaping to conduct a regression discontinuity design analysis. I still believe this is possible, as several papers in the economics literature have sought to overcome and analyze this issue in similar settings. @barreca2016 explore heaping in the context of birth weights. While extremely unlikely in "nature", reports show heaping at perfect 100 gram levels. They conduct monte carlo analyses to show that dropping data at heap points provides unbiased estimates of the LATE. 
+The second path would need to overcome the heaping to conduct a regression discontinuity design analysis. I still believe this is possible, as several papers in the economics literature have sought to overcome and analyze this issue in similar settings. @barreca2016 explore heaping in the context of birth weights. While extremely unlikely in "nature", birth documents show heaping at perfect 100 gram levels. They conduct monte carlo analyses to show that dropping data at heap points provides unbiased estimates of the LATE in these settings before showing that designation as "low birth weight" at the threshold improved outcomes.  
 
-\textbf{certainty of funding:}
-- other interested parties face the risk of not being funded
-- smallholders are guaranteed funding
-- other interested parties may add on additional components to increase score
 
-\textbf{payment increase:}
 
-selection:
-- landowners with higher opportunity cost are likely to enter program
-- whether this is good depends on how opportuniy cost is correlated with project selection and performance
+## Path one: manipulation and selection
 
-application decisions: 
-- lower profit activities may become more appealing
-- landowners may simply increase project areas, etc. to generate more payments
+I have shown evidence of manipulation and misreporting. Some of this is due to landowners not knowing their true property size. If this manipulation facilitates entrance into the program, program managers may sacrifice environmental benefits to properties that shouldn't even be enrolling. 
+
+I first explore how heapers (i.e. those that report property sizes at the threshold or at very round numbers) differ in characteristics to other landowners. 
+
+```{r}
+regions_200 <- c(5,6,7,8,9, 10,14)
+regions_500 <- c(1, 2, 3, 4, 15)
+regions_800 <- c(11, 12)
+NFL_df <- readRDS("C:/Users/agarcia/Dropbox/chile_collab/input_files/NFL_df.rds")
+
+discontinuity_main <- NFL_df %>%
+  rename(property_size = rptpre_superficie_predial)%>%
+  mutate(received_bonus = as.numeric(ifelse(rptpro_tiene_bonificacion_saff == "Si", 1, 0)),
+         size_cutoff = ifelse(
+           rptpro_numero_region %in% regions_200, 200,
+           ifelse(rptpro_numero_region %in% regions_800, 800, 500)
+         ),
+         size_centered = property_size - size_cutoff,
+         below_cutoff = property_size <= size_cutoff,
+         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1),
+         round_heaper = (property_size %% 50 == 0)*1,
+         threshold_heaper = ifelse(
+           between(property_size, 195, 200)*1, "threshold heaper",
+         ifelse( between(property_size, 200.01, 225)*1, "just over", 
+                 ifelse( rptpro_tipo_concurso != "Otros Interesados", "other smallholders over 150 ha", "other other")
+                 )
+         )
+  )%>%
+  # group_by(rptpro_id)%>%
+  # mutate_at(.vars = vars(anillado:zanja),
+  #           .funs = list(~ max(.)))%>%
+  # ungroup()%>%
+distinct(rptpro_id, .keep_all = TRUE)
+
+
+ggplot(summarySE(subset(discontinuity_main, property_size > 150 ),
+                 measurevar="rptpro_monto_total", groupvars=c("threshold_heaper"), na.rm = TRUE), 
+       aes(x=threshold_heaper, y=rptpro_monto_total)
+       ) + 
+  geom_bar(position=position_dodge(), stat="identity") +
+  geom_errorbar(aes(ymin=rptpro_monto_total-se, ymax=rptpro_monto_total+se), width=.25) +
+  xlab("contest")+
+  ylab("test")+ggtitle("test")+theme(legend.position = "none")
+
+
+```
+<!-- payment amount -->
+<!-- bonus area relative to property size -->
+<!-- objective -->
+<!-- activities -->
+
+## Path two: tradeoffs due to smallholder benefits offered at threshold
+
+Public programs often seek to encourage private landowners to provide environmental benefits through incentive payments that correspond to specific activities. However, the design of these incentives has consequences for how landowners choose to participate and the resulting tradeoffs faced by program administrators. We would use a fuzzy regression discontinuity design to understand how selection into the program and application decisions affect program outcomes at the eligibility cutoff. We can explore whether the cutoff induces landowners who enroll in the program to enroll less land overall, apply for larger total payments, or follow through at higher rates. They may also be less likely to undertake projects with the objective of timber production, which may have environmental repercussions to offering increased payments. 
+
+
+
+
+<!-- \textbf{certainty of funding:} -->
+<!-- - other interested parties face the risk of not being funded -->
+<!-- - smallholders are guaranteed funding -->
+<!-- - other interested parties may add on additional components to increase score -->
+
+<!-- \textbf{payment increase:} -->
+
+<!-- selection: -->
+<!-- - landowners with higher opportunity cost are likely to enter program -->
+<!-- - whether this is good depends on how opportuniy cost is correlated with project selection and performance -->
+
+<!-- application decisions:  -->
+<!-- - lower profit activities may become more appealing -->
+<!-- - landowners may simply increase project areas, etc. to generate more payments -->
 
 
 

@@ -25,7 +25,7 @@ discontinuity_main <- NFL_df %>%
   mutate_at(.vars = vars(anillado:zanja),
             .funs = list(~ max(.)))
   ungroup()%>%
-distinct(rptpro_id)
+distinct(rptpro_id, .keep_all = TRUE)
 
 #################################################################################################
 ### table shows compliance across the threshold for all properties

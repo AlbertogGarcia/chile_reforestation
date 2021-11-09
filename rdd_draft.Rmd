@@ -1,5 +1,5 @@
 ---
-title: "Chapter 3: Big fish in the small pond: benefits at smallholder eligibility cutoffs in Chile's Native Forest Law"
+title: "Chapter 3: Big fish in the small pond: heaping, manipulation, and selection in Chile's Native Forest Law"
 author: "Alberto Garcia"
 date: "November 4th, 2021"
 output:
@@ -59,57 +59,12 @@ In practice, the contest benefits smallholders in several ways. First, CONAF hol
 
 ## Smallholder eligibility
 
-CONAF defines smallholder eligibility in different ways depending on region, but with some exceptions, eligibility is determined by property size. In the regions of Chile in which forestry plays a major role, this cutoff is 200 hectares, and it is larger in other regions of the country. Further, these landowners cannot have assets exceeding the equivalent of 3,500 development units. Some exceptions apply to these rules, such as for indigenous communities, who are eligible for the smallholder contest regardless of property size. 
-
-```{r status-200, fig.pos="H", out.width = '70%', fig.cap = "conditional probability of being granted smallholder status drops distinctly across main 200 hectare eligibility threshold", echo=FALSE}
-knitr::include_graphics("figs/status_discontinuity.png")
-```
-
-Figure \@ref(fig:status-200) shows how the probability of being granted smallholder status changes discontinuously across this property size threshold. We see a distinct drop in the proportion of properties granted smallholder status beyond the eligibility threshold, although there is some noncompliance. Figure \@ref(fig:status-800) shows that this discontinuity moves as expected in regions 11 and 12, where 800 hectares is the threshold for smallholder eligibility. This time, almost no properties above the cutoff were granted smallholder eligibility in these two regions. Note that there is no discontinuity at 200 hectares for properties in regions 11 and 12. Nothing about 200 hectares should affect conditional probability of smallholder status outside of the program threshold in the relevant regions, and the lack of a discontinuity at 200 ha for these regions confirms this.   
-
-```{r status-800, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
-knitr::include_graphics("figs/status_discontinuity_800.png")
-```
-
-# Bunching at the eligibility threshold
-
-Testing for manipulation at the 200 hectare threshold reveals clear evidence of bunching right below the cutoff. A Mccrary density test rejects the null of a smooth distribution at this point. This ability to manipulate the running variable poses a threat to identification in an RDD design unless properly addressed. 
-
-```{r rddensity-200, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
-knitr::include_graphics("figs/psize_manipulation_200.png")
-```
-
-## Distinguishing misreporting from selective entry
-
-We have boundaries for rural properties in Chile for the regions that comprise the main set of Native Forest Law enrollees. We match enrolled properties to property boundaries using the set of coordinates provided for each property. The property boundaries are sourced from the Centro de Informacion de Recursos Naturales (CIREN), who provide property boundaries based on the property divisions sent by the Internal Revenue Service (SII). As such, there is no reason to believe that these boundaries are minipulable. These matches provide a good estimate of the distribution of actual property sizes of Native Forest Law enrollees, and Figure \@ref(fig:dists) shows that the distribution of reported and matched true property sizes are comparable. 
-
-```{r dists, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
-knitr::include_graphics("figs/psize_distributions.png")
-```
-
-In an effort to determine whether the bunching below the smallholder eligibility threshold of 200 hectares is due to misreporting or an increase in the number of enrollees just below the threshold, we explore these two distributions near the eligibility cutoff. Figure \@ref(fig:dists-window) shows the distributions of the reported and matched property sizes near the 200 hectare threshold. We again see evidence of bunching just under the cutoff. In addition, we see evidence that properties with matched (true) property sizes just over the 200 hectare threshold were less likely to report their matched property size. This is suggestive of misreporting by properties just above the threshold.  
-
-```{r dists-window, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
-knitr::include_graphics("figs/psize_distributions_window.png")
-```
-
-Lastly, we explore the properties who have reported property sizes just under the threshold. Figure \@ref(fig:heapers-200) shows the reported and true property sizes for these properties after limiting the sample to only matched properties with a reported property size between 198 to 200 hectares. We see that not all of the properties are underreporting their property size. Some are likely unsure of their exact property size and simply round to the nearest 10 hectares or so. Roughly half of the properties bunching just below the threshold had true property sizes below the threshold, although very few had accurately reported sizes. 
-
-```{r heapers-200, fig.pos="H", out.width = '90%', fig.cap = "test", echo=FALSE}
-knitr::include_graphics("figs/heapers_200.png")
-```
-
-## Are heapers different?
-
-I have shown evidence of manipulation and misreporting. Some of this is due to landowners not knowing their true property size. I first explore how the smallholder heapers at 200 ha differ from other interested party enrollees just above the 200 ha threshold. Table 1 shows that the heapers are statistically different from other interested parties in almost no way. The exception is that the smallholders are paid at much higher rates. This may be due to the higher payment or signal that the heapers are somehow different from the other properties in some way.
-
-
-```{r table1}
+```{r}
 
 regions_200 <- c(5,6,7,8,9, 10,14)
 regions_500 <- c(1, 2, 3, 4, 15)
 regions_800 <- c(11, 12)
-NFL_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/input_files/NFL_df.rds")
+NFL_df <- readRDS("C:/Users/agarcia/Dropbox/chile_collab/input_files/NFL_df.rds")
 
 discontinuity_main <- NFL_df %>%
   dplyr::rename(property_size = rptpre_superficie_predial)%>%
@@ -121,7 +76,7 @@ discontinuity_main <- NFL_df %>%
          size_centered = property_size - size_cutoff,
          below_cutoff = property_size <= size_cutoff,
          smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1),
-         round_heaper = (property_size %% 10 == 0)*1,
+         round_heaper = ifelse(property_size %% 10 == 0 &property_size != 200, 1, 0),
          threshold_heaper = ifelse(
            between(property_size, 199, 200) & rptpro_tipo_concurso != "Otros Interesados", "smallholder heaper",
          ifelse( between(property_size, 200.01, 225) & rptpro_tipo_concurso == "Otros Interesados", "other interested just over", 
@@ -148,6 +103,64 @@ discontinuity_main <- NFL_df %>%
 distinct(rptpro_id, .keep_all = TRUE)
 
 discontinuity_main200 <- subset(discontinuity_main, rptpro_numero_region %in% regions_200)
+```
+
+CONAF defines smallholder eligibility in different ways depending on region, but with some exceptions, eligibility is determined by property size. In the regions of Chile in which forestry plays a major role, this cutoff is 200 hectares, and it is larger in other regions of the country. Further, these landowners cannot have assets exceeding the equivalent of 3,500 development units. Some exceptions apply to these rules, such as for indigenous communities, who are eligible for the smallholder contest regardless of property size. 
+
+```{r status-200, fig.pos="H", out.width = '70%', fig.cap = "conditional probability of being granted smallholder status drops distinctly across main 200 hectare eligibility threshold", echo=FALSE}
+knitr::include_graphics("figs/status_discontinuity.png")
+```
+
+Figure \@ref(fig:status-200) shows how the probability of being granted smallholder status changes discontinuously across this property size threshold. We see a distinct drop in the proportion of properties granted smallholder status beyond the eligibility threshold, although there is some noncompliance. Figure \@ref(fig:status-800) shows that this discontinuity moves as expected in regions 11 and 12, where 800 hectares is the threshold for smallholder eligibility. This time, almost no properties above the cutoff were granted smallholder eligibility in these two regions. Note that there is no discontinuity at 200 hectares for properties in regions 11 and 12. Nothing about 200 hectares should affect conditional probability of smallholder status outside of the program threshold in the relevant regions, and the lack of a discontinuity at 200 ha for these regions confirms this.   
+
+```{r status-800, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics("figs/status_discontinuity_800.png")
+```
+
+# Bunching at the eligibility threshold
+
+Testing for manipulation at the 200 hectare threshold reveals clear evidence of bunching right below the cutoff. A Mccrary density test rejects the null of a smooth distribution at this point. This ability to manipulate the running variable poses a threat to identification in an RDD design unless properly addressed. 
+
+```{r rddensity-200, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics("figs/psize_manipulation_200.png")
+```
+
+## Round number heaping at other points
+
+I have shown evidence of manipulation and misreporting. Some of this is due to landowners not knowing their true property size, and I show this to be the case at other round number points as well. For instance, Figure XX shows evidence of bunching at 25 and 50 hectares. While these numbers have no bearing on the outcome of the application or payment, landowners round to these numbers. 
+
+```{r heapers-other, fig.pos="H", out.width = '90%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics("figs/round_heaping.png")
+```
+
+
+
+## Distinguishing misreporting from round number heaping
+
+We have boundaries for rural properties in Chile for the regions that comprise the main set of Native Forest Law enrollees. We match enrolled properties to property boundaries using the set of coordinates provided for each property. The property boundaries are sourced from the Centro de Informacion de Recursos Naturales (CIREN), who provide property boundaries based on the property divisions sent by the Internal Revenue Service (SII). As such, there is no reason to believe that these boundaries are minipulable. These matches provide a good estimate of the distribution of actual property sizes of Native Forest Law enrollees, and Figure \@ref(fig:dists) shows that the distribution of reported and matched true property sizes are comparable. 
+
+```{r dists, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics("figs/psize_distributions.png")
+```
+
+In an effort to determine whether the bunching below the smallholder eligibility threshold of 200 hectares is due to misreporting or an increase in the number of enrollees just below the threshold, we explore these two distributions near the eligibility cutoff. Figure \@ref(fig:dists-window) shows the distributions of the reported and matched property sizes near the 200 hectare threshold. We again see evidence of bunching just under the cutoff. In addition, we see evidence that properties with matched (true) property sizes just over the 200 hectare threshold were less likely to report their matched property size. This is suggestive of misreporting by properties just above the threshold.  
+
+```{r dists-window, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics("figs/psize_distributions_window.png")
+```
+
+Lastly, we explore the properties who have reported property sizes just under the threshold. Figure \@ref(fig:heapers-200) shows the reported and true property sizes for these properties after limiting the sample to only matched properties with a reported property size between 198 to 200 hectares. We see that not all of the properties are underreporting their property size. Some are likely unsure of their exact property size and simply round to the nearest 10 hectares or so. Roughly half of the properties bunching just below the threshold had true property sizes below the threshold, although very few had accurately reported sizes. 
+
+```{r heapers-200, fig.pos="H", out.width = '90%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics("figs/heapers_200.png")
+```
+
+## Are heapers different?
+
+I first explore how the smallholder heapers at 200 ha differ from other interested party enrollees just above the 200 ha threshold. Table 1 shows that the heapers are statistically different from other interested parties in almost no way. The exception is that the smallholders are paid at much higher rates. This may be due to the higher payment or signal that the heapers are somehow different from the other properties in some way.
+
+
+```{r table1}
 
 test_df <- discontinuity_main200 %>%
 filter(threshold_heaper == "smallholder heaper" | threshold_heaper == "other interested just over")
@@ -268,6 +281,8 @@ kable(results_df, format = "latex", row.names = FALSE, booktabs = T,
 
 <!-- $$CLATE = E[Y_i(1) - Y_i(0) | X = c, i \in L]$$ -->
 <!-- , where $Y_i$ denotes the potential outcome for property $i$; $X$ is property size; $c$ is the smallholder eligibility threshold; and $L$ represents enrollment via the Native Forest Law. This is the local average treatment effect of smallholder classification, conditional on property $i$ participating in the program.  -->
+
+\clearpage
 
 # Possible research questions and design
 

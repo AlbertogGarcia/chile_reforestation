@@ -24,11 +24,12 @@ header-includes:
 \doublespacing
 \sectionfont{\fontsize{11}{11}\selectfont}
 \subsectionfont{\fontsize{11}{11}\selectfont}
+\setcounter{page}{70}
 
 ```{r setup, include=FALSE}
-source('summarySE.R')
+
 library(knitr)
-#library(dplyr)
+
 library(ggplot2)
 library(stringi)
 library(stargazer)
@@ -92,7 +93,170 @@ In an effort to determine whether the bunching below the smallholder eligibility
 knitr::include_graphics("figs/psize_distributions_window.png")
 ```
 
-Lastly, we explore the properties who have reported property sizes just under the threshold. Figure XX shows the reported and true property sizes for these properties after limiting the sample to only matched properties with a reported property size between 198 to 200 hectares. We see that not all of the properties are underreporting their property size. Some are likely unsure of their exact property size and simply round to the nearest 10 hectares or so. Roughly half of the properties bunching below the threshold had true property sizes below the threshold. 
+Lastly, we explore the properties who have reported property sizes just under the threshold. Figure \@ref(fig:heapers-200) shows the reported and true property sizes for these properties after limiting the sample to only matched properties with a reported property size between 198 to 200 hectares. We see that not all of the properties are underreporting their property size. Some are likely unsure of their exact property size and simply round to the nearest 10 hectares or so. Roughly half of the properties bunching just below the threshold had true property sizes below the threshold, although very few had accurately reported sizes. 
+
+```{r heapers-200, fig.pos="H", out.width = '90%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics("figs/heapers_200.png")
+```
+
+## Are heapers different?
+
+I have shown evidence of manipulation and misreporting. Some of this is due to landowners not knowing their true property size. I first explore how the smallholder heapers at 200 ha differ from other interested party enrollees just above the 200 ha threshold. Table 1 shows that the heapers are statistically different from other interested parties in almost no way. The exception is that the smallholders are paid at much higher rates. This may be due to the higher payment or signal that the heapers are somehow different from the other properties in some way.
+
+
+```{r table1}
+
+regions_200 <- c(5,6,7,8,9, 10,14)
+regions_500 <- c(1, 2, 3, 4, 15)
+regions_800 <- c(11, 12)
+NFL_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/input_files/NFL_df.rds")
+
+discontinuity_main <- NFL_df %>%
+  dplyr::rename(property_size = rptpre_superficie_predial)%>%
+  mutate(received_bonus = as.numeric(ifelse(rptpro_tiene_bonificacion_saff == "Si", 1, 0)),
+         size_cutoff = ifelse(
+           rptpro_numero_region %in% regions_200, 200,
+           ifelse(rptpro_numero_region %in% regions_800, 800, 500)
+         ),
+         size_centered = property_size - size_cutoff,
+         below_cutoff = property_size <= size_cutoff,
+         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1),
+         round_heaper = (property_size %% 10 == 0)*1,
+         threshold_heaper = ifelse(
+           between(property_size, 199, 200) & rptpro_tipo_concurso != "Otros Interesados", "smallholder heaper",
+         ifelse( between(property_size, 200.01, 225) & rptpro_tipo_concurso == "Otros Interesados", "other interested just over", 
+                 ifelse(between(property_size, 180, 198) & rptpro_tipo_concurso != "Otros Interesados", "between 180 and 198 ha", NA)
+                 )
+         ),
+         regeneration = (regeneracion ) > 0,
+         planting = (`siembra-directa`
+                     + plantacion + `plantacion-suplementaria`
+                      + enriquecimiento + regeneracion
+                          ) > 0,
+         cutting = (`corta-liberacion` + `corta-mejoramiento` + `corta-recuperacion` +`corta-regeneracion` + `corta-selectiva` + `corta-sanitaria`) > 0,
+         timber = ifelse(rptpro_objetivo_manejo == "PRODUCCION MADERERA", 1, 0),
+         digital = ifelse(rptpro_tipo_presentacion == "Digital", 1, 0),
+         ecological_recovery = ifelse(rptpro_objetivo_manejo != "PRODUCCION MADERERA" & rptpro_objetivo_manejo != "PRODUCCION NO MADERERA", 1, 0),
+         nontimber = ifelse(rptpro_objetivo_manejo == "PRODUCCION NO MADERERA", 1, 0),
+         extentionist_consultant = ifelse(rptpro_tipo_presenta == "Extensionista" | rptpro_tipo_presenta == "Consultor", 1, 0),
+         proportion_bonus_area = rptpro_superficie/property_size
+  )%>%
+  # group_by(rptpro_id)%>%
+  # mutate_at(.vars = vars(anillado:zanja),
+  #           .funs = list(~ max(.)))%>%
+  # ungroup()%>%
+distinct(rptpro_id, .keep_all = TRUE)
+
+discontinuity_main200 <- subset(discontinuity_main, rptpro_numero_region %in% regions_200)
+
+test_df <- discontinuity_main200 %>%
+filter(threshold_heaper == "smallholder heaper" | threshold_heaper == "other interested just over")
+
+# Welch t-test
+timber <- t.test(timber ~ threshold_heaper, test_df)
+
+digital <- t.test(digital ~ threshold_heaper, test_df)
+
+ecological_recovery <- t.test(ecological_recovery ~ threshold_heaper, test_df)
+
+extentionist_consultant <- t.test(extentionist_consultant ~ threshold_heaper, test_df)
+
+proportion_bonus_area <- t.test(proportion_bonus_area ~ threshold_heaper, test_df)
+
+rptpro_monto_total <- t.test(rptpro_monto_total ~ threshold_heaper, test_df)
+
+received_bonus <- t.test(received_bonus ~ threshold_heaper, test_df)
+
+results_df <- data.frame("variable" = c("timber production", "ecological recovery", "digital application", "used extensionist or consultant", "proportion bonus area", "payment (UTM)", "received payment"), 
+  "heaper_mean" = c(timber$estimate[2], ecological_recovery$estimate[2], digital$estimate[2], extentionist_consultant$estimate[2], proportion_bonus_area$estimate[2], rptpro_monto_total$estimate[2], received_bonus$estimate[2]),
+  "justover_mean" = c(timber$estimate[1], ecological_recovery$estimate[1], digital$estimate[1], extentionist_consultant$estimate[1], proportion_bonus_area$estimate[1], rptpro_monto_total$estimate[1], received_bonus$estimate[1]),
+  "p value" = c(timber$p.value, ecological_recovery$p.value, digital$p.value, extentionist_consultant$p.value, proportion_bonus_area$p.value, rptpro_monto_total$p.value, received_bonus$p.value)
+)
+
+kable(results_df, format = "latex", row.names = FALSE, booktabs = T,
+      caption = "differences in means for heapers vs. other interested just over threshold",
+      col.names = c("variable", "heaper mean", "just over mean", "p-value"),
+      escape = TRUE) %>%
+  kable_classic()
+```
+
+Table 2 compares the heapers just below the 200ha threshold and smallholders that didn't heap but were comparable in property size (180 - 198 ha). Interestingly, the heapers are still paid at a much higher rate than the comparable smallholders, meaning that the payment is unlikely to have driven this difference. Also note that the heapers use a consultant or extensionist much less frequently than the comparable smallholders. This may have given them extra freedom to manipulate, but could also be a sign of limited resources to hire surveyors or know the true property size. 
+
+
+```{r table2}
+
+test_df <- discontinuity_main200 %>%
+filter(threshold_heaper == "smallholder heaper" | threshold_heaper == "between 180 and 198 ha")
+
+# Welch t-test
+timber <- t.test(timber ~ threshold_heaper, test_df)
+
+digital <- t.test(digital ~ threshold_heaper, test_df)
+
+ecological_recovery <- t.test(ecological_recovery ~ threshold_heaper, test_df)
+
+extentionist_consultant <- t.test(extentionist_consultant ~ threshold_heaper, test_df)
+
+proportion_bonus_area <- t.test(proportion_bonus_area ~ threshold_heaper, test_df)
+
+rptpro_monto_total <- t.test(rptpro_monto_total ~ threshold_heaper, test_df)
+
+rptpro_puntaje <- t.test(rptpro_puntaje ~ threshold_heaper, test_df)
+
+received_bonus <- t.test(received_bonus ~ threshold_heaper, test_df)
+
+results_df <- data.frame("variable" = c("timber production", "ecological recovery", "digital application", "used extensionist or consultant", "proportion bonus area", "payment (UTM)", "project score", "received payment"), 
+  "heaper_mean" = c(timber$estimate[2], ecological_recovery$estimate[2], digital$estimate[2], extentionist_consultant$estimate[2], proportion_bonus_area$estimate[2], rptpro_monto_total$estimate[2], rptpro_puntaje$estimate[2], received_bonus$estimate[2]),
+  "other_mean" = c(timber$estimate[1], ecological_recovery$estimate[1], digital$estimate[1], extentionist_consultant$estimate[1], proportion_bonus_area$estimate[1], rptpro_monto_total$estimate[1], rptpro_puntaje$estimate[1], received_bonus$estimate[1]),
+  "p value" = c(timber$p.value, ecological_recovery$p.value, digital$p.value, extentionist_consultant$p.value, proportion_bonus_area$p.value, rptpro_monto_total$p.value, rptpro_puntaje$p.value, received_bonus$p.value)
+)
+
+kable(results_df, format = "latex", row.names = FALSE, booktabs = T,
+      caption = "differences in means for heapers vs. other large smallholders",
+      col.names = c("variable", "heaper mean", "smallholders (180 to 198 ha) mean", "p-value"),
+      escape = TRUE) %>%
+  kable_classic()
+
+```
+
+
+
+```{r table3}
+
+test_df <- discontinuity_main %>%
+  filter(between(property_size, 1, 1000))
+# Welch t-test
+timber <- t.test(timber ~ round_heaper, test_df)
+
+digital <- t.test(digital ~ round_heaper, test_df)
+
+ecological_recovery <- t.test(ecological_recovery ~ round_heaper, test_df)
+
+extentionist_consultant <- t.test(extentionist_consultant ~ round_heaper, test_df)
+
+bonus_area <- t.test(rptpro_superficie ~ round_heaper, test_df)
+
+psize <- t.test(property_size ~ round_heaper, test_df)
+
+rptpro_monto_total <- t.test(rptpro_monto_total ~ round_heaper, test_df)
+
+rptpro_puntaje <- t.test(rptpro_puntaje ~ round_heaper, test_df)
+
+received_bonus <- t.test(received_bonus ~ round_heaper, test_df)
+
+results_df <- data.frame("variable" = c("timber production", "ecological recovery", "digital application", "used extensionist or consultant", "bonus area", "property size", "payment (UTM)", "project score", "received payment"), 
+  "heaper_mean" = c(timber$estimate[2], ecological_recovery$estimate[2], digital$estimate[2], extentionist_consultant$estimate[2], bonus_area$estimate[2], psize$estimate[2], rptpro_monto_total$estimate[2], rptpro_puntaje$estimate[2], received_bonus$estimate[2]),
+  "other_mean" = c(timber$estimate[1], ecological_recovery$estimate[1], digital$estimate[1], extentionist_consultant$estimate[1], bonus_area$estimate[1], psize$estimate[1], rptpro_monto_total$estimate[1], rptpro_puntaje$estimate[1], received_bonus$estimate[1]),
+  "p value" = c(timber$p.value, ecological_recovery$p.value, digital$p.value, extentionist_consultant$p.value, bonus_area$p.value, psize$p.value, rptpro_monto_total$p.value, rptpro_puntaje$p.value, received_bonus$p.value)
+)
+
+kable(results_df, format = "latex", row.names = FALSE, booktabs = T,
+      caption = "differences in means for multiple of 10 heapers vs. non-heapers",
+      col.names = c("variable", "round number heaper mean", "other mean", "p-value"),
+      escape = TRUE) %>%
+  kable_classic()
+
+```
 
 <!-- ## Benefits of smallholder classification and the policy relevant parameter -->
 
@@ -107,66 +271,17 @@ Lastly, we explore the properties who have reported property sizes just under th
 
 # Possible research questions and design
 
-I see two paths forward with this project. The first surrounds the manipulation and misreporting at the thresholds. 
+I see two paths forward with this project. The first surrounds the manipulation and misreporting at the thresholds. The second path would need to overcome the heaping to conduct a regression discontinuity design analysis. I still believe this is possible, as several papers in the economics literature have sought to overcome and analyze this issue in similar settings. @barreca2016 explore heaping in the context of birth weights. While extremely unlikely in "nature", birth documents show heaping at perfect 100 gram levels. They conduct monte carlo analyses to show that dropping data at heap points provides unbiased estimates of the LATE in these settings before showing that designation as "low birth weight" at the threshold improved outcomes.  
 
-The second path would need to overcome the heaping to conduct a regression discontinuity design analysis. I still believe this is possible, as several papers in the economics literature have sought to overcome and analyze this issue in similar settings. @barreca2016 explore heaping in the context of birth weights. While extremely unlikely in "nature", birth documents show heaping at perfect 100 gram levels. They conduct monte carlo analyses to show that dropping data at heap points provides unbiased estimates of the LATE in these settings before showing that designation as "low birth weight" at the threshold improved outcomes.  
+## Path one: selection and manipulation
 
+possible questions:
 
+- is this a cost placed on landowners who cannot afford to hire surveyor to learn true property size?
+- is this costly to program administrators/ do heapers take away benefits from smallholders?
+- what are the benefits of heaping?
 
-## Path one: manipulation and selection
-
-I have shown evidence of manipulation and misreporting. Some of this is due to landowners not knowing their true property size. If this manipulation facilitates entrance into the program, program managers may sacrifice environmental benefits to properties that shouldn't even be enrolling. 
-
-I first explore how heapers (i.e. those that report property sizes at the threshold or at very round numbers) differ in characteristics to other landowners. 
-
-```{r}
-regions_200 <- c(5,6,7,8,9, 10,14)
-regions_500 <- c(1, 2, 3, 4, 15)
-regions_800 <- c(11, 12)
-NFL_df <- readRDS("C:/Users/agarcia/Dropbox/chile_collab/input_files/NFL_df.rds")
-
-discontinuity_main <- NFL_df %>%
-  rename(property_size = rptpre_superficie_predial)%>%
-  mutate(received_bonus = as.numeric(ifelse(rptpro_tiene_bonificacion_saff == "Si", 1, 0)),
-         size_cutoff = ifelse(
-           rptpro_numero_region %in% regions_200, 200,
-           ifelse(rptpro_numero_region %in% regions_800, 800, 500)
-         ),
-         size_centered = property_size - size_cutoff,
-         below_cutoff = property_size <= size_cutoff,
-         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1),
-         round_heaper = (property_size %% 50 == 0)*1,
-         threshold_heaper = ifelse(
-           between(property_size, 195, 200)*1, "threshold heaper",
-         ifelse( between(property_size, 200.01, 225)*1, "just over", 
-                 ifelse( rptpro_tipo_concurso != "Otros Interesados", "other smallholders over 150 ha", "other other")
-                 )
-         )
-  )%>%
-  # group_by(rptpro_id)%>%
-  # mutate_at(.vars = vars(anillado:zanja),
-  #           .funs = list(~ max(.)))%>%
-  # ungroup()%>%
-distinct(rptpro_id, .keep_all = TRUE)
-
-
-ggplot(summarySE(subset(discontinuity_main, property_size > 150 ),
-                 measurevar="rptpro_monto_total", groupvars=c("threshold_heaper"), na.rm = TRUE), 
-       aes(x=threshold_heaper, y=rptpro_monto_total)
-       ) + 
-  geom_bar(position=position_dodge(), stat="identity") +
-  geom_errorbar(aes(ymin=rptpro_monto_total-se, ymax=rptpro_monto_total+se), width=.25) +
-  xlab("contest")+
-  ylab("test")+ggtitle("test")+theme(legend.position = "none")
-
-
-```
-<!-- payment amount -->
-<!-- bonus area relative to property size -->
-<!-- objective -->
-<!-- activities -->
-
-## Path two: tradeoffs due to smallholder benefits offered at threshold
+## Path two: benefits and tradeoffs due to smallholder benefits offered at threshold
 
 Public programs often seek to encourage private landowners to provide environmental benefits through incentive payments that correspond to specific activities. However, the design of these incentives has consequences for how landowners choose to participate and the resulting tradeoffs faced by program administrators. We would use a fuzzy regression discontinuity design to understand how selection into the program and application decisions affect program outcomes at the eligibility cutoff. We can explore whether the cutoff induces landowners who enroll in the program to enroll less land overall, apply for larger total payments, or follow through at higher rates. They may also be less likely to undertake projects with the objective of timber production, which may have environmental repercussions to offering increased payments. 
 

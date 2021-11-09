@@ -8,7 +8,7 @@ library(bunchr)
 regions_200 <- c(5,6,7,8,9, 10,14)
 regions_500 <- c(1, 2, 3, 4, 15)
 regions_800 <- c(11, 12)
-NFL_df <- readRDS("C:/Users/agarcia/Dropbox/chile_collab/input_files/NFL_df.rds")
+NFL_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/input_files/NFL_df.rds")
 
 discontinuity_main <- NFL_df %>%
   rename(property_size = rptpre_superficie_predial)%>%
@@ -22,8 +22,8 @@ discontinuity_main <- NFL_df %>%
          smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", 0, 1)
   )%>%
   group_by(rptpro_id)%>%
-  mutate_at(.vars = vars(anillado:zanja),
-            .funs = list(~ max(.)))
+  # mutate_at(.vars = vars(anillado:zanja),
+  #           .funs = list(~ max(.)))
   ungroup()%>%
 distinct(rptpro_id, .keep_all = TRUE)
 
@@ -45,7 +45,7 @@ reported_200 <- subset(discontinuity_main, between(property_size, 198, 200))%>%
 ### Density tests show that there is manipulation at the 200 hectare threshold
 #################################################################################################
 
-test_density <- rddensity(discontinuity_main$property_size, c = 200)
+test_density <- rddensity(discontinuity_main200$property_size, c = 200)
 summary(test_density)
 rdplotdensity(rdd = test_density, 
                                    X = discontinuity_main200$property_size,
@@ -54,9 +54,28 @@ rdplotdensity(rdd = test_density,
               xlabel = "reported property size",
               ylabel = "density")  # This adds both points and lines
 
+
 #ggsave(path = "figs", filename = "psize_manipulation_200.png", width = 8, height = 5)
 
 # plot zooming in on manipulation at 200
+
+count_with_bins200 <- discontinuity_main200 %>%
+  mutate(size_binned = cut(property_size, breaks = seq(0, 500, 5)),
+         smallholder = ifelse(rptpro_tipo_concurso == "Otros Interesados", FALSE, TRUE)) %>% 
+  # Group by each of the new bins and tutoring status
+  group_by(size_binned) %>% 
+  # Count how many people are in each test bin + used/didn't use tutoring
+  summarize(n = n())%>%
+  mutate(bin_end = as.numeric(size_binned)*5)%>%
+  drop_na(size_binned)%>%
+  filter(between(bin_end, 125, 275))
+
+ggplot(count_with_bins200, aes(x = bin_end, y = n)) +
+  geom_point(fill = "grey90") +
+  geom_line() +
+  geom_vline(xintercept = 202.5)+
+  labs(x = "reported property size", y = "Proportion of properties designated as smallholders")+
+  theme_minimal()
 
 ggplot(data = discontinuity_main200) +
   geom_histogram(aes(property_size), binwidth = 1, alpha = .7 ,fill = "#E69F00", color = "white", size = 1, boundary = 0)+
@@ -123,7 +142,6 @@ ggplot(discontinuity_with_bins2, aes(x = bin_end, y = prob_smallholder)) +
 #################################################################################################
 ### Implementing fuzzy rdd
 #################################################################################################
-
 
 # Now we have a new column named below_cutoff that we’ll use as an instrument. Most of the time this will be the same as the contest column, since most people are compliers. But some people didn’t comply,
 
@@ -332,9 +350,9 @@ results_donut_3 <- data.frame("donut_size" = donut_size, "bw" = donut_nonp$bws[1
 ### EVI as outcome
 ###############################################################################
 library(sf)
-my_rol_match <- data.frame(readRDS("C:/Users/agarcia/Dropbox/chile_reforestation/data/analysis/my_rol_match.rds"))%>%
+my_rol_match <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/analysis/my_rol_match.rds"))%>%
   mutate(match_type = "rol")
-my_spatial_match <- data.frame(readRDS("C:/Users/agarcia/Dropbox/chile_reforestation/data/analysis/my_spatial_match.rds"))%>%
+my_spatial_match <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/analysis/my_spatial_match.rds"))%>%
   mutate(match_type = "spatial")
 
 native_forest_law <- NFL_df %>%
@@ -358,9 +376,16 @@ checking_manipulation <- rol_priority %>%
   select(rptpro_tipo_concurso, rptpre_superficie_predial, area_ha, NOM_PREDIO, PROPIETARI, rptpre_nombre, rptprop_nombre, rptpro_id, evi_2007, evi_2020)
 
 bunchers_200 <- rol_priority %>%
-  filter(between(rptpre_superficie_predial, 195, 200) )%>%
+  filter(between(rptpre_superficie_predial, 190, 200) )%>%
   #filter( area_diff/rptpre_superficie_predial < 1)%>%
   select(rptpro_tipo_concurso, rptpre_superficie_predial, area_ha, NOM_PREDIO, PROPIETARI, rptpre_nombre, rptprop_nombre, rptpro_id, evi_2007, evi_2020)
+
+heap_points <- c(25, 50)
+bunchers_50 <- rol_priority %>%
+  filter(rptpre_superficie_predial %in% heap_points )%>%
+  #filter( area_diff/rptpre_superficie_predial < 1)%>%
+  select(rptpro_tipo_concurso, rptpre_superficie_predial, area_ha, NOM_PREDIO, PROPIETARI, rptpre_nombre, rptprop_nombre, rptpro_id, evi_2007, evi_2020)
+
 
 x <- nrow(subset(bunchers_200, area_ha <= 200))
 y <- nrow(subset(bunchers_200, area_ha > 200))
@@ -394,9 +419,24 @@ ggplot(data = subset(bunchers_200)) +
                      values = c("rptpre_superficie_predial"="#E69F00", 
                                 "area_ha"="grey40"))+
   xlab("property size (ha)")+
-  xlim(100, 400)
+  xlim(50, 400)
 ggsave(#path = "figs", 
   filename = "psize_distributions_window.png", width = 8, height = 5)
+
+ggplot(data = subset(bunchers_50)) +
+  geom_histogram(aes(rptpre_superficie_predial,  fill = "rptpre_superficie_predial"), binwidth = 1, alpha = .7 ,color = "white", size = 1, boundary = 0)+
+  geom_histogram(aes(area_ha, fill = "area_ha",), binwidth = 1,  alpha = .8, boundary = 0) +
+  geom_density(aes(area_ha)) +
+  geom_vline(xintercept = 50, linetype = "dashed", size = 1.25)+
+  #scale_fill_manual(values=c("grey20", "grey60")) + 
+  theme_minimal()+
+  scale_fill_manual(name="", 
+                    labels = c("reported", 
+                               "matched"), 
+                    values = c("rptpre_superficie_predial"="#E69F00", 
+                               "area_ha"="grey40"))+
+  xlab("property size (ha)")+
+  xlim(0, 70)
 
 ggplot(data = subset(checking_manipulation)) +
   geom_histogram(aes(rptpre_superficie_predial,  fill = "rptpre_superficie_predial"), binwidth = 10, alpha = .7, color = "white", size = 1, boundary = 0)+

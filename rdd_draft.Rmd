@@ -64,7 +64,7 @@ In practice, the contest benefits smallholders in several ways. First, CONAF hol
 regions_200 <- c(5,6,7,8,9, 10,14)
 regions_500 <- c(1, 2, 3, 4, 15)
 regions_800 <- c(11, 12)
-NFL_df <- readRDS("C:/Users/agarcia/Dropbox/chile_collab/input_files/NFL_df.rds")
+NFL_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/input_files/NFL_df.rds")
 
 discontinuity_main <- NFL_df %>%
   dplyr::rename(property_size = rptpre_superficie_predial)%>%
@@ -117,6 +117,27 @@ Figure \@ref(fig:status-200) shows how the probability of being granted smallhol
 knitr::include_graphics("figs/status_discontinuity_800.png")
 ```
 
+## Round number heaping 
+
+I have shown evidence of manipulation and misreporting. Some of this is due to landowners not knowing their true property size, and I show this to be the case at other round number points as well. For instance, Figure XX shows evidence of bunching at 20 and 50 hectares. While these numbers have no bearing on the outcome of the application or payment, landowners round to these numbers. 
+
+```{r heapers-other, fig.pos="H", out.width = '90%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics("figs/round_heaping.png")
+```
+
+Round number heapers are potentially different from other applicants. Unlike other applicants, they do not know the exact size of their property or have a reason not to report precisely. To address this, I run the following regression on a number of application characteristics as the outcome:
+
+$$ X_i = \mathbb{1} \gamma_1\{ R_i = Z \} + \gamma_2(R_i - Z) + \epsilon_i$$
+
+, where $Z$ is the heap point of interest, and $R_i$ is the reported property size for project $i$. 
+
+Figure XX reports $\gamma_1$ at various heap points across several application characteristics. 
+
+```{r cohort-es, fig.show="hold", fig.pos="H",  out.width = '33%', fig.cap = "This figure shows event time treatment effects for Left: female landowners; and Right: male landowners.", echo=FALSE}
+knitr::include_graphics(c("figs/heap_covars_extensionista.png", "figs/heap_covars_received_bonus.png", "figs/heap_covars_digital.png"))
+```
+
+
 # Bunching at the eligibility threshold
 
 Testing for manipulation at the 200 hectare threshold reveals clear evidence of bunching right below the cutoff. A Mccrary density test rejects the null of a smooth distribution at this point. This ability to manipulate the running variable poses a threat to identification in an RDD design unless properly addressed. 
@@ -124,15 +145,6 @@ Testing for manipulation at the 200 hectare threshold reveals clear evidence of 
 ```{r rddensity-200, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
 knitr::include_graphics("figs/psize_manipulation_200.png")
 ```
-
-## Round number heaping at other points
-
-I have shown evidence of manipulation and misreporting. Some of this is due to landowners not knowing their true property size, and I show this to be the case at other round number points as well. For instance, Figure XX shows evidence of bunching at 25 and 50 hectares. While these numbers have no bearing on the outcome of the application or payment, landowners round to these numbers. 
-
-```{r heapers-other, fig.pos="H", out.width = '90%', fig.cap = "test", echo=FALSE}
-knitr::include_graphics("figs/round_heaping.png")
-```
-
 
 
 ## Distinguishing misreporting from round number heaping

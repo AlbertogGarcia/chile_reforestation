@@ -137,6 +137,7 @@ Figure XX reports $\gamma_1$ at various heap points across several application c
 knitr::include_graphics(c("figs/heap_covars_extensionista.png", "figs/heap_covars_received_bonus.png", "figs/heap_covars_digital.png"))
 ```
 
+We see that heapers are much less likely to work with an extensionist or consultant, submit a digital application, and actually receive the payment (row 1). They do not clearly differ on the enrolled area (ha), the total payment requested, or the probability of pursuing timber production objectives (row 2). This may reflect the lack of resources that heapers have, which leads to low follow-through. 
 
 # Bunching at the eligibility threshold
 
@@ -145,7 +146,6 @@ Testing for manipulation at the 200 hectare threshold reveals clear evidence of 
 ```{r rddensity-200, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
 knitr::include_graphics("figs/psize_manipulation_200.png")
 ```
-
 
 ## Distinguishing misreporting from round number heaping
 
@@ -161,15 +161,15 @@ In an effort to determine whether the bunching below the smallholder eligibility
 knitr::include_graphics("figs/psize_distributions_window.png")
 ```
 
-Lastly, we explore the properties who have reported property sizes just under the threshold. Figure \@ref(fig:heapers-200) shows the reported and true property sizes for these properties after limiting the sample to only matched properties with a reported property size between 198 to 200 hectares. We see that not all of the properties are underreporting their property size. Some are likely unsure of their exact property size and simply round to the nearest 10 hectares or so. Roughly half of the properties bunching just below the threshold had true property sizes below the threshold, although very few had accurately reported sizes. 
+Lastly, we explore the properties who have reported property sizes just under the threshold. Figure \@ref(fig:heapers-200) shows the reported and true property sizes for these properties after limiting the sample to only matched properties with a reported property size between 198 to 200 hectares. We see that not all of the properties are underreporting their property size. Some are likely unsure of their exact property size and simply round to the nearest 10 hectares or so. These properties fall in the same category as the other round heapers, while I consider thos with property sizes above the threshold to be "manipulators". Roughly half of the properties bunching just below the threshold had true property sizes below the threshold, although very few had accurately reported sizes. 
 
 ```{r heapers-200, fig.pos="H", out.width = '90%', fig.cap = "test", echo=FALSE}
 knitr::include_graphics("figs/heapers_200.png")
 ```
 
-## Are heapers different?
+## Are manipulators and heapers different?
 
-I first explore how the smallholder heapers at 200 ha differ from other interested party enrollees just above the 200 ha threshold. Table 1 shows that the heapers are statistically different from other interested parties in almost no way. The exception is that the smallholders are paid at much higher rates. This may be due to the higher payment or signal that the heapers are somehow different from the other properties in some way.
+I first explore how the smallholder heapers at 200 ha differ from other interested party enrollees just above the 200 ha threshold. I define the "manipulable zone" to be properties reported between 198 and 200 hectares. Table 1 shows that properties in the manipulable zone are statistically different from other interested parties in almost no way. The exception is that the smallholders are paid at much higher rates. This may be due to the higher payment or signal that the heapers are somehow different from the other properties in some way.
 
 
 ```{r table1}
@@ -205,7 +205,7 @@ kable(results_df, format = "latex", row.names = FALSE, booktabs = T,
   kable_classic()
 ```
 
-Table 2 compares the heapers just below the 200ha threshold and smallholders that didn't heap but were comparable in property size (180 - 198 ha). Interestingly, the heapers are still paid at a much higher rate than the comparable smallholders, meaning that the payment is unlikely to have driven this difference. Also note that the heapers use a consultant or extensionist much less frequently than the comparable smallholders. This may have given them extra freedom to manipulate, but could also be a sign of limited resources to hire surveyors or know the true property size. 
+Table 2 compares properties in the manipulable zone and smallholders that didn't heap but were comparable in property size (180 - 198 ha). Interestingly, those in the manipulable zone are still paid at a much higher rate than the comparable smallholders, meaning that the payment is unlikely to have driven this difference. Also note that the heapers use a consultant or extensionist much less frequently than the comparable smallholders. This may have given them extra freedom to manipulate, but could also be a sign of limited resources to hire surveyors or know the true property size. 
 
 
 ```{r table2}
@@ -238,50 +238,34 @@ results_df <- data.frame("variable" = c("timber production", "ecological recover
 
 kable(results_df, format = "latex", row.names = FALSE, booktabs = T,
       caption = "differences in means for heapers vs. other large smallholders",
-      col.names = c("variable", "heaper mean", "smallholders (180 to 198 ha) mean", "p-value"),
+      col.names = c("variable", "heaper (198 to 200) mean", "smallholders (180 to 198 ha) mean", "p-value"),
       escape = TRUE) %>%
   kable_classic()
 
 ```
 
+## Matched round number heapers and manipulators are different
+
+In this section, I use the matched sample to compare properties within the manupulable zone that were truly below the 200 ha threshold vs. those that under reported their property size. 
 
 
-```{r table3}
 
-test_df <- discontinuity_main %>%
-  filter(between(property_size, 1, 1000))
-# Welch t-test
-timber <- t.test(timber ~ round_heaper, test_df)
 
-digital <- t.test(digital ~ round_heaper, test_df)
 
-ecological_recovery <- t.test(ecological_recovery ~ round_heaper, test_df)
 
-extentionist_consultant <- t.test(extentionist_consultant ~ round_heaper, test_df)
 
-bonus_area <- t.test(rptpro_superficie ~ round_heaper, test_df)
 
-psize <- t.test(property_size ~ round_heaper, test_df)
 
-rptpro_monto_total <- t.test(rptpro_monto_total ~ round_heaper, test_df)
 
-rptpro_puntaje <- t.test(rptpro_puntaje ~ round_heaper, test_df)
 
-received_bonus <- t.test(received_bonus ~ round_heaper, test_df)
 
-results_df <- data.frame("variable" = c("timber production", "ecological recovery", "digital application", "used extensionist or consultant", "bonus area", "property size", "payment (UTM)", "project score", "received payment"), 
-  "heaper_mean" = c(timber$estimate[2], ecological_recovery$estimate[2], digital$estimate[2], extentionist_consultant$estimate[2], bonus_area$estimate[2], psize$estimate[2], rptpro_monto_total$estimate[2], rptpro_puntaje$estimate[2], received_bonus$estimate[2]),
-  "other_mean" = c(timber$estimate[1], ecological_recovery$estimate[1], digital$estimate[1], extentionist_consultant$estimate[1], bonus_area$estimate[1], psize$estimate[1], rptpro_monto_total$estimate[1], rptpro_puntaje$estimate[1], received_bonus$estimate[1]),
-  "p value" = c(timber$p.value, ecological_recovery$p.value, digital$p.value, extentionist_consultant$p.value, bonus_area$p.value, psize$p.value, rptpro_monto_total$p.value, rptpro_puntaje$p.value, received_bonus$p.value)
-)
 
-kable(results_df, format = "latex", row.names = FALSE, booktabs = T,
-      caption = "differences in means for multiple of 10 heapers vs. non-heapers",
-      col.names = c("variable", "round number heaper mean", "other mean", "p-value"),
-      escape = TRUE) %>%
-  kable_classic()
 
-```
+
+
+
+
+
 
 <!-- ## Benefits of smallholder classification and the policy relevant parameter -->
 

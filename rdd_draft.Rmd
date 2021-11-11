@@ -9,7 +9,7 @@ output:
     toc: no
   html_document: default
   documentclass: article
-#bibliography: draft_aug2021_ref.bib
+bibliography: rdd_ref.bib
 header-includes: 
   \usepackage{setspace}
   \usepackage{bbm}  
@@ -364,3 +364,8 @@ In progress
 #### Accumulation of forest biomass
 
 In progress
+
+# References
+
+<div id="refs"></div>
+

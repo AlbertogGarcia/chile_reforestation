@@ -1,7 +1,7 @@
 ---
 title: "Chapter 3: Big fish in the small pond: heaping, manipulation, and selection in Chile's Native Forest Law"
 author: "Alberto Garcia"
-date: "November 4th, 2021"
+date: "November 9th, 2021"
 output:
   bookdown::pdf_document2:
     latex_engine: xelatex
@@ -44,6 +44,7 @@ options(scipen = 999)
 
 # Abstract {-}
 
+This paper seeks to explore how program administrators face tradeoffs in a Chilean payments for native reforestation program. Public programs often seek to encourage private landowners to provide environmental benefits through incentive payments that correspond to specific activities. However, the design of these incentives has consequences for how landowners choose to participate and the resulting tradeoffs faced by program administrators. We begin by documenting round number heaping at multiples of 10 hectares in the application pool. These heapers are less likely to have used an extensionist or ultimately receive payment than surrounding observations. Further, properties just above the smallholder eligibility threshold misreport their property size, getting into the smallholder contest, which comes with additional support and benefits. We use a fuzzy regression discontinuity design, accounting for heaping and manipulation, to understand how selection into the program and application decisions affect program outcomes at the smallholder eligibility cutoff. We show that accounting for this heaping and misreporting gives much different estimates than when it is ignored. Other questions of interest include whether manipulation allowed for selection or replaced projects that would have been more environmentally friendly or gone to smallholders. 
 
 \clearpage
 
@@ -64,7 +65,7 @@ In practice, the contest benefits smallholders in several ways. First, CONAF hol
 regions_200 <- c(5,6,7,8,9, 10,14)
 regions_500 <- c(1, 2, 3, 4, 15)
 regions_800 <- c(11, 12)
-NFL_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/input_files/NFL_df.rds")
+NFL_df <- readRDS("C:/Users/agarcia/Dropbox/chile_collab/input_files/NFL_df.rds")
 
 discontinuity_main <- NFL_df %>%
   dplyr::rename(property_size = rptpre_superficie_predial)%>%
@@ -127,17 +128,18 @@ knitr::include_graphics("figs/round_heaping.png")
 
 Round number heapers are potentially different from other applicants. Unlike other applicants, they do not know the exact size of their property or have a reason not to report precisely. To address this, I run the following regression on a number of application characteristics as the outcome:
 
-$$ X_i = \mathbb{1} \gamma_1\{ R_i = Z \} + \gamma_2(R_i - Z) + \epsilon_i$$
+$$ X_i = \gamma_1 \mathbb{1}  \{ R_i = Z \} + \gamma_2(R_i - Z) + \epsilon_i$$
 
 , where $Z$ is the heap point of interest, and $R_i$ is the reported property size for project $i$. 
 
-Figure XX reports $\gamma_1$ at various heap points across several application characteristics. 
+Essentially, this regression equation estimates the extent to which characteristics “jump” off of the regression line predicted by the non-heaped data [@barreca2016]. Figure XX reports $\hat{\gamma_1}$ at various heap points across several application characteristics. I use a bandwidth of 9.99 ha around each heap point. 
 
-```{r cohort-es, fig.show="hold", fig.pos="H",  out.width = '33%', fig.cap = "This figure shows event time treatment effects for Left: female landowners; and Right: male landowners.", echo=FALSE}
-knitr::include_graphics(c("figs/heap_covars_extensionista.png", "figs/heap_covars_received_bonus.png", "figs/heap_covars_digital.png"))
+```{r cohort-es, fig.show="hold", fig.pos="H",  out.width = '49%', fig.cap = "", echo=FALSE}
+knitr::include_graphics(c("figs/heap_covars_extensionista2.png", "figs/heap_covars_received_bonus2.png", "figs/heap_covars_digital2.png",
+                          "figs/heap_covars_bonusarea2.png", "figs/heap_covars_payment2.png", "figs/heap_covars_timber2.png"))
 ```
 
-We see that heapers are much less likely to work with an extensionist or consultant, submit a digital application, and actually receive the payment (row 1). They do not clearly differ on the enrolled area (ha), the total payment requested, or the probability of pursuing timber production objectives (row 2). This may reflect the lack of resources that heapers have, which leads to low follow-through. 
+We see that heapers are much less likely to work with an extensionist or consultant, submit a digital application, and actually receive the payment. They do not clearly differ on the enrolled area (ha), the total payment requested, or the probability of pursuing timber production objectives. This may reflect the lack of resources that heapers have, which leads to low follow-through. 
 
 # Bunching at the eligibility threshold
 
@@ -169,7 +171,7 @@ knitr::include_graphics("figs/heapers_200.png")
 
 ## Are manipulators and heapers different?
 
-I first explore how the smallholder heapers at 200 ha differ from other interested party enrollees just above the 200 ha threshold. I define the "manipulable zone" to be properties reported between 198 and 200 hectares. Table 1 shows that properties in the manipulable zone are statistically different from other interested parties in almost no way. The exception is that the smallholders are paid at much higher rates. This may be due to the higher payment or signal that the heapers are somehow different from the other properties in some way.
+I first explore how the smallholder heapers at 200 ha differ from other interested party enrollees just above the 200 ha threshold. I define the "manipulable zone" to be properties reported between 198 and 200 hectares. Table 1 shows that properties in the manipulable zone are statistically different from other interested parties in almost no way. The exception is that the smallholders are paid at much higher rates. This may be due to the higher payment or signal that the heapers are somehow different from the other properties in some otherwise unclear way. 
 
 
 ```{r table1}
@@ -246,24 +248,18 @@ kable(results_df, format = "latex", row.names = FALSE, booktabs = T,
 
 ## Matched round number heapers and manipulators are different
 
-In this section, I use the matched sample to compare properties within the manupulable zone that were truly below the 200 ha threshold vs. those that under reported their property size. 
+In this section, I use the matched sample to compare properties within the manupulable zone that were truly below the 200 ha threshold vs. those that under reported their property size. We see that the manipulators seem more sophisticated in that they submit digital applications more, follow through more, and need higher payments. 
 
+```{r table3}
 
+matched_heap <- readRDS("matched_heap.rds")
+kable(matched_heap, format = "latex", row.names = FALSE, booktabs = T,
+      caption = "differences in means for matched properties in manipulable zone",
+      col.names = c("variable", "true size over 200 ha", "true size under 200 ha", "p-value"),
+      escape = TRUE) %>%
+  kable_classic()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
 
 
 
@@ -288,83 +284,83 @@ I see two paths forward with this project. The first surrounds the manipulation 
 
 possible questions:
 
-- is this a cost placed on landowners who cannot afford to hire surveyor to learn true property size?
-- is this costly to program administrators/ do heapers take away benefits from smallholders?
-- what are the benefits of heaping?
+- Does manipulation allow for increased selection under the threshold?
+
+- Do manipulators take away benefits from smallholders?
 
 ## Path two: benefits and tradeoffs due to smallholder benefits offered at threshold
 
 Public programs often seek to encourage private landowners to provide environmental benefits through incentive payments that correspond to specific activities. However, the design of these incentives has consequences for how landowners choose to participate and the resulting tradeoffs faced by program administrators. We would use a fuzzy regression discontinuity design to understand how selection into the program and application decisions affect program outcomes at the eligibility cutoff. We can explore whether the cutoff induces landowners who enroll in the program to enroll less land overall, apply for larger total payments, or follow through at higher rates. They may also be less likely to undertake projects with the objective of timber production, which may have environmental repercussions to offering increased payments. 
 
+\textbf{certainty of funding:}
+
+- other interested parties face the risk of not being funded
+
+- smallholders are guaranteed funding
+
+- other interested parties may add on additional components to increase score
+
+\textbf{payment increase:}
+
+selection:
+
+- landowners with higher opportunity cost are likely to enter program
+
+- whether this is good depends on how opportuniy cost is correlated with project selection and performance
+
+application decisions:
+
+- lower profit activities may become more appealing
+
+- landowners may simply increase project areas, etc. to generate more payments
 
 
+### Estimation
 
-<!-- \textbf{certainty of funding:} -->
-<!-- - other interested parties face the risk of not being funded -->
-<!-- - smallholders are guaranteed funding -->
-<!-- - other interested parties may add on additional components to increase score -->
+Smallholder eligibility is largely determined by property size in the Native Forest Law contest. If properties fall below the regional property size cutoff, they are eligible for additional program benefits. While this size theshold determines smallholder status for the vast majority of properties, some can lose or gain eligibility through other means. Table XX shows the non-compliers in this setting. While a property size exceeding the threshold essentially disqualifies a property from smallholder benefits, a sizeable proportion of properties under the cutoff still get classified as other interested parties.
 
-<!-- \textbf{payment increase:} -->
+We know that properties just above the smallholder eligibility threshold were likely to misreport their property sizes in order to obtain the benefits alotted for smallholders. The donut hole RDD can be used to circumvent problems introduced by these situations. [@balleca2016] shows that in the sharp RD setting, the donut RDD approach leads to an unbiased estimate of the treatment effect for non-heaped types. If we do not drop properties within the manipulation zone, a sharp RDD would recover the average treatment effect across the two types, weighted by the share of non-heaped properties that are observed at the heap.
 
-<!-- selection: -->
-<!-- - landowners with higher opportunity cost are likely to enter program -->
-<!-- - whether this is good depends on how opportuniy cost is correlated with project selection and performance -->
+Because of the non-compliance observed in Figure \@ref(fig:status-200), we have a fuzzy setting, and with instrumental variables, we are estimating the CLATE for compliers only. We estimate the following 2sls set of equations:
 
-<!-- application decisions:  -->
-<!-- - lower profit activities may become more appealing -->
-<!-- - landowners may simply increase project areas, etc. to generate more payments -->
+$$ \widehat{smallholder}_i = \gamma_0 + \gamma_1 hectares_{i, centered} + \gamma_2 belowcutoff_i + \omega$$
+$$ Y_i = \beta_0 + \beta_1 hectares_{i, centered} +\beta_2 \widehat{smallholder}_i + \epsilon$$
+
+In order to minimize concern surrounding the misreporting of property size at the threshold, I report estimates with a variety of donut sizes. I also ensure that the estimates are robust to several different bandwidths and the dropping of heap points.
 
 
+### Results
 
+#### Follow through
 
-<!-- ## Estimation -->
+Policy makers are interested in the impact of these smallholder benefits for several reasons. First, the primary program objective seeks to protect and recover native forest. An increased payment is likely to attract landowners with a higher opportunity cost. Second, program administators have prioritized the participation of smallholders and indigenous communities. This is evidenced by both the application process, which prioritizes the funding of smallholders, and the increased payments.
 
-<!-- Smallholder eligibility is largely determined by property size in the Native Forest Law contest. If properties fall below the regional property size cutoff, they are eligible for additional program benefits. While this size theshold determines smallholder status for the vast majority of properties, some can lose or gain eligibility through other means. Table XX shows the non-compliers in this setting. While a property size exceeding the threshold essentially disqualifies a property from smallholder benefits, a sizeable proportion of properties under the cutoff still get classified as other interested parties.  -->
+One of the primary challenges faced by program administrators is a lack of follow through. The average follow-through rate for projects in the program was 33.91\% through 2018. The follow through rate for smallholders was 37.66\% and 26.63\% for other interested parties. Smallholders have a significantly higher follow through rate, which could be due to the increased payment. Low follow through affects both of the above program goals. If projects are not completed, forest cover benefits are unrealized, and landowners do not receive any benefits.
 
-<!-- We know that properties just above the smallholder eligibility threshold were likely to misreport their property sizes in order to obtain the benefits alotted for smallholders. The donut hole RDD can be used to circumvent problems introduced by these situations. [@balleca2016] shows that in the sharp RD setting, the donut RDD approach leads to an unbiased estimate of the treatment effect for non-heaped types. If we do not drop properties within the manipulation zone, a sharp RDD would recover the average treatment effect across the two types, weighted by the share of non-heaped properties that are observed at the heap. -->
+```{r received-bonus, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics("figs/received_bonus_plot.png")
+```
 
-<!-- Because of the non-compliance observed in Figure \@ref(fig:status-200), we have a fuzzy setting, and with instrumental variables, we are estimating the CLATE for compliers only. We estimate the following 2sls set of equations: -->
+Figure \@ref(fig:received-bonus) shows that although all estimates are positive, smallholder status did not increase follow through rates at a statistically significant level for compliers at the eligibility cutoff.
 
-<!-- $$ \widehat{smallholder}_i = \gamma_0 + \gamma_1 hectares_{i, centered} + \gamma_2 belowcutoff_i + \omega$$ -->
-<!-- $$ Y_i = \beta_0 + \beta_1 hectares_{i, centered} +\beta_2 \widehat{smallholder}_i + \epsilon$$ -->
+#### Application decisions
 
-<!-- In order to minimize concern surrounding the misreporting of property size at the threshold, I report estimates with a variety of donut sizes. I aslo ensure that the estimates are robust to several different bandwidths.  -->
+An interesting component of our data is access to specific project details, activities, and objectives. Increased payments may make previously unprofitable activities desirable choices. There may also be landowner benefits to scaling up the size of the reforestation project when payments increase.
 
+In this section, we explore the impact of smallholder status at the threshold on components of the project applications. Recall that these estimates the impact of both the direct payment increase and selection into the program.
 
-<!-- # Results -->
+```{r applications,  fig.show="hold", fig.pos="H", out.width = '49%', fig.cap = "test", echo=FALSE}
+knitr::include_graphics(c("figs/payment_plot.png", "figs/area_enrolled_plot.png", "figs/timber_plot.png"))
+```
 
-<!-- ## Follow through -->
+Figure \@ref(fig:applications) shows that smallholder status decreases the average project area, total payment amount, and probability of undartaking projects with the objective of timber production for compliers at the cutoff.
 
-<!-- Policy makers are interested in the impact of these smallholder benefits for several reasons. First, the primary program objective seeks to protect and recover native forest. An increased payment is likely to attract landowners with a higher opportunity cost. Second, program administators have prioritized the participation of smallholders and indigenous communities. This is evidenced by both the application process, which prioritizes the funding of smallholders, and the increased payments.  -->
+I need to further work to understand the tradeoffs discussed above.
 
-<!-- One of the primary challenges faced by program administrators is a lack of follow through. The average follow-through rate for projects in the program was 33.91\% through 2018. The follow through rate for smallholders was 37.66\% and 26.63\% for other interested parties. Smallholders have a significantly higher follow through rate, which could be due to the increased payment. Low follow through affects both of the above program goals. If projects are not completed, forest cover benefits are unrealized, and landowners do not receive any benefits.   -->
+#### Specific activities undertaken
 
-<!-- ```{r received-bonus, fig.pos="H", out.width = '70%', fig.cap = "test", echo=FALSE} -->
-<!-- knitr::include_graphics("figs/received_bonus_plot.png") -->
-<!-- ``` -->
+In progress
 
-<!-- Figure \@ref(fig:received-bonus) shows that although all estimates are positive, smallholder status did not increase follow through rates at a statistically significant level for compliers at the eligibility cutoff.   -->
+#### Accumulation of forest biomass
 
-<!-- ## Application decisions -->
-
-<!-- An interesting component of our data is access to specific project details, activities, and objectives. Increased payments may make previously unprofitable activities desirable choices. There may also be landowner benefits to scaling up the size of the reforestation project when payments increase.  -->
-
-<!-- In this section, we explore the impact of smallholder status at the threshold on components of the project applications. Recall that these estimates the impact of both the direct payment increase and selection into the program.  -->
-
-<!-- ```{r applications,  fig.show="hold", fig.pos="H", out.width = '49%', fig.cap = "test", echo=FALSE} -->
-<!-- knitr::include_graphics(c("figs/payment_plot.png", "figs/area_enrolled_plot.png", "figs/timber_plot.png")) -->
-<!-- ``` -->
-
-<!-- Figure \@ref(fig:applications) shows that smallholder status decreases the average project area, total payment amount, and probability of undartaking projects with the objective of timber production for compliers at the cutoff.  -->
-
-<!-- I need to further work to understand the tradeoffs discussed above.  -->
-
-<!-- ## Specific activities undertaken -->
-
-<!-- In progress -->
-
-<!-- ## Accumulation of forest biomass -->
-
-<!-- In progress -->
-
-<!-- # Evidence of application construction to maximize score for other interested parties -->
+In progress

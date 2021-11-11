@@ -8,7 +8,7 @@ library(bunchr)
 regions_200 <- c(5,6,7,8,9, 10,14)
 regions_500 <- c(1, 2, 3, 4, 15)
 regions_800 <- c(11, 12)
-NFL_df <- readRDS("C:/Users/garci/Dropbox/chile_collab/input_files/NFL_df.rds")
+NFL_df <- readRDS("C:/Users/agarcia/Dropbox/chile_collab/input_files/NFL_df.rds")
 
 discontinuity_main <- NFL_df %>%
   rename(property_size = rptpre_superficie_predial)%>%
@@ -169,8 +169,8 @@ ggplot(discontinuity_with_bins2, aes(x = bin_end, y = prob_smallholder)) +
 #################################################################################################
 ### characteristics jump at heaps
 #################################################################################################
-heaps <- c(10, 20, 50, 100, 120, 150)
-#heaps <- seq(from = 10, to = 190, by = 10)
+#heaps <- c(10, 20, 50, 100, 150, 250)
+heaps <- c(seq(from = 10, to = 100, by = 10), seq(from = 110, to = 250, by = 20), 300, 400, 500)
 
 # outcomes:
 # received_bonus
@@ -199,13 +199,15 @@ analysis_df <- discontinuity_main %>%
 heaps_results <- data.frame()
 for(i in heaps){
   
-bw_side = ifelse(i < 100, 9.99, 24.99)  
+bw_side = ifelse(i < 100, 9.99, 
+                 ifelse(i > 200, 49.99, 24.99)
+                 )  
   
 df_heap <- analysis_df %>%
   mutate(R_Z = property_size - i,
          heap = ifelse(property_size == i, 1, 0)) %>%
   filter(between(property_size, i - bw_side, i + bw_side))
-reg <- as.data.frame(summary(lm(digital ~ heap + R_Z, data = df_heap))$coefficients) %>%
+reg <- as.data.frame(summary(lm(extensionist_consultant ~ heap + R_Z, data = df_heap))$coefficients) %>%
   rownames_to_column()%>%
   filter(rowname == "heap")
 
@@ -220,10 +222,10 @@ ggplot(data = heaps_results, aes(x = heap_point, y = coeff ))+
   geom_hline(yintercept = 0, linetype = "dashed")+
   scale_x_continuous(breaks = heaps)+
   ylab("estimate") + xlab("heap point")+
-  ggtitle("submitted digital application")+
+  ggtitle("used extensionist or consultant")+
   theme_minimal()
 
-ggsave(path = "figs", filename = "heap_covars_digital.png", width = 7, height = 5)
+ggsave(path = "figs", filename = "heap_covars_extensionista2.png", width = 7, height = 5)
 
 #################################################################################################
 ### Implementing fuzzy rdd
@@ -282,9 +284,9 @@ export(rdd_results, "rdresults_main.rds")
 ### EVI as outcome
 ###############################################################################
 library(sf)
-my_rol_match <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/analysis/my_rol_match.rds"))%>%
+my_rol_match <- data.frame(readRDS("C:/Users/agarcia/Dropbox/chile_reforestation/data/analysis/my_rol_match.rds"))%>%
   mutate(match_type = "rol")
-my_spatial_match <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/analysis/my_spatial_match.rds"))%>%
+my_spatial_match <- data.frame(readRDS("C:/Users/agarcia/Dropbox/chile_reforestation/data/analysis/my_spatial_match.rds"))%>%
   mutate(match_type = "spatial")
 
 native_forest_law <- NFL_df %>%
@@ -339,6 +341,10 @@ results_df <- data.frame("variable" = c("timber production", "non-timber", "digi
                          "under_mean" = c(timber$estimate[1], ecological_recovery$estimate[1], digital$estimate[1], extentionist_consultant$estimate[1], rptpro_monto_total$estimate[1], score$estimate[1], received_bonus$estimate[1], evi_2007$estimate[1]),
                          "p value" = c(timber$p.value, ecological_recovery$p.value, digital$p.value, extentionist_consultant$p.value, rptpro_monto_total$p.value, score$p.value, received_bonus$p.value, evi_2007$p.value)
 )
+
+
+library(rio)
+export(results_df, "matched_heap.rds")
 
 
 x <- nrow(subset(bunchers_200, area_ha <= 200))

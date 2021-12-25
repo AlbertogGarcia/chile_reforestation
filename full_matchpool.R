@@ -254,3 +254,97 @@ all_matchpool <- control_fcn(losrios_matchpool) %>%
          area_ha = property_area_ha)
 setwd("C:/Users/garci/Dropbox/chile_reforestation/data/analysis")
 export(all_matchpool, "control_matchpool.rds")
+
+##################################################################################################
+##########  creating full matchpool dataset
+#### This will be used in analysis_matching.R to match control group 
+#################################################################################################
+
+library(ggplot2)
+library(sf)
+library(stringi)
+library(data.table)
+
+library(tidyverse)
+
+#property_df <- readRDS("property_df.rds")
+control_matchpool <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/analysis/control_matchpool.rds"))%>%
+  mutate(treat = 0)
+my_rol_match <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/analysis/my_rol_match.rds"))%>%
+  mutate(match_type = "rol")
+my_spatial_match <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/analysis/my_spatial_match.rds"))%>%
+  mutate(match_type = "spatial")
+
+native_forest_law <- readRDS("C:/Users/garci/Dropbox/chile_collab/input_files/NFL_df.rds") %>%
+  select(-c(rptprop_nombre, rptpre_rol, rptpre_nombre))%>%
+  inner_join(bind_rows(my_spatial_match, my_rol_match), by = "rptpro_id")%>%
+  mutate(submitted_mp = ifelse( rptpro_tiene_plan_saff=="Si" | rptpro_tiene_bonificacion_saff == "Si", 1, 0),
+         treat = 1,
+         first.treat = rptpro_ano)
+
+length(unique(native_forest_law$rptpro_id))
+
+
+rol_priority <- native_forest_law %>%
+  filter(submitted_mp == 1)%>%
+  group_by(rptpro_id)%>%
+  mutate(priority = ifelse(match_type != "spatial", 1, 0),
+         max_priority = max(priority))%>%
+  filter(priority == max_priority)%>%
+  filter(area_diff == min(area_diff))%>%
+  ungroup()%>%
+  distinct(rptpro_id, .keep_all = TRUE)
+
+rol_compliance <- native_forest_law %>%
+  group_by(rptpro_id)%>%
+  mutate(priority = ifelse(match_type != "spatial", 1, 0),
+         max_priority = max(priority))%>%
+  filter(priority == max_priority)%>%
+  filter(area_diff == min(area_diff))%>%
+  ungroup()%>%
+  distinct(rptpro_id, .keep_all = TRUE)
+
+
+
+# area_priority <- native_forest_law %>%
+#   filter(submitted_mp == 1)%>%
+#   group_by(rptpro_id)%>%
+#   mutate(priority1 = ifelse(area_diff == min(area_diff), 1, 0),
+#          priority2 = ifelse(match_type != "spatial", 1, 0),
+#          max_priority = max(priority1 + priority2))%>%
+#   filter((priority1 + priority2) == max_priority)%>%
+#   ungroup()%>%
+#   distinct(rptpro_id, .keep_all = TRUE)
+
+pool_wide <- bind_rows(rol_priority, control_matchpool)%>%
+  mutate(evi_trend1918 = evi_2019 - evi_2018,
+         evi_trend1817 = evi_2018 - evi_2017,
+         evi_trend1716 = evi_2017 - evi_2016,
+         evi_trend1615 = evi_2016 - evi_2015,
+         evi_trend1514 = evi_2015 - evi_2014,
+         evi_trend1413 = evi_2014 - evi_2013,
+         evi_trend1312 = evi_2013 - evi_2012,
+         evi_trend1211 = evi_2012 - evi_2011,
+         evi_trend1110 = evi_2011 - evi_2010,
+         evi_trend1009 = evi_2010 - evi_2009,
+         evi_trend0908 = evi_2009 - evi_2008,
+         evi_trend0807 = evi_2008 - evi_2007,
+         evi_trend0706 = evi_2007 - evi_2006,
+         evi_trend0605 = evi_2006 - evi_2005,
+         forest = c_1,
+         plantation = c_3,
+         pasture = c_9,
+         urban = c_16,
+         water = c_15,
+         baresoil = c_12,
+         shrub = c_5,
+         snow = c_11,
+         road_dist = unlist(road_dist),
+         industry_dist = unlist(industry_dist),
+         native_industry_dist = unlist(native_industry_dist),
+         area = ifelse(is.na(rptpre_superficie_predial), area_ha, rptpre_superficie_predial)
+  )%>%
+  mutate(id = 1:nrow(.))
+
+library(rio)
+export(pool_wide, "pool_wide_rol.rds")

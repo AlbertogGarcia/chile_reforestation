@@ -35,19 +35,44 @@ data <- matched_long %>%
 #          id = as.numeric(id),
 #          utm_per_ha = rptpre_monto_total/property_area_ha)
 
-# data_2009 <- subset(data, first.treat == 2009 | treat == 0)
-# data_2010 <- subset(data, first.treat == 2010 | treat == 0)
-# data_2011 <- subset(data, first.treat == 2011 | treat == 0)
-# data_2012 <- subset(data, first.treat == 2012 | treat == 0)
-# data_2013 <- subset(data, first.treat == 2013 | treat == 0)
-# data_2014 <- subset(data, first.treat == 2014 | treat == 0)
-# data_2015 <- subset(data, first.treat == 2015 | treat == 0)
-# data_2016 <- subset(data, first.treat == 2016 | treat == 0)
-# data_2017 <- subset(data, first.treat == 2017 | treat == 0)
-# data_2018 <- subset(data, first.treat == 2018 | treat == 0)
-# data_2019 <- subset(data, first.treat == 2019 | treat == 0)
 
 library(did)
+
+cohorts <- seq(from = 2009, to = 2019, by =1)
+for(i in cohorts){
+  print(i)
+  
+  this_data <- subset(data, first.treat == i | treat == 0)
+  
+  did <- att_gt(yname="EVI2",
+                tname="Year",
+                idname="id",
+                gname="first.treat",
+                est_method = "reg",
+                xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                , 
+                data=this_data, clustervars = "id"
+                , panel=TRUE, bstrap = TRUE,
+                print_details=FALSE
+  )
+  
+  did.es <- aggte(did, type="dynamic")
+  
+  dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$egt, "crit.val" = did.es$crit.val.egt)%>%
+    mutate(period = ifelse(e >= 0 , "post", "pre"))
+  
+  plot_mgmt <- ggplot(data=dyn.es, aes(x=e, y=att, color = period)) +
+    geom_point() +
+    geom_errorbar(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), width=0.1) +
+    ggtitle(paste0(i , " cohort event study treatment effects")) +
+    xlab("years since property enrollment") + ylab("EVI")+# ylim(-.005, 0.022)
+    theme_minimal()
+  plot_mgmt
+  
+  ggsave(path = "figs", filename = paste0("cohort", i, "_Dec2021.png"), width = 8, height = 5)
+  
+}
+
 
 did <- att_gt(yname="EVI2",
               tname="Year",

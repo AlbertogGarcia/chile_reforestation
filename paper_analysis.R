@@ -48,15 +48,15 @@ for(i in cohorts){
                 tname="Year",
                 idname="id",
                 gname="first.treat",
-                est_method = "reg",
-                xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                est_method = "dr",
+                xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                 , 
                 data=this_data, clustervars = "id"
                 , panel=TRUE, bstrap = TRUE,
                 print_details=FALSE
   )
   
-  did.es <- aggte(did, type="dynamic")
+  did.es <- aggte(did, type="dynamic", min_e = -6)
   
   dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$egt, "crit.val" = did.es$crit.val.egt)%>%
     mutate(period = ifelse(e >= 0 , "post", "pre"))
@@ -64,6 +64,7 @@ for(i in cohorts){
   plot_mgmt <- ggplot(data=dyn.es, aes(x=e, y=att, color = period)) +
     geom_point() +
     geom_errorbar(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), width=0.1) +
+    geom_hline(yintercept = 0, linetype = "dashed", size = 0.001)+
     ggtitle(paste0(i , " cohort event study treatment effects")) +
     xlab("years since property enrollment") + ylab("EVI")+# ylim(-.005, 0.022)
     theme_minimal()
@@ -79,7 +80,7 @@ did <- att_gt(yname="EVI2",
               idname="id",
               gname="first.treat",
               est_method = "reg",
-              xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+              xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
               , 
               data=data, clustervars = "id"
               , panel=TRUE, bstrap = TRUE,
@@ -105,8 +106,11 @@ plot_mgmt
 
 ggsave(path = "figs", filename = "did_main_Dec2021.png", width = 8, height = 5)
 
-pretrend_data <- subset(data, treat == 0 | first.treat == 2010 | first.treat == 2009 | first.treat == 2015 | first.treat == 2016 | first.treat == 2017)
-#11, 12, 13, 14, 18, 19 violate pretrends 
+`%notin%` <- Negate(`%in%`)
+
+pretrend_data <- data %>%
+  filter(first.treat %notin% c(2011, 2014, 2017, 2018, 2019))
+#these cohorts violate pretrends 
 # drop these cohorts
 
 did <- att_gt(yname="EVI2",
@@ -114,7 +118,7 @@ did <- att_gt(yname="EVI2",
               idname="id",
               gname="first.treat",
               est_method = "reg",
-              xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+              xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
               , 
               data=pretrend_data, clustervars = "id"
               , panel=TRUE, bstrap = TRUE,
@@ -123,7 +127,7 @@ did <- att_gt(yname="EVI2",
 
 
 
-did.es <- aggte(did, type="dynamic", min_e = -10)#, max_e = 10)
+did.es <- aggte(did, type="dynamic")
 did.ovr <- aggte(did, type="simple")
 
 dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$egt, "crit.val" = did.es$crit.val.egt)%>%
@@ -167,7 +171,7 @@ small_did <- att_gt(yname="EVI2",
                     idname="id",
                     gname="first.treat",
                     est_method = "reg",
-                    xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                    xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                     , 
                     data=small_dta, clustervars = "id"
                     , panel=TRUE, bstrap = TRUE,
@@ -188,7 +192,7 @@ plot_mgmt <- ggplot(data=small_dyn.es, aes(x=e, y=att, color = period)) +
   theme_minimal()
 plot_mgmt
 
-ggsave(path = "figs", filename = "did_smallholder_Dec2021.png", width = 8, height = 5)
+#ggsave(path = "figs", filename = "did_smallholder_Dec2021.png", width = 8, height = 5)
 
 ############################################
 ### others
@@ -197,7 +201,7 @@ other_did <- att_gt(yname="EVI2",
                     idname="id",
                     gname="first.treat",
                     est_method = "reg",
-                    xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                    xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                     , 
                     data=other_dta, clustervars = "id"
                     , panel=TRUE, bstrap = TRUE,
@@ -219,7 +223,7 @@ plot_mgmt <- ggplot(data=other_dyn.es, aes(x=e, y=att, color = period)) +
 plot_mgmt
 
 
-ggsave(path = "figs", filename = "did_other_Dec2021.png", width = 8, height = 5)
+#ggsave(path = "figs", filename = "did_other_Dec2021.png", width = 8, height = 5)
 
 #################################################################################################
 ################# other subsets
@@ -237,7 +241,7 @@ timber_did <- att_gt(yname="EVI2",
                      idname="id",
                      gname="first.treat",
                      est_method = "reg",
-                     ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                     ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                      ,  
                      data=timber_dta, clustervars = "id"
                      , panel=TRUE, bstrap = TRUE
@@ -256,7 +260,7 @@ timber_plot <- ggplot(data= timber_dyn.es, aes(x=e, y=att, color = period)) +
   theme_minimal()
 timber_plot
 
-ggsave(plot = timber_plot, width = 8, height = 5, path = "figs", filename = "timber_did.png", dpi = 500)
+#ggsave(plot = timber_plot, width = 8, height = 5, path = "figs", filename = "timber_did.png", dpi = 500)
 
 ####################################################################################
 #### results on not timber production subset
@@ -266,7 +270,7 @@ ntimber_did <- att_gt(yname="EVI2",
                       idname="id",
                       gname="first.treat",
                       est_method = "reg",
-                      xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                      xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                       , 
                       data=nottimber_dta, clustervars = "id"
                       , panel=TRUE, bstrap = TRUE
@@ -285,7 +289,7 @@ ntimber_plot <- ggplot(data= ntimber_dyn.es, aes(x=e, y=att, color = period)) +
   theme_minimal()
 ntimber_plot
 
-ggsave(plot = ntimber_plot, width = 8, height = 5, path = "figs", filename = "ntimber_did.png", dpi = 500)
+#ggsave(plot = ntimber_plot, width = 8, height = 5, path = "figs", filename = "ntimber_did.png", dpi = 500)
 
 #####################################################################################################
 ###########
@@ -404,7 +408,7 @@ small_did_q1 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=small_q1, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -419,7 +423,7 @@ small_did_q2 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=small_q2, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -434,7 +438,7 @@ small_did_q3 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=small_q3, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -449,7 +453,7 @@ small_did_q4 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=small_q4, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -468,7 +472,7 @@ other_did_q1 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=other_q1, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -483,7 +487,7 @@ other_did_q2 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=other_q2, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -497,7 +501,7 @@ other_did_q3 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=other_q3, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -512,7 +516,7 @@ other_did_q4 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=other_q4, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -533,41 +537,10 @@ assigned_results <- data.frame(
            smallholder_q1.es$overall.se, smallholder_q2.es$overall.se, smallholder_q3.es$overall.se, smallholder_q4.es$overall.se
   )
 )
-
+library(rio)
 export(assigned_results, "assigned_results.rds")
 
-smallholder_qplot_df <- assigned_results %>%
-  filter(contest == "smallholders")# & scoring.method  != "adjusted")
 
-
-ggplot(data = smallholder_qplot_df, aes(x = quartile, y = ATT)
-) + 
-  geom_point(position=position_dodge(width = 0.2)) +
-  geom_errorbar(aes(ymin=ATT-1.96*se, ymax=ATT+1.96*se), position=position_dodge(width = 0.2)) +
-  geom_line(position=position_dodge(width = 0.2))+
-  geom_hline(yintercept = 0, linetype = "dashed")+
-  xlab("quartile")+
-  #scale_color_manual(values = c( "red", "blue"))+
-  #ylim(-0.003, 0.012)+
-  ylab("ATT")+ggtitle("smallholder ATT by score quartile")+
-  theme_minimal()
-
-other_qplot_df <- assigned_results %>%
-  filter(contest != "smallholders")
-
-
-ggplot(data = other_qplot_df, aes(x=quartile, y=ATT)
-) + 
-  geom_point(position=position_dodge(width = 0.2)) +
-  geom_errorbar(aes(ymin=ATT-1.96*se, ymax=ATT+1.96*se), position=position_dodge(width = 0.2)) +
-  geom_line(position=position_dodge(width = 0.2))+
-  geom_hline(yintercept = 0, linetype = "dashed")+
-  xlab("quartile")+
-  scale_color_manual(values = c( "blue"))+
-  ylab("ATT")+ggtitle("other interested ATT by score quartile")+
-  theme_minimal()
-
-###########################
 
 #################################################################################
 ######### ADJUSTED SCORES
@@ -611,7 +584,7 @@ small_did_q1 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=small_q1, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -626,7 +599,7 @@ small_did_q2 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=small_q2, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -641,7 +614,7 @@ small_did_q3 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=small_q3, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -656,7 +629,7 @@ small_did_q4 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=small_q4, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -675,7 +648,7 @@ other_did_q1 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=other_q1, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -690,7 +663,7 @@ other_did_q2 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=other_q2, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -704,7 +677,7 @@ other_did_q3 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=other_q3, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -719,7 +692,7 @@ other_did_q4 <- att_gt(yname="EVI2",
                        idname="id",
                        gname="first.treat",
                        est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
+                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area
                        , 
                        data=other_q4, clustervars = "id"
                        , panel=TRUE, bstrap = TRUE
@@ -743,159 +716,128 @@ adjusted_results <- data.frame(
 
 export(adjusted_results, "adjusted_results.rds")
 
-smallholder_qplot_df <- adjusted_results %>%
-  filter(contest == "smallholders")# & scoring.method  != "adjusted")
+###########################################################
+##### generate plots
+###########################################################
+adjusted_results <- readRDS("adjusted_results.rds")
+assigned_results <- readRDS("assigned_results.rds")
 
+smallholder_qplot_df <- assigned_results %>%
+  filter(contest == "smallholders")
+
+other_color = "#D55E00"
+small_color = "#009E73"
 
 ggplot(data = smallholder_qplot_df, aes(x = quartile, y = ATT)
 ) + 
-  geom_point(position=position_dodge(width = 0.2)) +
-  geom_errorbar(aes(ymin=ATT-1.96*se, ymax=ATT+1.96*se), position=position_dodge(width = 0.2)) +
-  geom_line(position=position_dodge(width = 0.2))+
+  geom_point(position=position_dodge(width = 0.2), shape = 21, size = 3, fill = "white") +
+  geom_errorbar(aes(ymin=ATT-1.96*se, ymax=ATT+1.96*se), color = small_color, position=position_dodge(width = 0.2)) +
+  geom_line(color = small_color, position=position_dodge(width = 0.2))+
   geom_hline(yintercept = 0, linetype = "dashed")+
   xlab("quartile")+
   #scale_color_manual(values = c( "red", "blue"))+
   #ylim(-0.003, 0.012)+
-  ylab("ATT")+ggtitle("smallholder ATT by score quartile")+
+  ylab("ATT")+ggtitle("smallholder ATT by assigned score quartile")+
   theme_minimal()
+
+ggsave(width = 7, height = 5, path = "figs", filename = "small_q_assigned.png", dpi = 500)
+
+
+other_qplot_df <- assigned_results %>%
+  filter(contest != "smallholders")
+
+ggplot(data = other_qplot_df, aes(x = quartile, y = ATT)
+) + 
+  geom_point(position=position_dodge(width = 0.2),shape = 21, size = 2, fill = "white") +
+  geom_errorbar(aes(ymin=ATT-1.96*se, ymax=ATT+1.96*se), color = other_color, position=position_dodge(width = 0.2)) +
+  geom_line(color = other_color, position=position_dodge(width = 0.2))+
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  xlab("quartile")+
+  #scale_color_manual(values = c( "red", "blue"))+
+  #ylim(-0.003, 0.012)+
+  ylab("ATT")+ggtitle("other interested ATT by assigned score quartile")+
+  theme_minimal()
+
+
+ggsave(width = 7, height = 5, path = "figs", filename = "other_q_assigned.png", dpi = 500)
+
+###########################
+
+smallholder_qplot_df <- adjusted_results %>%
+  filter(contest == "smallholders")
+
+ggplot(data = smallholder_qplot_df, aes(x = quartile, y = ATT)
+) + 
+  geom_point(position=position_dodge(width = 0.2),shape = 21, size = 2, fill = "white") +
+  geom_errorbar(aes(ymin=ATT-1.96*se, ymax=ATT+1.96*se), position=position_dodge(width = 0.2), color = small_color) +
+  geom_line(position=position_dodge(width = 0.2), color = small_color)+
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  xlab("quartile")+
+  #scale_color_manual(values = c( "red", "blue"))+
+  #ylim(-0.003, 0.012)+
+  ylab("ATT")+ggtitle("smallholder ATT by adjusted score quartile")+
+  theme_minimal()
+
+
+ggsave(width = 7, height = 5, path = "figs", filename = "small_q_adjusted.png", dpi = 500)
+
 
 other_qplot_df <- adjusted_results %>%
   filter(contest != "smallholders")
 
-
-ggplot(data = other_qplot_df, aes(x=quartile, y=ATT)
+ggplot(data = other_qplot_df, aes(x = quartile, y = ATT)
 ) + 
-  geom_point(position=position_dodge(width = 0.2)) +
-  geom_errorbar(aes(ymin=ATT-1.96*se, ymax=ATT+1.96*se), position=position_dodge(width = 0.2)) +
-  geom_line(position=position_dodge(width = 0.2))+
+  geom_point(position=position_dodge(width = 0.2),shape = 21, size = 2, fill = "white", color = other_color) +
+  geom_errorbar(aes(ymin=ATT-1.96*se, ymax=ATT+1.96*se), position=position_dodge(width = 0.2), color = other_color) +
+  geom_line(color = other_color, position=position_dodge(width = 0.2))+
   geom_hline(yintercept = 0, linetype = "dashed")+
   xlab("quartile")+
-  scale_color_manual(values = c( "blue"))+
-  ylab("ATT")+ggtitle("other interested ATT by score quartile")+
+  #scale_color_manual(values = c( "red", "blue"))+
+  #ylim(-0.003, 0.012)+
+  ylab("ATT")+ggtitle("other interested ATT by adjusted score quartile")+
   theme_minimal()
 
-###########################
 
-#################################################################################
-######### Social SCORES
-#################################################################################
-
-#################################################################################
-######### social quartile score dataframes
-#################################################################################
-
-other_q1 <- other_dta %>%
-  filter(social_puntaje <= soc_q1 | treat == 0)
-
-other_q2 <- other_dta %>%
-  filter((social_puntaje > soc_q1) | treat == 0)
+ggsave(width = 7, height = 5, path = "figs", filename = "other_q_adjusted.png", dpi = 500)
 
 
+other_qplot_df <- adjusted_results %>%
+  rbind(assigned_results)%>%
+  filter(contest != "smallholders")
 
-small_q1 <- small_dta %>%
-  filter(social_puntaje <= soc_q1 | treat == 0)
+small_qplot_df <- adjusted_results %>%
+  rbind(assigned_results)%>%
+  filter(contest == "smallholders")
 
-small_q2 <- small_dta %>%
-  filter((social_puntaje > soc_q1) | treat == 0)
-
-
-
-############################################################################################################
-### quartile social score dids
-##########################################################################################################
-small_did_q1 <- att_gt(yname="EVI2",
-                       tname="Year",
-                       idname="id",
-                       gname="first.treat",
-                       est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
-                       , 
-                       data=small_q1, clustervars = "id"
-                       , panel=TRUE, bstrap = TRUE
-)
-
-smallholder_q1.es <- aggte(small_did_q1, type="dynamic")
-#smallholder_q1.ovr <- aggte(small_did_q1, type="simple")
-
-
-small_did_q2 <- att_gt(yname="EVI2",
-                       tname="Year",
-                       idname="id",
-                       gname="first.treat",
-                       est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
-                       , 
-                       data=small_q2, clustervars = "id"
-                       , panel=TRUE, bstrap = TRUE
-)
-
-smallholder_q2.es <- aggte(small_did_q2, type="dynamic")
-#smallholder_q2.ovr <- aggte(small_did_q2, type="simple")
-
-
-
-####################################################################################################
-
-
-
-
-other_did_q1 <- att_gt(yname="EVI2",
-                       tname="Year",
-                       idname="id",
-                       gname="first.treat",
-                       est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
-                       , 
-                       data=other_q1, clustervars = "id"
-                       , panel=TRUE, bstrap = TRUE
-)
-
-other_q1.es <- aggte(other_did_q1, type="dynamic")
-#other_q1.ovr <- aggte(other_did_q1, type="simple")
-
-
-other_did_q2 <- att_gt(yname="EVI2",
-                       tname="Year",
-                       idname="id",
-                       gname="first.treat",
-                       est_method = "reg",
-                       xformla= ~ road_dist + proportion_erosion + industry_dist + native_industry_dist + water + urban + forest + plantation + baresoil + pasture + shrub + slope + lat + elev + area_ha
-                       , 
-                       data=other_q2, clustervars = "id"
-                       , panel=TRUE, bstrap = TRUE
-)
-other_q2.es <- aggte(other_did_q2, type="dynamic")
-#other_q2.ovr <- aggte(other_did_q2, type="simple")
-
-
-
-social_results <- data.frame(
-  "agg_type" = rep("es", 4),
-  "contest" = c(rep("other interested", 2), rep("smallholders", 2)),
-  "quartile" = rep(seq(1, 2, by = 1), 2), 
-  "scoring method" = c(rep("adjusted", 4)), 
-  "ATT" = c(other_q1.es$overall.att, other_q2.es$overall.att,
-            smallholder_q1.es$overall.att, smallholder_q2.es$overall.att
-  ),
-  "se" = c(other_q1.es$overall.se, other_q2.es$overall.se, 
-           smallholder_q1.es$overall.se, smallholder_q2.es$overall.se
-  )
-)
-
-ggplot(data = social_results, aes(x = quartile, y = ATT, color = contest)
+ggplot(data = other_qplot_df, aes(x = quartile, y = ATT, color = scoring.method)
 ) + 
-  geom_point(position=position_dodge(width = 0.2)) +
+  geom_point(position=position_dodge(width = 0.2),shape = 21, size = 2, fill = "white") +
   geom_errorbar(aes(ymin=ATT-1.96*se, ymax=ATT+1.96*se), position=position_dodge(width = 0.2)) +
   geom_line(position=position_dodge(width = 0.2))+
   geom_hline(yintercept = 0, linetype = "dashed")+
   xlab("quartile")+
   #scale_color_manual(values = c( "red", "blue"))+
   #ylim(-0.003, 0.012)+
-  ylab("ATT")+ggtitle("smallholder ATT by score quartile")+
+  ylab("ATT")+ggtitle("other interested ATT by score quartile")+
   theme_minimal()
 
 
+ggsave(width = 7, height = 5, path = "figs", filename = "other_q.png", dpi = 500)
 
+ggplot(data = small_qplot_df, aes(x = quartile, y = ATT, color = scoring.method)
+) + 
+  geom_point(position=position_dodge(width = 0.2),shape = 21, size = 2, fill = "white") +
+  geom_errorbar(aes(ymin=ATT-1.96*se, ymax=ATT+1.96*se), position=position_dodge(width = 0.2)) +
+  geom_line(position=position_dodge(width = 0.2))+
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  xlab("quartile")+
+  #scale_color_manual(values = c( "red", "blue"))+
+  #ylim(-0.003, 0.012)+
+  ylab("ATT")+ggtitle("other interested ATT by score quartile")+
+  theme_minimal()
+
+
+ggsave(width = 7, height = 5, path = "figs", filename = "small_q.png", dpi = 500)
 
 #################################################################################
 ######### land-use regressions

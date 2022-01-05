@@ -47,17 +47,7 @@ NFL_df <- property_df %>%
          reforest = (regeneracion + `siembra-directa` + `corta-regeneracion` + `plantacion-suplementaria` + plantacion) > 0)%>%
   distinct(rptpro_id, rptpre_id, received_bonus, .keep_all = TRUE)
 
-score_plot <- ggplot(data = NFL_df, aes(x = rptpro_puntaje, y = received_bonus, color = rptpro_tipo_concurso))+
-  #geom_point()+
-  #geom_smooth(se = F)+
-  geom_smooth(method = "lm") +
-  #geom_smooth(method = "lm", formula = y ~ x + I(x^2), se = F)+
-  xlab("project score") + ylab("probability of compliance") +
-  ggtitle("compliance probability by project score") +
-  scale_color_discrete("contest")+
-  theme_minimal()
 
-ggsave(path = "figs", filename = "compliance_score_plot.png", width = 7, height = 5)
 
 mod <- lm(received_bonus ~  rptpro_tipo_concurso*rptpro_puntaje,
            data = NFL_df)
@@ -109,31 +99,81 @@ other_df <- NFL_df %>%
 
 NFL_df <- rbind(other_df, small_df)
 
-socialscore_plot <- ggplot(data = NFL_df, aes(x = social_puntaje, y = received_bonus, color = rptpro_tipo_concurso))+
+
+other_color = "#D55E00"
+small_color = "#009E73"
+
+small_score_plot <- ggplot(data = small_df, aes(x = rptpro_puntaje, y = received_bonus))+
   #geom_point()+
   #geom_smooth(se = F)+
-  geom_smooth(method = "lm", show.legend = FALSE) +
+  geom_smooth(method = "lm", color = small_color) +
   #geom_smooth(method = "lm", formula = y ~ x + I(x^2), se = F)+
-  xlab("social component of project score") + ylab("probability of compliance") +
-  ggtitle("compliance probability by social score") +
-  #scale_color_discrete("contest")+
-  theme_minimal()
-
-ggsave(path = "figs", filename = "compliance_socialscore_plot.png", width = 7, height = 5)
-
-adjustedscore_plot <- ggplot(data = NFL_df, aes(x = adjusted_puntaje, y = received_bonus, color = rptpro_tipo_concurso))+
-  #geom_point()+
-  #geom_smooth(se = F)+
-  geom_smooth(method = "lm") +
-  #geom_smooth(method = "lm", formula = y ~ x + I(x^2), se = F)+
-  xlab("adjusted project score") + ylab("probability of compliance") +
-  ggtitle("compliance probability by adjusted score") +
+  xlab("project score") + ylab("probability of compliance") +
+  ggtitle("compliance probability by project score") +
   scale_color_discrete("contest")+
   theme_minimal()
+small_score_plot
+ggsave(path = "figs", filename = "small_compliance_plot.png", width = 7, height = 5)
 
-ggsave(path = "figs", filename = "compliance_adjscore_plot.png", width = 7, height = 5)
+other_score_plot <- ggplot(data = other_df, aes(x = rptpro_puntaje, y = received_bonus))+
+  #geom_point()+
+  #geom_smooth(se = F)+
+  geom_smooth(method = "lm", color = other_color) +
+  #geom_smooth(method = "lm", formula = y ~ x + I(x^2), se = F)+
+  xlab("project score") + ylab("probability of compliance") +
+  ggtitle("compliance probability by project score") +
+  scale_color_discrete("contest")+
+  theme_minimal()
+other_score_plot
+ggsave(path = "figs", filename = "other_compliance_plot.png", width = 7, height = 5)
+
+small_long <- small_df %>%
+  mutate("assigned score" = (rptpro_puntaje - mean(rptpro_puntaje))/sd(rptpro_puntaje),
+         "adjusted score" = (adjusted_puntaje - mean(adjusted_puntaje))/sd(adjusted_puntaje))%>%
+  gather(key = "score_type", value = "score", c("assigned score", "adjusted score"))%>%
+  select(received_bonus, `score_type`, score)
+
+other_long <- other_df %>%
+  mutate("assigned score" = (rptpro_puntaje - mean(rptpro_puntaje))/sd(rptpro_puntaje),
+         "adjusted score" = (adjusted_puntaje - mean(adjusted_puntaje))/sd(adjusted_puntaje))%>%
+  gather(key = "score_type", value = "score", c("assigned score", "adjusted score"))%>%
+  select(received_bonus, `score_type`, score)
 
 
+small_adjustedscore_plot <- ggplot(data = small_long, aes(x = score, y = received_bonus, color = `score_type`))+
+  #geom_point()+
+  #geom_smooth(se = F)+
+  geom_smooth(method = "lm", se = T, size = 1.2, level=0.90) +
+  #geom_smooth(method = "lm", formula = y ~ x + I(x^2), se = T)+
+  xlab("standardized project score") + ylab("probability of compliance") +
+  ggtitle("compliance probability by standardized score for other interested parties") +
+  scale_color_discrete("scoring method")+
+  scale_x_continuous(breaks = c(-3, -1, 0, 1, 3))+
+  theme_minimal() #+ theme(axis.text.x = element_blank())
+small_adjustedscore_plot
+
+ggsave(path = "figs", filename = "compliance_smallholder2.png", width = 7, height = 5)
+
+other_adjustedscore_plot <- ggplot(data = other_long, aes(x = score, y = received_bonus, color = `score_type`))+
+  #geom_point()+
+  #geom_smooth(se = F)+
+  geom_smooth(method = "lm", se = T, size = 1.2, level=0.90) +
+  #geom_smooth(method = "lm", formula = y ~ x + I(x^2), se = T)+
+  xlab("standardized project score") + ylab("probability of compliance") +
+  ggtitle("compliance probability by standardized score for other interested parties") +
+  scale_color_discrete("scoring method")+
+  scale_x_continuous(breaks = c(-3, -1, 0, 1, 3))+
+  theme_minimal() #+ theme(axis.text.x = element_blank())
+other_adjustedscore_plot
+
+ggsave(path = "figs", filename = "compliance_other2.png", width = 7, height = 5)
+
+
+mod <- lm(received_bonus ~ score*as.factor(score_type), data = small_long)
+summary(mod)
+
+mod <- lm(received_bonus ~ score*as.factor(score_type), data = other_long)
+summary(mod)
 
 #############################################################################################
 #### matched set to examine heterogeneity in land use characteristics

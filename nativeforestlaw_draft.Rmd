@@ -1,7 +1,7 @@
 ---
-title: "Targeting in Chilean payments for native reforestation"
+title: "Targeting and compliance in Chilean payments for native reforestation"
 author: "Alberto Garcia and Robert Heilmayr"
-date: "December 30th, 2021"
+date: "January 2nd, 2022"
 output:
   bookdown::pdf_document2:
     latex_engine: xelatex
@@ -35,37 +35,21 @@ library(stringi)
 library(stargazer)
 library(kableExtra)
 library(tidyverse)
+library(ggplot2)
 
 knitr::opts_chunk$set(echo = FALSE, warnings = FALSE, messages = FALSE, out.width="49%", fig.align = "center")
 
 options(scipen = 999)
 ```
 
-TO DO:
-
-- add trends for matched and unmatched groups
-
-- cite kelsey
-
-- theory section on correlation between impact and poverty alleviation: possible predictions or relate to alix-garcia paper
-
-- can i predict equivalent of "life-years lostt" i.e. lost effects from low compliance
-
-- intuition for correlation between factors and impact/score
-
-- update estimates
-
-- add appendix work
-
-
-
 # Abstract {-}
-Widespread reforestation has become an important part of global efforts to address the intertwined challenges posed by climate change, biodiversity loss, and rural poverty. In response to concerns that plantations of exotic species may undermine objectives of increased carbon storage, biodiversity, and community involvement, some policies have sought to reforest with native species. We evaluate land cover impacts of a Chilean federal program that pays landowners to reforest their property with native species and prioritizes and targets for program co-benefits such as the engagement of smallholders and indigenous peoples. Panel data for program beneficiaries and comparable unawarded properties allow us to control for fixed differences and time trends affecting both groups using difference-in-differences methods that avoid concerns surrounding heterogeneous treatment effects. We find that the program increased vegetation cover on the properties of both smallholders and larger landowners, however, program compliance was rather low. The underlying correlation between compliance, environmental impact, and a program's targeting strategy can enhance or create tension in terms of program benefits. This highlights the difficulty of targeting for reforestation in contrast to avoided deforestation, where program impact is driven by the presence of deforestation risk and incentivizing a lack of action rather than actual behavior changes.
+Widespread reforestation has become an important part of global efforts to address the intertwined challenges posed by climate change, biodiversity loss, and rural poverty. In response to concerns that plantations of exotic species may undermine objectives of increased carbon storage, biodiversity, and community involvement, some policies have sought to reforest with native species. We evaluate land cover impacts of a Chilean federal program that pays landowners to reforest their property with native species and targets for program co-benefits such as the engagement of smallholders and indigenous peoples. Panel data for program beneficiaries and comparable unawarded properties allow us to control for fixed differences and time trends affecting both groups using difference-in-differences methods that avoid concerns surrounding heterogeneous treatment effects. We find that the program increased vegetation cover on the properties of both smallholders and larger landowners, however, program compliance was rather low. The underlying correlation between compliance, environmental impact, and characteristics underpinnning a program's targeting strategy can enhance or create tension in terms of program benefits. This highlights the difficulty of targeting for reforestation in contrast to avoided deforestation, where program impact is driven by the presence of deforestation risk and incentivizing a lack of action rather than sustained behavior changes.
 
 List of to dos/future additions:
 \begin{itemize}
+\item some appendix work still needs to be added back after new round of estimates, primarily surrounding rejected applicants and robustness checks
 \item adjust overall metrics to account for to-date impacts
-\item integrate woody biomass/land-cover classification maps
+\item integrate woody biomass/land-cover classification maps and estimates
 \end{itemize}
 
 \clearpage
@@ -76,17 +60,15 @@ In order to achieve the warming targets set by the IPCC, both emissions reductio
 
 Within the natural climate solutions literature, ample attention has been given to the co-benefits and co-risks that can arise from the growing market for carbon removals. As a result of the emphasis on generating biomass, many programs have encouraged afforestation with monocultures of quick-growing exotic species such as eucalyptus and monterrey pine [@iucn_afforestation_2016]. This model can have co-risks such as the conversion of native ecosystems, loss of biodiversity, and exacerbation of distributional issues [@heilmayr_impacts_2020]. On the other hand, many argue that these schemes can avoid the aforementioned risks and generate substantial co-benefits if done properly. These often cited co-benefits include biodiversity conservation, habitat improvement, erosion reductions, watershed protection, and support for lower-income and indigenous communities. 
 
-Efficient targeting of public programs is difficult when the costs or benefits to potential recipients is private information [@jack_private_2013]. This is a major consideration in the payments for reforestation case, where not only is the opportunity cost of restoration to landowners unknown to program administrators, but factors such as uncertainty can influence landowner compliance [@oliva_technology_2020]. In many cases, the social planner hopes to generate co-benefits and to target for both environmental and social development goals. The underlying correlation between environmental gains and poverty alleviation through these programs has ramifications for whether targeting on social characteristics can provide the touted win-wins of natural climate solutions in practice [@alix-garcia_only_2015]. In the reforestation setting, compliance further influences whether policy makers can successfully meet these multiple policy objectives with a single tool. Tension may arise if social characteristics of interest are correlated with compliance and program impacts in opposite directions. 
+Efficient targeting of public programs is difficult when the costs or benefits to potential recipients is private information [@jack_private_2013; @jack_leakage_2017]. This is a major consideration in the payments for reforestation case, where not only is the opportunity cost of restoration to landowners unknown to program administrators, but factors such as uncertainty can influence landowner compliance [@oliva_technology_2020]. In many cases, the social planner hopes to generate co-benefits and to target for both environmental and social development goals. The underlying correlation between environmental gains and poverty alleviation through these programs has ramifications for whether targeting on social characteristics can provide the touted win-wins of natural climate solutions in practice [@alix-garcia_payment_2014]. In some cases subsidies that reflect political processes may undermine environmental benefits [@jack2008]. In the reforestation setting, compliance further influences whether policy makers can successfully meet these multiple policy objectives with a single tool. Tension may arise if targeted characteristics of interest are correlated with compliance and program impacts in opposite directions. 
 
-In this paper, we evaluate the land cover impacts of Chile’s Native Forest Law and explore the influence of the program's targeting mechanisms on its ultimate environmental impact. A key concern with evaluations of these types of programs is that apparent effectiveness may be driven by unobservable differences in participation costs, meaning that performance may be attributed to these omitted characteristics rather than participation in the program [@alix-garcia_only_2015]. From a pool of over five-hundred-thousand untreated properties, we construct a set of counterfactual properties based on a detailed set of land use and property characteristics in order to alleviate some of the concerns surrounding selection. This vastly improves the plausibility of the conditional common trends assumption on which our identification strategy relies. We evaluate land cover impacts for eleven cohorts (2009–2019) using annual data from 2005–2020 and a difference-in-differences approach that is robust to general treatment effect heterogeneity and relies on a plausible conditional parallel trends assumption. 
+In this paper, we evaluate the land cover impacts of Chile’s Native Forest Law and explore the influence of the program's targeting mechanisms on its ultimate environmental efficacy. A key concern with evaluations of these types of programs is that apparent effectiveness may be driven by unobservable differences in participation costs, meaning that performance may be attributed to these omitted characteristics rather than participation in the program [@alix-garcia_only_2015]. From a pool of over five-hundred-thousand untreated properties, we construct a set of counterfactual properties based on a detailed set of land use and property characteristics in order to alleviate some of the concerns surrounding selection. This vastly improves the plausibility of the conditional common trends assumption on which our identification strategy relies. We evaluate land cover impacts for eleven cohorts (2009–2019) using annual data from 2005–2020 and a difference-in-differences approach that is robust to general treatment effect heterogeneity and relies on a conditional parallel trends assumption. 
 
-We then analyze the Native Forest Law’s program design to understand whether improved environmental impacts could have been achieved and whether doing so would sacrifice program goals such as the involvement of smallholders, women, and indigenous peoples. The program targets for both environmental and social benefits in two ways: 1) holding separate contests for smallholders and larger landowners, with smallholders paid 15\% more for the same set of activities and 2) scoring proposed projects based on pre-determined applicant and project criteria. 
+We then analyze the Native Forest Law’s program design to understand how the targeting strategy influenced environmental impacts and the potential costs and benefits of targeting for social co-benefits. The program targets for both environmental and social benefits in two ways: 1) holding separate contests for smallholders and larger landowners, with smallholders paid 15\% more for the same set of activities and 2) scoring proposed projects based on pre-determined applicant and project criteria.  
 
-We show that the program's scoring methodology, which reflects both environmental and political economy factors such as employment potential, smallholder and indigenous participation, and the objective of funding many smaller projects, does have a positive correlation with forest cover impacts for landowenrs who follow-through. We use detailed program documentation to isolate the influence of social components of the score, which is also positively correlated with forest cover gains amongst compliers. However, correlation with compliance...
+We show that the correlation between compliance, impact, and the program's scoring methodology, which reflects both environmental and political economy factors such as employment potential, smallholder and indigenous participation, and the objective of funding many smaller projects, is different between the smallholder and other interested party contest. Using detailed project-specific information, we reconstruct project scores and remove the influence of social components of the score to show that considering social characteristics of interest may have had a small impact on the score's effectiveness. 
 
-This draft aims to advance the literature that addresses whether reforestation may be a viable large-scale method for removing and storing CO2 and add to the limited existing evidence on the environmental effectiveness of large-scale native reforestation programs. Between 2009 and 2019, the National Forest Corporation (CONAF) allocated approximately US $58 million to enroll more than 235 hectares of land through the Native Forest Law, making it one of the largest native forest reforestation programs in the world. As other countries begin to contemplate reforestation policies, Chile’s experience provides a valuable case study from which to draw. 
-
-We contribute to the literature on targeting and whether there exist tradeoffs between environmental efficacy and advancement of social development goals. We develop a framework that has ramifications for targeting in payments for ecosystem services programs when compliance plays a role in ultimate program impact. This case study provides one instance in which the correlation between social characteristics, compliance, and environmental gains likely improved program impact based on the targeting strategy. 
+This draft aims to advance the literature that addresses whether reforestation may be a viable large-scale method for removing and storing CO2 and add to the limited existing evidence on the environmental effectiveness of large-scale native reforestation programs. Between 2009 and 2019, the National Forest Corporation (CONAF) allocated approximately US $58 million to enroll more than 235 hectares of land through the Native Forest Law, making it one of the largest native forest reforestation programs in the world. As other countries begin to contemplate reforestation policies, Chile’s experience provides a valuable case study from which to draw. We contribute to the literature on targeting and whether there exist tradeoffs between environmental efficacy and advancement of social development goals. We develop a framework that has ramifications for targeting in payments for ecosystem services programs when compliance plays a role in ultimate program impact. This case study provides one instance in which the correlation between social characteristics, compliance, and environmental gains likely improved program impact based on the targeting strategy. 
 
 # Chile's Native Forest Law and its desired co-benefits
 
@@ -96,35 +78,27 @@ Chile provides an ideal setting in which to explore the potential for large-scal
 
 In an attempt to encourage the recovery and protection of native forests, Chile sought to pass the Ley de Recuperación del Bosque Nativo y Fomento Forestal (Native Forest Law) as a successor to DL701 [@clapp1998]. Initially expected in 1994, it became frozen in legislature before finally passing in 2008. In addition to protections for native forests, the law established an annual competition for grants to support private landowners in their efforts to manage, restore, or reforest their land using native species. Since 2009, more than $58 million have been allocated through these competitions for projects covering 235 thousand hectares. Much of this allocated funding has not been paid to landowners, however, as program follow-through is relatively low. In order to receive payment, landowners must complete the project and have the completed activities verified by a third party. Roughly 48\% of projects enrolled between 2009 and 2019 have actually been paid out on. Program administrators are unsure exactly why enrolled applicants fail to complete projects at such high rates [@conaf_2019].
 
-The subsidy component of the law encourages three types of activities: 1) the regeneration, recovery or protection of native preservation forests; 2) silvicultural activities aimed at managing and recovering native forests for timber production purposes; and 3) silvicultural activities aimed at managing and recovering native forests for non-timber production purposes. Of the 12,889 projects enrolled between 2009 and 2019, 10912 (84.66\%) recovered native forest for the purposes of timber production. 
-
-Few estimates on the impacts of the Native Forest Law on land cover currently exist. CONAF estimated the carbon impacts of the Native Forest Law through 2018 as it relates to Chile's Nationally Determined Contribution (NDC) as part of the Paris Argeement. These estimates, however, assume that the carbon stored by every subsidized hectare is the direct result of the law. These types of estimates ignore the concept of additionality, since some of this forest would likely exist even in the absence of the law. 
+The subsidy component of the law encourages three types of activities: 1) the regeneration, recovery or protection of native preservation forests; 2) silvicultural activities aimed at managing and recovering native forests for timber production purposes; and 3) silvicultural activities aimed at managing and recovering native forests for non-timber production purposes. Of the 12,889 projects enrolled between 2009 and 2019, 10912 (84.66\%) recovered native forest for the purposes of timber production. Few estimates on the impacts of the Native Forest Law on land cover currently exist. CONAF estimated the carbon impacts of the Native Forest Law through 2018 as it relates to Chile's Nationally Determined Contribution (NDC) as part of the Paris Argeement. These estimates, however, assume that the carbon stored by every subsidized hectare is the direct result of the law. These types of estimates ignore the concept of additionality, since some of this forest would likely exist even in the absence of the law. 
 
 The Native Forest Law prioritizes not only forest cover in line with Chile's NDC goal of managing 200,000 ha of native forest, but also co-benefits such as biodiversity preservation and the participation of underrepresented groups. By prioritizing native forest rather than monocultures of pine or eucalyptus, the law seeks to incentivize the preservation of biological diversity. Prioritizing carbon-plantings without consideration of other co-benefits may result in negligible biodiversity co-benefits [@bryan2016]. In fact, DL701 resulted in the decline of native forest and biodiversity, as native forests provide significantly more biodiversity than plantation forests in Chile [@heilmayr_impacts_2020]. 
 
-Reforestation is well understood to mitigate erosion, both stabilizing eroded areas and preventing new erosion. In Chile, widespread erosion on marginal agricultural lands has motivated forest policy for over a century [@heilmayr_impacts_2020; @clapp1998]. DL701 and the Native Forest Law both prioritize erosion mitigation in the implementation of the law. The Native Forest law prioritizes areas with moderate to severe erosion and subsidizes projects aimed at erosion mitigation. All projects that occur in areas of moderate-to-severe erosion must specify additional measures to prevent erosion in the management plan. 
+<!-- Reforestation is well understood to mitigate erosion, both stabilizing eroded areas and preventing new erosion. In Chile, widespread erosion on marginal agricultural lands has motivated forest policy for over a century [@heilmayr_impacts_2020; @clapp1998]. DL701 and the Native Forest Law both prioritize erosion mitigation in the implementation of the law. The Native Forest law prioritizes areas with moderate to severe erosion and subsidizes projects aimed at erosion mitigation. All projects that occur in areas of moderate-to-severe erosion must specify additional measures to prevent erosion in the management plan.  -->
 
-In response to concerns that large companies benefited disproportionately from the DL701 subsidies, Native Forest Law bonuses place an emphasis upon supporting smallholders and indigenous peoples. The contest provides additional support for properties awarded through the smallholder contest. In particular, smallholder awards are worth 15\% more than awards in the other interested parties contest for the same set of activities. Further, smaller properties are more likely to be awarded based on the application scoring system. Applications from indigenous communities are also substantially more likely to receive funding based on the application scoring process. 
-
-One major question is whether targeting for these co-benefits reduces the primary objective of the policy. This is particularly interesting in the case of the Native Forest Law, where program follow-through is low. Even when targeting specific groups for enrollment does not impact program cost-effectiveness, if these groups are ex-ante less likely to follow through, overall program impact will be reduced because of this targeting. 
+In response to concerns that large companies benefited disproportionately from the DL701 subsidies, Native Forest Law bonuses place an emphasis upon supporting smallholders and indigenous peoples. The contest provides additional support for properties awarded through the smallholder contest. In particular, smallholder awards are worth 15\% more than awards in the other interested parties contest for the same set of activities. Further, smaller properties are more likely to be awarded based on the application scoring system. Applications from indigenous communities are also substantially more likely to receive funding based on the application scoring process. One major question is whether targeting for these co-benefits reduces the primary objective of the policy. This is particularly interesting in the case of the Native Forest Law, where program follow-through is low. Even when targeting specific groups for enrollment does not impact program cost-effectiveness, if these groups are ex-ante less likely to follow through, overall program impact will be reduced because of this targeting. 
 
 ## Data
 
 ### administrative data
 
-We have obtained property boundaries for all rural properties in the major forested regions of Chile as of the year 2009. Data on the awarded properties are available through CONAF and reflect aspects of the property and projects such as project objective, project surface area, bonus amount, and applicant race and gender. Also included is each property's parcel indentifier, which is unique to each property within a comuna, Chile's level 3 administrative unit. We match the enrolled properties to their corresponding boundaries via this unique parcel identifier. In addition, we are able to match payment recipients to the corresponding program application. 
+We have obtained property boundaries for all rural properties in the major forested regions of Chile as of the year 2009. Data on the awarded properties are available through CONAF and reflect aspects of the property and projects such as project objective, project surface area, bonus amount, and applicant race and gender. Also included is each property's parcel indentifier, which is unique to each property within a comuna, Chile's level 3 administrative unit. We match the enrolled properties to their corresponding boundaries via this unique parcel identifier. In addition, we are able to match payment recipients to the corresponding program application, which indicates whter a project was successfully completed. 
 
 ### satellite data
 
-We use the enhanced vegetation index (EVI 2) as a proxy for each property's annual level of vegetation/forest cover. To generate the outcome for each property, we compute the average maximum EVI value of each pixel within a property for a given year. We have generated EVI time series of this sort for each property in the regions of O'Higgins, Maule, Araucanía, Bío-Bío, Ñuble, Los Ríos, and Los Lagos. These regions constitute the major forest areas of Chile and the regions that contain the vast majority of the Native Forest Law enrollees. Generating time series for all properties in these regions allows us to match on pre-trends of the outcome variable in the matching part of the program evaluation. 
+We use the enhanced vegetation index (EVI 2) as a proxy for each property's annual level of vegetation/forest cover. To generate the outcome for each property, we compute the average maximum EVI value of each pixel within a property for a given year. We have generated EVI time series of this sort for each property in the regions of O'Higgins, Maule, Araucanía, Bío-Bío, Ñuble, Los Ríos, and Los Lagos. These regions constitute the major forested areas of Chile and the regions that contain the vast majority of the Native Forest Law enrollees. Generating time series for all properties in these regions allows us to match on pre-trends of the outcome variable in the matching part of the program evaluation. 
 
-One benefit of the use of EVI is the ability to capture both new forest cover and changes in forest quality within a single index measure. We prefer EVI to normalized difference vegetation index (NDVI) because of its propensity to become saturated in high biomass regions. Given Chile's extensive native and plantation forests and the fact that many enrolled properties already have some degree of forest cover, this could limit our ability to detect small changes in the area or density of vegetation/forest cover through time. In contrast, EVI corrects for canopy background noise and is more sensitive in areas with dense vegetation [add Cite].
+One benefit of the use of EVI is the ability to capture both new forest cover and changes in forest quality within a single index measure. We prefer EVI to normalized difference vegetation index (NDVI) because of its propensity to become saturated in high biomass regions. Given Chile's extensive native and plantation forests and the fact that many enrolled properties already have some degree of forest cover, this could limit our ability to detect small changes in the area or density of vegetation/forest cover through time. In contrast, EVI corrects for canopy background noise and is more sensitive in areas with dense vegetation [add Cite]. Lastly, Landsat resolution (30m) land-use maps of Chile for the year 2001 generated in @heilmayr_plantation-dominated_2016 allow us to see the proportion of each property engaged in specific land uses prior to the existence of the Native Forest Law or the announcement of the annual contests. 
 
-Lastly, Landsat resolution (30m) land-use maps of Chile for the year 2001 generated in @heilmayr_plantation-dominated_2016 allow us to see the proportion of each property engaged in specific land uses prior to the existence of the Native Forest Law or the announcement of the annual contests. 
-
-# Targeting for multiple objectives with heterogeneous compliance: a conceptual framework
-
-In development
+Future iterations of this paper will include integration of annualized maps of woody biomass and native versus plantation forest classification. This will allow us to gain insight into whether landowners may substitute away from plantation to native forest rather than establishing new forest on land allocated to other land uses. 
 
 # Program evaluation
 
@@ -132,22 +106,18 @@ In development
 
 As is the problem with many PES impact evaluations, enrollment is non-random. Landowners choose to enroll in the program and, in theory, have an opportunity cost equal to or lower than program enrollment. It is then ill-advised to simply use unenrolled properties as the counterfactual, since unobservable factors affecting enrollment could drive changes in forest cover outcomes, not enrollment. In order to generate a more convincing counterfactual, we match properties to ones that should have more similar opportunity costs than amongst the general population. 
 
-The covariates used for matching include property size, slope, elevation, distance to road, distance to timber processing (e.g., sawmill; separately for native specific), and proportion of the property under each of the following land-uses in 2001: native forest, plantation, pasture, shrubland, water, urban, and bare soil. We also include the 2007 levels of NDVI for each property, which should correspond to the overall vegetation cover prior to the existence or announcement of the Native Forest Law contest. Lastly, matching on EVI pre-trends will help us to build confidence in the conditional common trends identification assumption that we make for the difference-in-differences strategy in the next section. Matches are made with replacement based on nearest neighbor propensity scores from a logit regression. Our main strategy matches each program enrollee with two control properties, however, we also include estimates based on matching each enrolled property with one nearest neighbor as a robustness check.  
+The covariates used for matching include property size, slope, elevation, distance to road, distance to timber processing (e.g., sawmill; separately for native specific), erosion levels, and proportion of the property under each of the following land-uses in 2001: native forest, plantation, pasture, shrubland, water, urban, and bare soil. We also include the 2007 levels of EVI for each property, which should correspond to the overall vegetation cover prior to the property's enrollment. Lastly, matching on EVI pre-trends will help us to build confidence in the conditional common trends identification assumption that we make for the difference-in-differences strategy in the next section. We exclude the two year trends leading up to enrollment in order to avoid concerns of overfitting. Thus, seeing that pre-trends in the two years prior to enrollment hold should lend further creedence to the matching process. Matches are made with replacement based on nearest neighbor propensity scores from a logit regression (I also consider mahalanobis matching, but this performed much worse in terms of balance. I still need to add this to the appendix). Our main strategy matches each program enrollee with two control properties, however, we also include estimates based on matching each enrolled property with one nearest neighbor as a robustness check (also need to add this to the appendix still).  
 
-The covariates included should allow us to match properties with similar opportunity costs to enrollment. Of particular value is the ability to match on land use prior to the existence of the program. Landowners with similar levels of forest plantation, native forest, and other land uses on the property should face a similar decision about whether to enroll in a program involving native forest management. Slope and elevation tend to be highly correlated with the productive potential of the land, and distance to road provides a proxy of a property's remoteness. Figure \@ref(fig:m-dist) in the Appendix shows how comparability between covariate distributions drastically improved between treatment and control properties after matching. Table \@ref(tab:covar-bal) in the Appendix displays a more complete balance check for all covariates used. Figure \@ref(fig:trends) displays EVI trends of the treatment group, matched control group, and all unenrolled properties. We see that ...
-
-<!-- ```{r trends, fig.pos="H", out.width = '75%', fig.cap = "Raw EVI trends for unmatched control group, matched control group, and treatment group", echo=FALSE} -->
-<!-- knitr::include_graphics("figs/trends.png") -->
-<!-- ``` -->
+The covariates included should allow us to match properties with similar opportunity costs to enrollment. Of particular value is the ability to match on land use prior to the existence of the program. Landowners with similar levels of plantation forest, native forest, and other land uses on the property should face a similar decision about whether to enroll in a program involving native forest management. Slope and elevation tend to be highly correlated with the productive potential of the land, and distance to road provides a proxy of a property's remoteness. Figure \@ref(fig:m-dist) in the Appendix shows how comparability between covariate distributions drastically improved between treatment and control properties after matching. Table \@ref(tab:covar-bal) in the Appendix displays a complete balance check for all covariates used. Figure \@ref(fig:trends) explores how the matching process improved pre-tends. 
 
 We need to make an appropriate common trends assumption in order to make inference about causal effects of the program, and this choice leads us to our preferred estimator [@marcus2021]. As mentoned above, many PES programs operate on voluntary enrollment into the program. This is indeed the case with the Native Forest Law, in which enrollees must apply and be selected for participation. Because enrollment is unlikely to be exogenous, we opt for a relatively weak common trends assumption: 
 
 \textbf{Conditional common trends based on unawarded properties:}
 For all $g, t = 2,...,\Tau,$ such that $t\geq g$, 
 $$  E[evi_{it}(0)-evi_{it-1}(0)|X_i, G_g=1] = E[evi_{it}(0)-evi_{it-1}(0)|X_i, C=1] $$
-This amounts to assuming that without enrolling in the Native Forest Law contest, awarded properties would have continued to follow the same evolution in EVI as matched control properties, after conditioning on pre-treatment covariates. In order to rely on this common trends assumption, we must have a relatively large set of properties that do not experience treatment, or inference procedures may not be as precise as procedures that align with an alternative assumption. However, it is important to stress that this potential “loss of efficiency” is a direct consequence of not exploiting restrictions on pretreatment trends across cohorts [@marcus2021]. Luckily, in our case, we can take advantage of our matching procedure, which uses an extremely large pool of unawarded properties, detailed covariates including pre-program land uses, and explicit pre-trends. As such, we benefit from the fact that our common trends assumption does not restrict pre-trends across cohorts and does not presume that later cohorts are viable counterfactuals for early cohorts. Settling on this specific common trends assumption helps us to determine the appropriate estimator. The estimator developed in @callaway_did_2020 relies on the common trends assumption above, which we believe is reasonable to make. Robustness checks do include the use of not yet treated observations (and thus, a stronger common trends assumption).
+This amounts to assuming that without enrolling in the Native Forest Law contest, awarded properties would have continued to follow the same evolution in EVI as matched control properties, after conditioning on pre-treatment covariates. In order to rely on this common trends assumption, we must have a relatively large set of properties that do not experience treatment, or inference procedures may not be as precise as procedures that align with an alternative assumption. However, it is important to stress that this potential “loss of efficiency” is a direct consequence of not exploiting restrictions on pretreatment trends across cohorts [@marcus2021]. Luckily, in our case, we can take advantage of our matching procedure, which uses an extremely large pool of unawarded properties, detailed covariates including pre-program land uses, and explicit pre-trends. As such, we benefit from the fact that our common trends assumption does not restrict pre-trends across cohorts and does not presume that later cohorts are viable counterfactuals for early cohorts. Settling on this specific common trends assumption helps us to determine the appropriate estimator. The estimator developed in @callaway_did_2020 relies on the common trends assumption above, which we believe is reasonable to make. Future robustness checks will include the use of not yet treated observations (and thus, a stronger common trends assumption).
 
-One concern may be our decision to exclude rejected applicants from the control group. Given that these properties have revealed their intention to enroll in the program, it seems that they may have opportunity costs similar to program enrollees. However, the composition of the rejected applicants differs between smallholders and other interested parties depending on year, and many rejected applicants are able to reapply and be awarded in later years. This means that the composition of the rejected applicant group is relatively unstable through time. Further, it would be difficult to make claims about the differences between the smallholders and other interested parties, because the rejected group differs through time for each. We discuss the rejected applicants in more detail in the Appendix and give creedence to our analysis by using the rejected group in a placebo test. 
+One concern may be our decision to exclude rejected applicants from the control group. Given that these properties have revealed their intention to enroll in the program, it seems that they may have opportunity costs similar to program enrollees. However, the composition of the rejected applicants differs between smallholders and other interested parties depending on year, and many rejected applicants are able to reapply and be awarded in later years. This means that the composition of the rejected applicant group is relatively unstable through time. Further, it would be difficult to make claims about the differences between the smallholders and other interested parties, because the rejected group differs through time for each. We discuss the rejected applicants in more detail in the Appendix. 
 
 ## DID
 
@@ -155,11 +125,12 @@ In order to estimate the program impact, we use a difference-in-differences even
 
 $$ATT_{g,t} =  E[evi_{it}(1) - evi_{it}(0) | G_i = g, t \geq t_o]$$
 
-Each $ATT_{g,t}$ then represents the treatment effect for cohort $g$ in time $t$. To generate the $ATT_{g,t}$s, we first subset the data to only contain observations at time $t$ and $g − 1$, from units with either $G_i = g$ or that are in the control group. For example, for the $\beta_{2015, 2019}$, we subset to only the 2015 cohort and control group for the years 2014 and 2019. Then using only the observations from this subset, we calculate $\beta_{g,t}$ using the doubly robust difference-in-differences estimator developed in @santanna_doubly_2020. This involves first estimating a propensity score using a logit model and allows for common trends to hold only after conditioning on pre-treatment covariates. With this method, we can identify the $ATT_{g,t}$s if either (but not necessarily both) the propensity score or outcome regression is correctly specified [@santanna_doubly_2020]. 
-
-For the sake of intuition, note that without covariates, the $ATT_{g,t}$s could be estimated by the following simple DID regression:
+Each $ATT_{g,t}$ then represents the treatment effect for cohort $g$ in time $t$. To generate the $ATT_{g,t}$s, we first subset the data to only contain observations at time $t$ and $g − 1$, from units with either $G_i = g$ or that are in the control group. For example, for the $ATT_{2015, 2019}$, we subset to only the 2015 cohort and control group for the years 2014 and 2019. Then using only the observations from this subset, we calculate $ATT_{g,t}$ using a 2x2 difference-in-differences method. Without covariates, the $ATT_{g,t}$s could be estimated by the following simple 2x2 DID regression:
 $$ evi_{it} = \beta_1 \mathbb{1}\{ G_i = g \} + \beta_2 \mathbb{1}\{ t \geq t_0 \} + \beta_3 \mathbb{1}\{ G_i = g \}\mathbb{1}\{ t \geq t_0 \}  + \epsilon_{it}$$
-, where $\beta = ATT_{g, t}$.
+, where $\beta_3 = ATT_{g, t}$.
+
+We opt to use the doubly robust difference-in-differences estimator developed in @santanna_doubly_2020. This involves first estimating a propensity score using a logit model and allows for common trends to hold only after conditioning on pre-treatment covariates. With this method, we can identify the $ATT_{g,t}$s if either (but not necessarily both) the propensity score or outcome regression is correctly specified [@santanna_doubly_2020]. 
+
 
 We use two primary measures of the $ATT$ in this paper. The first measure provides event study estimates. Here, within each event time window, we aggregate the $ATT_{g,t}$s with weights corresponding to group size. 
 
@@ -179,16 +150,28 @@ $$ ATT_{equal} =\frac{1}{ \sum_{t_0}^{T}\sum_{g \in G} \mathbb{1}\{ g \leq t \} 
 $ATT_{equal}$ is simply an average of all $ATT_{g,t}$s after treatment. Relative to $ATT_{ovr}$, $ATT_{equal}$ places less weight on time periods further from initial treatment. This may help reduce the influence of early cohorts at the expense of downweighting time periods in which we expect treament effects to be most relevant. 
 
 ## Overall program results
+```{r}
 
-We first measure the impact of the program on all enrolled properties. This is the effect of being granted enrollment in the program and submitting the management plan within the required time frame, which generally predicts successful project completion and payment. As such, these estimates represent treatment effects conditional on compliance. Figure \@ref(fig:main-es) shows that the EVI on the characteristic awarded property steadily increases through time relative to the counterfactual following treatment. For reference, the average awarded property had a pre-treatment EVI equal to .4738, meaning that an effect of .006103 represents a 1.29\% increase on average. 
+n = 10913
+
+did.ovr = 0.003353
+did.ovr_se = 0.000735
+
+did.equal = 0.001451
+did.equal_se = 0.000526
+
+avg_evi = 0.4738
+percent.ovr = round((did.ovr/avg_evi)*100, digits = 2)
+percent.equal = round((did.equal/avg_evi)*100, digits = 2)
+
+```
+We first measure the impact of the program on all enrolled properties. This is the impact of the payment, conditional on successfully completing the project and subsequently receiving payment. As such, these estimates represent treatment effects conditional on compliance. Figure \@ref(fig:main-es) shows that the characteristic awarded property sees an increase in EVI after enrollment relative to the counterfactual following treatment. 
 
 ```{r main-es, fig.pos="H", out.width = '70%', fig.cap = "This figure shows event time treatment effects of the native forest law for awarded and complying properties.", echo=FALSE}
 knitr::include_graphics("figs/did_main_Dec2021.png")
-
-n = 8556
 ```
 
-Figure \@ref(fig:main-es) also allows us to examine the plausibility of our conditional common trends assumption. We do see that pre-trends are relatively stable, lending creedence to the assumption made previously. As discussed, matching on detailed land use and property characteristics allows us to compare properties that likely had similar future land use intentions and opportunity costs. Looking at Table 1, we see that the overall treatment effects ($ATT_{ovr}$, $ATT_{equal}$) are also positive and statistically significant. In the appendix, we show cohort specific event studies. These show that the results are driven primarily by early cohorts, which experience strong treatment effects. Later cohorts do not experience any clear sustained treatment effect. As such, part of the growing effect through time seen in \@ref(fig:main-es) is due to changing composition of cohorts in each event time window.
+Figure \@ref(fig:main-es) also allows us to examine the plausibility of our conditional common trends assumption. We do see that pre-trends are relatively stable, lending creedence to the assumption made previously. As discussed, matching on detailed land use and property characteristics allows us to compare properties that likely had similar future land use intentions and opportunity costs. Looking at Table 1, we see that the overall treatment effects ($ATT_{ovr}$, $ATT_{equal}$) are also positive and statistically significant. For reference, the average awarded property had a pre-treatment EVI equal to .4738, meaning that an effect size of `r did.ovr` represents a `r percent.ovr`\% increase on average. In the appendix, we show cohort specific event studies. These show that the results are driven primarily by early cohorts. Later cohorts do not experience any clear sustained treatment effect. As such, part of the growing effect through time seen in \@ref(fig:main-es) is due to the changing composition of cohorts in each event time window.
 
 <!-- Figure \@ref(fig:balanced-es) begins to address this by providing estimates that maintain constant composition through time for properties exposed to treatment for at least 6 (left panel) and 9 (right panel) years.  -->
 
@@ -206,10 +189,10 @@ Figure \@ref(fig:main-es) also allows us to examine the plausibility of our cond
 \toprule
   Dependent variable: EVI & &\\ 
 \midrule
- $ATT_{ovr}$  &           0.006103*** &  \\
-             &         (0.000905)  &  \\ 
-  $ATT_{equal}$      &  0.003287*** & \\
-                    &  (0.000664)  & \\
+ $ATT_{ovr}$  &           `r did.ovr`*** &  \\
+             &         (`r did.ovr_se`)  &  \\ 
+  $ATT_{equal}$      &  `r did.equal`*** & \\
+                    &  (`r did.equal_se`)  & \\
 \midrule
  N      &     `r n`    & \\          
 \bottomrule
@@ -258,36 +241,55 @@ for (v in unique(subsample_res$subsample)){
 
 ```
 
+# Targeting for multiple objectives with heterogeneous compliance: a framework
+
+Much research has addressed targeting in PES programs in the context of avoided deforestation. The key to gaining high environmental effectiveness at least cost is to enroll only the parcels at risk of deforestation [@alix-garcia_payment_2014]. This can be achieved by providing adequate payments and focusing on parcels in areas of high deforestation. This is not the case in the reforestation context, where high environmental effectiveness is determined by whether the payment induces landowners to generate and maintain new forest cover through sustained behavior change. As such, non-compliance may play a major role if, for example, landowners are unertain as to the costs or benefits of generating forest cover [e.g., @oliva_technology_2020]. For simplicity, we consider the probability of noncompliance to be an underlying feature of the setting and do not consider its potential causes. 
+In order to understand how noncompliance impacts program administrators' targeting strategy, we discuss a simple rent-driven model of land use [e.g., @pfaff1999] and take a graphical approach similar to @alix-garcia_only_2015. Let there be a set of landowners who vary in some characteristic, $Z_i$, that is used by program administrators to target payments. Let $r_f$ describe the rents to forest land use and $r_a$ describe the highest rent of any alternatives. Figure \@ref(fig:framework) describes the rents to forest and alternative land uses as a function of $Z_i$. 
+
+Prior to the existence of the program, landowners with values of $Z_i$ less that $x_1$ would allocate their land to non-forest uses. The introduction of the program shifts $r_f$, and anyone with a value of $Z_i$ greater than $x_0$ (the point where $r_a = r_f + PES$) should apply to the program. 
+
+From the perspective of program administrators, landowners at $x_0$ are the most cost-effective enrollees, since the offered payment is equal exactly to the minimum payment required to shift them to forest land uses. Further, payments to landowners with a value of $Z_i$ greater than $x_1$ are likely to be inframarginal. This means that amongst those who apply to the program (i.e. those with $Z_i \geq x_0$), administrators should target payments to those with low values of $Z_i$ first. 
+
+```{r framework, fig.show="hold", fig.pos="H", out.width = '100%', fig.cap = "Graphical rent model, where the x-axis shows a characteristic used for targeting that also affects rents"}
+
+knitr::include_graphics("figs/framework.png")
+```
+
+We can now think about how noncompliance may influence the environmental impact and cost-effectiveness of payments in this context. Also assume that payments are not made unless landowners do comply. If compliance probability is uncorrelated with $Z_i$, overall environmental impact of the program is decreased, however, the cost-effectiveness of the successful payments is not hurt.  
+
+In the case where compliance probability is positively correlated with $Z_i$ (i.e. those with high values of $Z_i$ are more likely to comply), not only will the program lose environmental impact, but cost-effectiveness of the payments will decline. This is because the most cost-effective applicants (i.e. those with the lowest values of $Z_i$) will be least likely to comply, and those who are inframarginal are more likely to receive payment. As such, the negative correlation between program impact and compliance creates tension for program administrators. Lastly, if compliance probability is negatively correlated with $Z_i$, cost-effectiveness will improve, and impact will improve relative to the previous two cases (assuming the overall compliance rate is the same).
+
+\textbf{Note:} One source of tension in this framework is how noncompliance arises. I really want to remain agnostic as to the source of noncompliance, however, it may help to ground ideas. My main obstacle is thinking about the case in which noncompliance is positively correlated with $Z_i$. In this case, those who would already allocate land to forest uses are less likely to comply. This is hard to make sense of intuitively, since they have the least to do in order to receive the payment.
+
+
 # Evaluating the Native Forest Law's targeting strategy
 
-PES programs are designed to offset the expected increase in agricultural rents by offering a corresponding increase in forest rents [@alix-garcia_payment_2014]. However, regulators may also target the program to land with certain characteristics [@alix-garcia_only_2015]. In the case of the Native Forest Law, this is done in two main ways: 1) holding separate contests for smallholders and larger properties, where the smallholder contest pays 15\% higher; and 2) a scoring mechanism that prioritizes indigenous peoples, smaller properties, and other landowner and property characteristics.
+In the case of the Native Forest Law, targeting is done in two main ways: 1) holding separate contests for smallholders and larger properties, where the smallholder contest pays 15\% higher; and 2) a scoring mechanism that prioritizes indigenous peoples, smaller properties, and other landowner and property characteristics. Here we separately evaluate the scoring system for the smallholder and other interested party contests. 
 
-Much research has addressed targeting in PES programs in the context of avoided deforestation. The key to gaining high environmental effectiveness at least cost is to enroll only the parcels at risk of deforestation [@alix-garcia_only_2015]. This can be achieved by providing adequate payments and focusing on parcels in areas of high deforestation. This is not the case in the reforestation context, where high environmental effectiveness is determined by whether the payment induces landowners to generate and maintain new forest cover. The characteristics likely to determine effectiveness in the reforestation setting may thus be less easily targeted than in the deforestation setting. 
+<!-- ## Smallholder versus other interested party contest -->
 
-## Smallholder versus other interested party contest
+<!-- \begin{table}[H]\centering -->
+<!-- \caption{smallholder vs. other interested party treatment effects} -->
+<!-- \smallskip -->
+<!-- \begin{tabular}{c c c} -->
 
-\begin{table}[H]\centering
-\caption{smallholder vs. other interested party treatment effects}
-\smallskip
-\begin{tabular}{c c c}
-
-\toprule
-   Dependent variable: EVI & & \\ 
-\cmidrule(l){2-3} 
- & \textbf{1} & \textbf{2}   \\ 
-\midrule
-$ATT_{ovr}$   & `r df_smallholder$ATT[1]`*** & `r df_other$ATT[1]`***\\ 
-                & (`r df_smallholder$std.error[1]`) & (`r df_other$std.error[1]`)\\  
-   $ATT_{equal}$ &  `r df_smallholder$ATT[2]`*** & `r df_other$ATT[2]`*\\ 
-               &  (`r df_smallholder$std.error[2]`) & (`r df_other$std.error[2]`)\\ 
- sample               & \textbf{smallholders} & \textbf{other interested parties} \\  
-\bottomrule
-\addlinespace[1ex]
-\multicolumn{3}{l}{\textsuperscript{***}$p<0.01$, 
-  \textsuperscript{**}$p<0.05$, 
-  \textsuperscript{*}$p<0.1$}
-\end{tabular}
-\end{table}
+<!-- \toprule -->
+<!--    Dependent variable: EVI & & \\  -->
+<!-- \cmidrule(l){2-3}  -->
+<!--  & \textbf{1} & \textbf{2}   \\  -->
+<!-- \midrule -->
+<!-- $ATT_{ovr}$   & `r df_smallholder$ATT[1]`*** & `r df_other$ATT[1]`***\\  -->
+<!--                 & (`r df_smallholder$std.error[1]`) & (`r df_other$std.error[1]`)\\   -->
+<!--    $ATT_{equal}$ &  `r df_smallholder$ATT[2]`*** & `r df_other$ATT[2]`*\\  -->
+<!--                &  (`r df_smallholder$std.error[2]`) & (`r df_other$std.error[2]`)\\  -->
+<!--  sample               & \textbf{smallholders} & \textbf{other interested parties} \\   -->
+<!-- \bottomrule -->
+<!-- \addlinespace[1ex] -->
+<!-- \multicolumn{3}{l}{\textsuperscript{***}$p<0.01$,  -->
+<!--   \textsuperscript{**}$p<0.05$,  -->
+<!--   \textsuperscript{*}$p<0.1$} -->
+<!-- \end{tabular} -->
+<!-- \end{table} -->
 
 ## The scoring mechanism
 
@@ -315,48 +317,58 @@ $$ score_{other} =  \gamma_1 VT+ \gamma_2 VI+ \gamma_3 VP $$
 
 The $\beta$ and $\gamma$ parameters vary slightly across contest. For reference, in the 2018 contest, $\beta_1 = 0.4$ , $\beta_2 = 0.2$, $\beta_3 =0.35$, and $\beta_4 =0.05$ in the smallholder contest. In the other interested party contest, $\gamma_1 = 0.5$ , $\gamma_2 = 0.25$, and $\gamma_3 = 0.25$. 
 
-Targeting based on social factors such as indigenous status or property size may come with costs or benefits in terms of both environmental impacts and compliance. In order to focus on the influence of the program's targeting of social characteristics, I isolate the influence of social characteristics on the score. As such, I consider two alternative scores to examine: 1) isolated social component; and 2) an adjusted score that considers the project score excluding the social components. The first score consists of any parts of the score that were not related to land characteristics or activities performed. The second score subtracts the social components from the true assigned score in order to focus solely on land and activity specific components. 
+Targeting based on social factors such as indigenous status or property size may come with costs or benefits in terms of both environmental impacts and compliance. In order to focus on the influence of the program's targeting of social characteristics, I isolate the influence of social characteristics on the score. As such, I consider an alternative score to examine. This adjusted score considers the project score excluding any social components, by subtracting the social components from the true assigned score in order to focus solely on land and activity specific components. 
 
-## Correlation with compliance
+## Results
 
-Compliance plays a major role in successful targeting for the Native Forest Law, particularly because it is so low. We now explore the relationship between the assigned project score and compliance. 
+### smallholder contest
 
-```{r compliance-score, fig.show="hold", fig.pos="H", out.width = '70%', fig.cap = "caption here", echo=FALSE}
-knitr::include_graphics("figs/compliance_score_plot.png")
+Compliance plays a major role in successful targeting for the Native Forest Law, particularly because it is so low. We now explore the relationship between the assigned project score and compliance in the smallholder contest. Figure \@ref(fig:compliance-small) shows that the assigned project scores were positively correlated with compliance in the smallholder contest.
+
+```{r compliance-small, fig.show="hold", fig.pos="H", out.width = '60%', fig.cap = "The assigned score is possitively associated with compliance in the smallholder contest", echo=FALSE}
+knitr::include_graphics("figs/small_compliance_plot.png")
+```
+
+Figure \@ref(fig:qdid-small) plots $ATT_{ovr}$ for each score quartile of the assigned score. Note that we determine score quartiles by cohort, so each quartile contains equal cohort representation. In order for the score to be a good predictor of increased forest cover, a primary goal of the program, we should see that treatment effect estimates increase across each quartile of the score. Figure \@ref(fig:qdid-small) shows a slight positive correlation between the assigned project scores and treatment effects. Perhaps most importantly, those with the lowest scores had the least impact, meaning that applicants rejected because of low scores where unlikely to provide much benefit anyway. These results suggest that the program's scoring system successfully targeted projects that were likely to be impactful. Further, because compliance was postitively correlated with the scores, and thus with treament effects, the program's targeting strategy improved cost-effectiveness within the smallholder contest. 
+
+```{r qdid-small, fig.show="hold", fig.pos="H", out.width = '60%', fig.cap = "This figure shows event time treatment effects by assigned score quartile for awards granted in the smallholder contest.", echo=FALSE}
+knitr::include_graphics(c("figs/small_q_assigned.png"))
 ```
 
 
-```{r compliance-score-alt, fig.show="hold", fig.pos="H", out.width = '49%', fig.cap = "caption here", echo=FALSE}
-knitr::include_graphics(c("figs/compliance_socialscore_plot.png", "figs/compliance_adjscore_plot.png"))
+### other interested parties contest
+
+In the other interested party contest, we see that the score was neither correlated with compliance or treatment effects. In fact, no score quartile produced treatment effect estimates that were statistically different from zero. This may reflect the fact that enrollees in the other interested parties contest are larger landowners more likely to maintain forest even in the absence of the program. We see in Table \@ref(tab:) that other interested parties on average have more plantation forest than smallholders, possibly indicating that they would have generated some level of forest cover even in the absence of the program. As such, the program's strategy to prioritize smallholder may be beneficial from a targeting perspective. 
+
+
+```{r qdid-other, fig.show="hold", fig.pos="H", out.width = '49%', fig.cap = "Assigned score in the other interested parties contest is not clearly associated with Left: compliance; and Right: treatment effects", echo=FALSE}
+knitr::include_graphics(c("figs/other_compliance_plot.png", "figs/other_q_assigned.png"))
 ```
 
+## influence of social targeting
+
+Targeting based on social factors such as indigenous status or property size may come with costs or benefits in terms of additionality. In order to understand how the social component influences the score's association with our treatment effect estimates, we recalculate project scores, excluding the influence of $VPS$ and $VI$. Now, each score only consists of elements from $VT$ and $VP$. The left panel of Figure \@ref(fig:small-adj) shows that the association of our adjusted score with compliance is slightly different than that of the true score. The difference in slopes is statistically different at the 10\% level. This indicates that targeting on social characteristics may have come at a small cost in terms of compliance. The right panel shows that the association of our adjusted score with $ATT_{ovr}$ is not clearly different than that of the true score. However, the $ATT_{ovr}$s are monotonically increasing in adjusted score quartile, while they were not in the assigned scores. This may be an indication of a more informative score. Ultimately, it appears that any costs of targeting based on social characteristics were rather small. 
 
 
-## Correlation with program impacts
-
-Figure \@ref(fig:contest-qdid1) plots $ATT_{ovr}$ for each score quartile of the assigned score. Note that we determine score quartiles by cohort, so each quartile contains equal cohort representation. In order for the score to be a good predictor of increased forest cover, a primary goal of the program, we should see that treatment effect estimates increase across each quartile of the score. 
-
-```{r contest-qdid1, fig.show="hold", fig.pos="H", out.width = '49%', fig.cap = "This figure shows event time treatment effects by assigned score quartile for awards granted in Left: the smallholder contest; and Right: the other interested parties contest", echo=FALSE}
-knitr::include_graphics(c("figs/small_qdid1.png", "figs/other_qdid1.png"))
+```{r small-adj, fig.show="hold", fig.pos="H", out.width = '49%', fig.cap = "In the smallholder contest, the adjusted score is Left: a better predictor of compliance than the assigned score; and Right: not clearly a better predictor of impact", echo=FALSE}
+knitr::include_graphics(c("figs/compliance_smallholder2.png", "figs/small_q.png"))
 ```
 
-Targeting based on social factors such as indigenous status or property size may come with costs or benefits in terms of additionality. In order to understand how the social component influences the score's association with our treatment effect estimates, we recalculate project scores, excluding the influence of $VPS$ and $VI$. Now, each score only consists of elements from $VT$ and $VP$. Figure \@ref(fig:contest-qdid2) shows that the association of our adjusted score with $ATT_{ovr}$ is not clearly different than that of the true score. 
+Figure \@ref(fig:other-adj) shows how targeting on social characteristics may have influenced the score's value in the other interested party contest. There is no clear difference in the association of the adjusted score with compliance or impact relative to the assigned score.  
 
-
-```{r contest-qdid2, fig.show="hold", fig.pos="H", out.width = '49%', fig.cap = "This figure shows event time treatment effects by both assigned and adjusted score quartile for awards granted in Left: the smallholder contest; and Right: the other interested parties contest", echo=FALSE}
-knitr::include_graphics(c("figs/small_qdid2.png", "figs/other_qdid2.png"))
+```{r other-adj, fig.show="hold", fig.pos="H", out.width = '49%', fig.cap = "In the other interested party contest, the adjusted score is no better or worse at predicting compliance or impact than the assigned score", echo=FALSE}
+knitr::include_graphics(c("figs/compliance_other2.png", "figs/other_q.png"))
 ```
-
-## Implications for targeting
 
 # Major drivers of heterogeneity 
 
-We saw how the score was correlated with treatment effect heterogeneity in this case study, and this section seeks to understand why. 
+We saw how the score was correlated with compliance and treatment effect heterogeneity in this case study, and this section seeks to understand the factors that influence these relationships. 
 
 On average, the Native Forest Law is effective in increasing vegetation on awarded properties. In the context of avoided deforestation, program additionality is likely to be highest in areas with high levels of deforestation risk. This is not applicable in the reforestation case, however, as additionality is driven by landowners that generate new forest cover at least cost and maintain it through time. Here, we explore the factors that drive program impacts and how targeting for co-benefits might have affected program effectiveness.
 
 ## Compliance 
 
+Table \@ref(tab:compliance-covars) shows that landowners who follow-through differ from those who do not on a number of characteristics. This includes project and property characteristics. Notably, projects that do follow-through are likely to belong to properties with more plantation forest, but there is no detectable difference in native forest. One potential driver of compliance is access to extensionist agents. The probability of having an extensionist is drastically different between the two groups. Access to extensionists may help explain why smallholders have a higher compliance rate than other interested parties. Future iterations of this paper will take a more active approach to predicting compliance and understanding the potential foregone benefits from a lack of compliance. 
 
 
 ```{r compliance-covars, fig.pos="H"}
@@ -368,22 +380,12 @@ kable(compliance_covars, format = "latex", row.names = FALSE, booktabs = T, col.
   row_spec(0,bold=TRUE)
 ```
 
-Table \@ref(tab:compliance-covars) shows that landowners who follow-through differ from those who do not on a number of characteristics. This includes project and property characteristics. Notably, projects that do follow-through are ...
-
-
-## Treatment effect heterogeneity
-
-We slightly adapt @callaway_did_2020 in order to highlight treatment effect heterogeneity that depends on property characteristics. We still estimate each $ATT_{g,t}$ individually before aggregating to our summary measures of the treatment effect, however, we adjust the method by which each $ATT_{g,t}$ is computed. After calculating propensity score weights in the fashion of @santanna_doubly_2020, we run the following difference-in-differences style regression:
-
-$$ EVI_{it} = \alpha_1 + \alpha_2 \mathbb{1}\{ G_i = g \} + \alpha_3 \mathbb{1}\{ T = t \} +\beta_{1g,t} \mathbb{1}\{ G_i = g \} \mathbb{1}\{ T = t \} +\beta_{2g,t} \mathbb{1}\{ G_i = g \} \mathbb{1}\{ T = t \} \times Z_i+ \gamma X_i + e_{it}$$
-, where $\beta{1g,t}$ represents the $ATT_{g,t}$ and $\beta{2g,t}$ represents the impact of $Z_i$ on the $ATT_{g,t}$. We aggregate $\beta{1g,t}$ and $\beta{2g,t}$ in order to retrieve a summary measure of both the overall $ATT$ and the overall effect of $Z_i$ on the Native Forest Law's effectiveness. 
-
 
 ### project objective
 
 A majority of projects funded through the Native Forest Law had a primary objective of timber production. While harvested wood leads to a reduction in the carbon stock in forests themselves, the overall carbon impact of timber harvests is ambiguous and largely depends on the post-harvest use of the timber products. The use of wood for energy and production of wood-based materials provides no carbon storage but may result in emission reductions by substituting in place of greenhouse gas (GHG) intensive fuels and energy-intensive non-wood materials [@kohl2020]. The use of timber for long-lasting wood products such as housing or furniture is likely to generate positive and relatively longer term carbon removals, while short-term uses such as paper products are unlikely to result in much overall carbon reduction at all. 
 
-Table 5 shows that projects for the purpose of timber production drive most of the forest cover gains, while projects for the purposes of non-timber production and ecologically beneficial activities saw no statistically or economically meaningful impact. This implies that landowners may need the incentive of the future benefots of the harvest in order to make the investment reforestation. 
+Table 5 shows that projects for the purpose of timber production drive most of the forest cover gains, while other projects saw no statistically or economically meaningful impact. This implies that landowners may need the incentive of the future benefits of the harvest in order to make the investment in establishing native forest. 
 
 \begin{table}[H]\centering
 \caption{Treatment effect heterogeneity based on project objective}
@@ -402,9 +404,8 @@ $ATT_{ovr}$    &     `r df_timber$ATT[1]`*** & `r df_not_timber$ATT[1]`         
   $ATT_{equal}$   &      `r df_timber$ATT[2]`*** & `r df_not_timber$ATT[2]`         \\
                       &  (`r df_timber$std.error[2]`)  &(`r df_not_timber$std.error[2]`)\\
                        
-
 \midrule
-\# treated properties         &     `r df_timber$treated_props[1]`    &     `r df_not_timber$treated_props[1]`  \\          
+          
  subsample         &     timber production    &     other projects  \\          
  
 \bottomrule
@@ -416,14 +417,18 @@ $ATT_{ovr}$    &     `r df_timber$ATT[1]`*** & `r df_not_timber$ATT[1]`         
 \end{table}
 
 
-### Pre-program land use and characteristics
+### Pre-program land use and property characteristics
+
+We slightly adapt @callaway_did_2020 in order to highlight treatment effect heterogeneity that depends on property characteristics. We still estimate each $ATT_{g,t}$ individually before aggregating to our summary measures of the treatment effect, however, we adjust the method by which each $ATT_{g,t}$ is computed. After calculating propensity score weights in the fashion of @santanna_doubly_2020, we run the following difference-in-differences style regression:
+
+$$ EVI_{it} = \alpha_1 + \alpha_2 \mathbb{1}\{ G_i = g \} + \alpha_3 \mathbb{1}\{ T = t \} +\beta_{1g,t} \mathbb{1}\{ G_i = g \} \mathbb{1}\{ T = t \} +\beta_{2g,t} \mathbb{1}\{ G_i = g \} \mathbb{1}\{ T = t \} \times Z_i+ \gamma X_i + e_{it}$$
+, where $\beta{1g,t}$ represents the $ATT_{g,t}$ and $\beta{2g,t}$ represents the impact of $Z_i$ on the $ATT_{g,t}$. We aggregate $\beta{1g,t}$ and $\beta{2g,t}$ in order to retrieve a summary measure of both the overall $ATT$ and the overall effect of $Z_i$ on the Native Forest Law's effectiveness. 
+
 
 Pre-program land use is likely to be a significant driver of this heterogeneity. Recent studies have found that a major barrier to reforestation success is a lack of technical skills and prior experience [e.g., @powlen_identifying_2019]. Further, landowners with high initial participation costs are less likely to engage in reforestation. These aspects of reforestation mean that pre-program land use characteristics likely play a major role in shaping a landowner's forest management success.  We examine how the make-up of a property's pre-program land uses affects the impact of the Native Forest Law on forest cover. 
 In this section, $Z_i$ represents the proportion of each property under each of the following land uses in 2001: native forest, plantation forest, shrub, and pasture.
 
 Thinking about the pre-program land uses of eventually enrolled properties raises some interesting questions about the additionality of the policy. If properties with high levels of native forest cover are receiving subsidies through the Native Forest Law contest, it is possible that additionality will be low. Landowners who maintain a significant amount of native forest may already undertake these activities in the absence of the payments. These properties may be able to provide native forest cover or forest quality gains at a lower cost, meaning they are inefficiently being paid above their opportunity cost for the projects. Properties with plantation forestry may be using funds from the Native Forest Law to substitute toward native forest. While the carbon additionality may be low in this case, co-benefits such as biodiversity gains and habitat connectivity would likely be had. If these landowners are extending forest cover on the property and doing so using native species, these properties may provide significant gains, because they have the experience and resources to ensure survival of trees and forest. If properties with high amounts of pasture or shrubland move away from livestock grazing or even enrich the existing vegetation on the property, carbon additionality could be high. These could, however, conceivably be properties that face higher costs to initiate forest management activities that the landowner does not have much experience with. 
-
-
 
 \begin{table}[H]\centering
 \caption{Treatment effect heterogeneity based on pre-program land uses}
@@ -452,8 +457,7 @@ enrolled x forest        & & & &  `r forest_boot[1,3]`   & & & &  `r forest_boot
                          & & & &    (`r forest_boot[1,5]`)    & & & &    (`r forest_boot[2,5]`)    \\
                        
 \midrule
- N                     &      `r n`    &      `r n`   &  `r n` &  `r n`  &      `r n`    &      `r n`   &  `r n` &  `r n`\\   
- 
+
  aggregation                     &   $ATT_{ovr}$       &    $ATT_{ovr}$     & $ATT_{ovr}$   & $ATT_{ovr}$   &    $ATT_{equal}$      &   $ATT_{equal}$      & $ATT_{equal}$  & $ATT_{equal}$ \\
  
 \bottomrule
@@ -464,10 +468,9 @@ enrolled x forest        & & & &  `r forest_boot[1,3]`   & & & &  `r forest_boot
 \end{tabular}
 \end{table}
 
-
 Table 2 shows how pre-program land use drives treatment effect heterogeneity. Properties with more proportion of the land dedicated to pasture (columns 2 and 6) and plantation forest (columns 3 and 7) see relatively higher treatment effects. Meanwhile, properties with more land under shrubland (columns 1 and 5) see substantially lower treatment effects. 
 
-Erosion mitigation has been recognized as one of the major co-benefits of reforestation. This has influenced Chile's forest policy and the Native Forest Law. We take the same approach as above to examine how subsidizing reforestation and forest management on properties with more erosion affects project effectiveness. Our covariate of interest is the proportion of the property experiencing moderate to severe erosion. Table 3 shows that when more of a property lies on eroded land, the award is less effective in generating or improving forest cover. This implies that erosion reduction may come at the expense of forest cover and carbon removal in the medium-run. 
+Erosion mitigation has been recognized as one of the major co-benefits of reforestation. This has influenced Chile's forest policy, including the Native Forest Law. We take the same approach as above to examine how subsidizing reforestation and forest management on properties with more erosion affects project effectiveness. Our covariate of interest is the proportion of the property experiencing moderate to severe erosion. Table 3 shows that when more of a property lies on eroded land, the award is less effective in generating or improving forest cover. This implies that erosion reduction may come at the expense of forest cover and carbon removal in the medium-run. 
 
 \begin{table}[H]\centering
 \caption{Treatment effect heterogeneity based on proportion of property experiencing moderate-to-severe erosion}
@@ -488,7 +491,7 @@ enrolled x erosion     &    `r erosion_boot[1,3]`**   &     `r erosion_boot[2,3]
                        
 
 \midrule
-N         &      `r n`    &      `r n`  \\          
+
  aggregation         &     $ATT_{ovr}$    &     $ATT_{equal}$  \\          
  
 \bottomrule
@@ -528,10 +531,9 @@ N         &      `r n`    &      `r n`  \\
 
 <!-- We see that smallholder projects on average experience a higher treatment effect than those awarded through the other interested party contest. We also see that indigenous peoples and communities tend to see higher treatment effects than other properties as well. Lastly, while female headed projects do not experience treatment effects as high as properties with projects without a female head of household reported, both groups see positive impacts from the program on forest cover. We note that smallholders were awarded 15\% more for than properties awarded through the other interested party contest for the same activities. This may affect the relative cost-effectiveness for smallholders vs. other interested parties. Future iterations of this paper will report carbon prices for each group separately to help compare which groups were provided the most cost-effective forest cover gains and carbon removals.  -->
 
-
-## Results and implications for social development goals
-
 # Discussion
+
+\textbf{Note:} Not updated, so feel free to ignore
 
 Prominent initiatives such as the Bonn Challenge, Trillion Trees Initiative, and UN Decade on Ecosystem Restoration hope to address the intertwined challenges of rural poverty, climate change and biodiversity loss through large-scale afforestation and reforestation. Initial national plans indicate that many countries will follow Chile’s model for tree cover expansion, relying heavily upon subsidies and plantation forests to achieve their commitments [@heilmayr_impacts_2020]. In light of the fact that this model may have negative impacts on native forest extent, biodiversity, and other outcomes, payments for native reforestation may provide a more sustainable and socially optimal path forward. This paper shows that payments for native reforestation may be a viable policy to increase carbon removals from the atmosphere for many countries. Further, this may lead to increased additionality if alternative policies simply subsidize plantation forests that would have been planted anyways. While the cost per ton of removed carbon associated with this strategy is unclear, Native Forest Law payments led to increased forest cover amongst smallholders, larger landowners, and several other groups. 
 
@@ -554,32 +556,8 @@ knitr::include_graphics(c("figs/timber_did.png", "figs/ntimber_did.png"))
 knitr::include_graphics(c("figs/smallholder_did.png", "figs/otros_did.png"))
 ```
 
-```{r indig-es, fig.show="hold", fig.pos="H", out.width = '49%', fig.cap = "This figure shows event time treatment effects for awards granted to Left: indigenous landowners and communities; adn Right: non-indigenous landowners or communities.", echo=FALSE}
-knitr::include_graphics(c("figs/indig_did.png", "figs/nonindig_did.png"))
-```
-
-```{r female-es, fig.show="hold", fig.pos="H",  out.width = '49%', fig.cap = "This figure shows event time treatment effects for Left: female landowners; and Right: male landowners.", echo=FALSE}
-knitr::include_graphics(c("figs/female_did.png", "figs/male_did.png"))
-```
-
-
 \clearpage
 
-## Robustness of overall treatment effects
-
-In order to examine the robustness of our main event study estimates, we replicate our event study for each cohort separately. Figure \@ref(fig:cohort-es) shows that the 2009 and 2010 cohorts are largely driving the treatment effect estimates. We also see that the common trends assumption appears to be implausible for a couple of cohorts that experience a null result. Figure \@ref(fig:good-cohort-es) replicates our main event study, excluding groups with a pretreatment estimate statistically different from zero. We see that the results are not visually different from those in Figure \@ref(fig:main-es)
-
-### Cohort level event studies
-```{r cohort-es, fig.show="hold", fig.pos="H",  out.width = '33%', fig.cap = "This figure shows event time treatment effects for Left: female landowners; and Right: male landowners.", echo=FALSE}
-knitr::include_graphics(c("figs/cohort_2009.png", "figs/cohort_2010.png", "figs/cohort_2011.png", "figs/cohort_2012.png", "figs/cohort_2013.png", "figs/cohort_2014.png", "figs/cohort_2015.png", "figs/cohort_2016.png", "figs/cohort_2017.png", "figs/cohort_2018.png"))
-```
-
-```{r good-cohorts-es, fig.pos="H", out.width = '100%', fig.cap = "This figure shows event time treatment effects of the native forest law for awarded properties.", echo=FALSE}
-knitr::include_graphics("figs/good_cohorts_es.png")
-
-n = 8556
-```
-\clearpage
 
 ## Smallholders vs. other interested parties on observables
 
@@ -686,6 +664,9 @@ kable(contest_covars, format = "latex", row.names = FALSE, booktabs = T, col.nam
 ```
 
 \clearpage
+
+
+
 ## Matching diagnostics
 
 ```{r m-dist, fig.pos="H", out.width = '75%', fig.cap = "Covariate distributions prior to and after matching for control and treatment groups", echo=FALSE}
@@ -712,8 +693,28 @@ kable(covar_bal, format = "latex", row.names = FALSE, booktabs = T,
   kable_classic()
 
 ```
-
 \clearpage
+
+Figure \@ref(fig:trends) shows the pre-treatment trends of each cohort relative to both the entire unenrolled set of properties and the matched set of control properties. We see that the matched group seems to outperform the , meaning that our matching process likely improved the plausibility of the conditional common trends assumption we make. Note that these are the raw trends unconditional on covariates, so we prefer the pre-treatment event study estimates for discussing the plausibility of our assumption, however, this figure show the benefits of matching to obtain a more plausible counterfactual. 
+
+```{r trends, fig.pos="H", out.width = '75%', fig.cap = "Raw EVI trends for unmatched control group, matched control group, and treatment group", echo=FALSE}
+knitr::include_graphics("figs/trends.png")
+```
+\clearpage
+
+
+## Robustness of overall treatment effects
+
+In order to examine the robustness of our main event study estimates, we replicate our event study for each cohort separately. Figure \@ref(fig:cohort-es) shows that the 2009 and 2010 cohorts are largely driving the treatment effect estimates. We also see that the common trends assumption appears to be implausible for a couple of cohorts that experience a null result. Figure \@ref(fig:good-cohort-es) replicates our main event study, excluding groups with a pretreatment estimate statistically different from zero. We see that the results are not visually different from those in Figure \@ref(fig:main-es)
+
+```{r cohort-es, fig.show="hold", fig.pos="H",  out.width = '33%', fig.cap = "This figure shows event time treatment effects by cohort.", echo=FALSE}
+knitr::include_graphics(c("figs/cohort2009_Dec2021.png", "figs/cohort2010_Dec2021.png", "figs/cohort2011_Dec2021.png", "figs/cohort2012_Dec2021.png", "figs/cohort2013_Dec2021.png", "figs/cohort2014_Dec2021.png", "figs/cohort2015_Dec2021.png", "figs/cohort2016_Dec2021.png", "figs/cohort2017_Dec2021.png", "figs/cohort2018_Dec2021.png"))
+```
+
+```{r good-cohorts-es, fig.pos="H", out.width = '100%', fig.cap = "This figure shows event time treatment effects for cohorts that did not have a pre-trend violation", echo=FALSE}
+knitr::include_graphics("figs/good_cohorts_es.png")
+
+```
 
 <!-- The left panel of Figure \@ref(fig:bar1) shows that properies awarded in the smallholder contest are more likely to follow-through with the project to the point of receiving payment. On the other hand, the right panel of Figure \@ref(fig:bar1) shows that projects from indigenous landowners and communities are less likely to follow-through with approved projects relative to non-indigenous landowners.  -->
 
@@ -726,17 +727,17 @@ kable(covar_bal, format = "latex", row.names = FALSE, booktabs = T,
 <!-- ``` -->
 
 
+\clearpage
 
+## Rejected applicants
 
-<!-- ## Rejected applicants -->
+During the annual Native Forest Law contest, applicants submit a management plan detailing the specifics of the project to be considered for an award. Judges score each application based on a number of criteria including the size of the property, project extent, specific activities to be performed, and the cost of the project. After scores are tallied, awards are dispersed in order of project score. Awards are given to the smallholder contest first, and subsequently to the other interested party contest. Thus, in years when the contest's funds run out, other interested parties generally go unfunded. In years in which the contest does not exceed the funding theshold for both groups, a second smallholder-only contest is held for any additional project applicants. These contests generate unawarded smallholders. Projects can become rejected either by scoring below the threshold that receives funding or because of unapproved proposed activities in the application itself. Thus there are two ways to get rejected.
 
-<!-- During the annual Native Forest Law contest, applicants submit a management plan detailing the specifics of the project to be considered for an award. Judges score each application based on a number of criteria including the size of the property, project extent, specific activities to be performed, and the cost of the project. After scores are tallied, awards are dispersed in order of project score. Awards are given to the smallholder contest first, and subsequently to the other interested party contest. Thus, in years when the contest's funds run out, other interested parties generally go unfunded. In years in which the contest does not exceed the funding theshold for both groups, a second smallholder-only contest is held for any additional project applicants. These contests generate unawarded smallholders. Projects can become rejected either by scoring below the threshold that receives funding or because of unapproved proposed activities in the application itself. Thus there are two ways to get rejected. -->
+Figure \@ref(fig:allreject-hist) shows the distribution of rejected applicants by contest across different contest years. One thing to note is that many of the rejected applicants are able to adjust their application, reapply, and enroll in subsequent years. We see that the two contests see different trends in the number of rejected applicants through time. 
 
-<!-- Figure \@ref(fig:allreject-hist) shows the distribution of rejected applicants by contest across different contest years. One thing to note is that many of the rejected applicants are able to adjust their application, reapply, and enroll in subsequent years. -->
-
-<!-- ```{r allreject-hist, fig.pos="H", out.width = '75%', fig.cap = "This histogram shows the number of rejected applicants by year across contest types", echo=FALSE} -->
-<!-- knitr::include_graphics("figs/rejected_hist.png") -->
-<!-- ``` -->
+```{r allreject-hist, fig.pos="H", out.width = '75%', fig.cap = "This histogram shows the number of rejected applicants by year across contest types", echo=FALSE}
+knitr::include_graphics("figs/rejected_hist.png")
+```
 
 <!-- In order to understand whether the enrolled set of properties differs from the full set of applicants, We compare the two groups based on a set of covariates below. (still in progress) -->
 

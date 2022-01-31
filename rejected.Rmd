@@ -35,9 +35,15 @@ setwd("C:/Users/garci/Dropbox/chile_reforestation/external_data/concurso_conaf")
 file_list <- list.files("unawarded", pattern = "*xlsx", full.names = TRUE)
 shapefile_list <- lapply(file_list, read_xlsx)
 
-rejected_df <- bind_rows(shapefile_list)%>%
-  rename(rptpre_rol = Rol)%>%
-  distinct(rptpre_rol, Comuna, .keep_all = TRUE)
+rejected_df <- bind_rows(shapefile_list)
+
+ggplot(data = rejected_df, aes(x = `Año Concurso`, fill = `Tipo Concurso`)) + 
+  geom_histogram(binwidth = 1)+
+  theme_minimal()+
+  scale_x_continuous(labels = seq(from = 2010, to = 2020, by =1), breaks = seq(from = 2010, to = 2020, by =1))
+# %>%
+#   rename(rptpre_rol = Rol)%>%
+#   distinct(rptpre_rol, Comuna, .keep_all = TRUE)
 
 unaward_df <- rejected_df %>%
   drop_na(Puntaje)

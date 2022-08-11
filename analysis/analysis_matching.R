@@ -1,5 +1,5 @@
 
-pool_wide <- readRDS("pool_wide_rol.rds")
+pool_wide <- readRDS("analysis/pool_wide_rol.rds")
 
 library(MatchIt)
 pool_wide <- pool_wide %>%
@@ -73,16 +73,16 @@ matched_2019 <- matchit(reformulate(c(vars, "evi_trend1716", "evi_trend1615", "e
 
 
 map_covars <- function(df){
-  # return_df <- within(df, quartile <- as.integer(cut(rptpro_puntaje, quantile(rptpro_puntaje, probs=0:4/4, na.rm = TRUE), include.lowest=TRUE)))
+  
+  subclass_contest <- df %>%
+    select(subclass, rptpro_tipo_concurso, rptpro_ano)%>%
+    drop_na(rptpro_tipo_concurso)%>%
+    dplyr::rename(control_contest = rptpro_tipo_concurso,
+                  control_year = rptpro_ano)%>%
+    select(subclass, control_contest, control_year)
   
   return_df <- df %>%
-    group_by(subclass)%>%
-    arrange(treat)%>%
-    mutate(
-     control_contest = rptpro_tipo_concurso[2],
-     control_year = max(first.treat)
-    )%>%
-    ungroup()
+    left_join(subclass_contest, by = "subclass")
   
   return(return_df)
 }
@@ -101,18 +101,19 @@ matched_wide <- map_covars(match.data(matched_2009, subclass = "subclass"))%>%
   bind_rows(map_covars(match.data(matched_2018, subclass = "subclass")))%>%
   bind_rows(map_covars(match.data(matched_2019, subclass = "subclass")))%>%
   distinct(id, .keep_all = TRUE)
+# distinct(id, control_contest, .keep_all = TRUE)
 
 library(rio)
-export(matched_wide, "my_matched_wide_rollevel.rds")
+export(matched_wide, "matched_wide_2to1mahalanobis.rds")
 
 
 library(tidyverse)
 library(sf)
 
-matched_wide <- readRDS("my_matched_wide_rollevel.rds")%>%
+matched_wide <- readRDS("matched_wide_2to1.rds")%>%
   mutate(group = ifelse(first.treat == 0, "matched control", first.treat))
   
-raw_trend_df <- readRDS("pool_wide_rol.rds") %>%
+raw_trend_df <- readRDS("analysis/pool_wide_rol.rds") %>%
   filter(treat == 0) %>%
   mutate(group = "unenrolled")%>%
   bind_rows(matched_wide) %>%

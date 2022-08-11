@@ -40,6 +40,21 @@ coordinadas_df <- read_xlsx("concurso_conaf/coordinadas_predio.xlsx")
 rodal_df <- read_xlsx("concurso_conaf/rodal.xlsx")
 
 
+#########################################################################################
+###########
+#########################################################################################
+setwd("C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef")
+# create list of all files with .shp extension in PROPIEDADES_RURALES folder
+file_list <- list.files("PROPIEDADES_RURALES", pattern = "*shp", full.names = TRUE)
+# read in all files in the list using read_sf
+shapefile_list <- lapply(file_list, read_sf)
+
+# bind rows into df then to sf object
+propiedadesrurales <- st_make_valid(sf::st_as_sf(bind_rows(shapefile_list))) %>%
+  rename(rptpre_rol = rol)%>%
+  mutate(area_ha = as.numeric(units::set_units(st_area(.), ha)),
+         source = "ciren_simef")%>%
+  select(desccomu, rptpre_rol, area_ha, source)
 
 #########################################################################################
 ###########
@@ -49,7 +64,7 @@ accents <- function(x){
   x <- stri_trans_general(x, id = "Latin-ASCII")
 }
 
-#setwd("C:/Users/garci/Dropbox/chile_reforestation/data")
+setwd("C:/Users/garci/Dropbox/chile_reforestation/data")
 
 prop_rural <- st_make_valid(st_read(
   "prop_rural.shp"
@@ -57,30 +72,16 @@ prop_rural <- st_make_valid(st_read(
   rename(rptpre_rol = ROL, desccomu = DESCCOMU)%>%
   #st_transform(crs = st_crs(propiedadesrurales))%>%
   mutate(area_ha = as.numeric(units::set_units(st_area(.), ha)),
-         desccomu = tolower(accents(desccomu)))
-
-#########################################################################################
-###########
-#########################################################################################
-#setwd("C:/Users/garci/Dropbox/chile_reforestation/external_data/ciren_simef")
-# create list of all files with .shp extension in PROPIEDADES_RURALES folder
-file_list <- list.files("PROPIEDADES_RURALES", pattern = "*shp", full.names = TRUE)
-# read in all files in the list using read_sf
-shapefile_list <- lapply(file_list, read_sf)
-
-# bind rows into df then to sf object
-propiedadesrurales <- st_make_valid(sf::st_as_sf(bind_rows(shapefile_list))) %>%
-  rename(rptpre_rol = rol)%>%
-  mutate(area_ha = as.numeric(units::set_units(st_area(.), ha)))%>%
-  select(desccomu, rptpre_rol, area_ha)%>%
-  st_transform(crs = st_crs(prop_rural))
+         desccomu = tolower(accents(desccomu)),
+         source = "prop_rural")%>%
+  st_transform(crs = st_crs(propiedadesrurales))
 
 #########################################################################################
 ########### combine both sets of property boundaries
 #########################################################################################
 
 all_rural_props <- prop_rural %>%  
-  select(desccomu, rptpre_rol, area_ha, PROPIETARI, NOM_PREDIO) %>%
+  select(desccomu, rptpre_rol, area_ha, PROPIETARI, NOM_PREDIO, source) %>%
   bind_rows(propiedadesrurales)%>%
   mutate(desccomu = tolower(accents(desccomu)))
 
@@ -104,7 +105,7 @@ enrolled_buffer <- st_buffer(enrolled_coordinadas, 250)
 
 # spatial match based on buffer  
 
-spatial_match_buffer <- all_rural_props %>%
+spatial_match_buffer <- st_make_valid(all_rural_props) %>%
   st_join(enrolled_buffer)%>%
   mutate(area_diff = abs(area_ha - rptpre_superficie_predial)
   )%>%
@@ -121,16 +122,18 @@ spatial_match <- all_rural_props %>%
 # get distinct property boundaries for each project
 
 spatial_unique <- spatial_match_buffer %>%
-  select(rptpro_id, rptpre_rol.x, rptpre_rol.y, area_diff, area_ha, rptpre_superficie_predial, PROPIETARI, rptprop_nombre, NOM_PREDIO, rptpre_nombre) %>%
+  select(rptpro_id, rptpre_rol.x, rptpre_rol.y, area_diff, area_ha, rptpre_superficie_predial, PROPIETARI, rptprop_nombre, NOM_PREDIO, rptpre_nombre, source) %>%
   #distinct(rptpro_id, NOM_PREDIO, area_ha, .keep_all=TRUE)
-  unique(by = c("rptpro_id", "NOM_PREDIO", "area_ha"))
+  unique(by = c("rptpro_id", "NOM_PREDIO", "area_ha", "source"))
 
 # sorting by ID & area differences, then taking top 5 closest properties
 spatial_cleaned <- spatial_unique %>% 
   arrange(rptpro_id, area_diff) %>% 
-  group_by(rptpro_id) %>% 
+  group_by(rptpro_id, source) %>% 
   slice(1:5)%>%
-  mutate(rol_verified = ifelse(rptpre_rol.x == rptpre_rol.y, 1, NA),
+  ungroup()%>%
+  group_by(rptpro_id)%>%
+  mutate(rol_verified = ifelse(rptpre_rol.x == rptpre_rol.y, 1, 0),
          min_area_diff = min(area_diff)
          ) %>%
   ungroup() %>%
@@ -147,7 +150,7 @@ spatial_names$geometry <- NULL
 #write.csv(spatial_names, "spatial_names.csv")
 
 ### read in spatial names with verified matches
-
+setwd("C:/Users/garci/Dropbox/chile_collab")
 spatial_names_updated <- read.csv("verification/spatial_names.csv") %>%
   select(match_verified, id)
 
@@ -157,23 +160,49 @@ spatial_df <- spatial_cleaned %>%
   filter(rol_verified == 1 | match_verified == 1 | min_area_diff_verified == 1) %>%
   mutate(rol_points = ifelse(rol_verified == 1, 1, 0),
          match_points = ifelse(match_verified == 1, 1, ifelse(match_verified == "P", 0.1, 0)),
-         area_points = ifelse(min_area_diff_verified == 1, 1, 0))%>%
+         area_points = ifelse(min_area_diff_verified == 1, 1, 0),
+         source_points = ifelse(source == "ciren_simef", 1, 0),
+         match_type = "spatial")%>%
   mutate_at(vars(rol_points, match_points, area_points), ~replace(., is.na(.), 0))%>%
-  mutate(ovr_match_points = 1.5*rol_points + 1*area_points + 1.25*match_points) %>%
+  mutate(ovr_match_points = 1.5*rol_points + 1*area_points + 1.25*match_points + 1*source_points) %>%
   group_by(rptpro_id)%>%
   filter(ovr_match_points == max(ovr_match_points))%>%
-  slice(1:1)
+  slice(1:1)%>%
+  select(PROPIETARI, NOM_PREDIO, rptpre_nombre, rptprop_nombre, rptpro_id, rptpre_rol.x, area_ha, area_diff, match_type)%>%
+  rename(rptpre_rol = rptpre_rol.x)
+
 
 
 rol_match_df <- all_rural_props %>%
   inner_join(NFL_df, by = "rptpre_rol")%>%
   mutate(comuna_stringd = stringdist(tolower(rptpre_comuna), desccomu, method = "dl")) %>%
   filter(comuna_stringd <= 1) %>%
-  mutate(area_diff = abs(area_ha-rptpre_superficie_predial)) %>%
+  mutate(match_type = "rol",
+         source_points = ifelse(source == "ciren_simef", 1, 0),
+         area_diff = abs(area_ha-rptpre_superficie_predial)) %>%
   group_by(rptpro_id)%>%
   filter(area_diff == max(area_diff))%>%
+  filter(source_points == max(source_points))%>%
   slice(1:1)%>%
-  select(PROPIETARI, NOM_PREDIO, rptpre_nombre, rptprop_nombre, rptpro_id, rptpre_rol, area_ha, area_diff)
+  select(PROPIETARI, NOM_PREDIO, rptpre_nombre, rptprop_nombre, rptpro_id, rptpre_rol, area_ha, area_diff, match_type)
+
+proyecto_df <- read_xlsx("C:/Users/garci/Dropbox/chile_reforestation/external_data/concurso_conaf/program/proyecto.xlsx")
+
+flora_df <- rbind(rol_match_df, spatial_df)%>%
+  mutate(preferred_match_type = ifelse(match_type == "rol", 1, 0))%>%
+  group_by(rptpro_id)%>%
+  filter(preferred_match_type == max(preferred_match_type))%>%
+  slice(1:1)%>%
+  select(-c(preferred_match_type))%>%
+  inner_join(proyecto_df, by = "rptpro_id")
+library(rio)
+st_write(flora_df, "flora_df.shp")
+
+median(flora_df$area_diff)
+  
+
+
+
 
 library(rio)
 

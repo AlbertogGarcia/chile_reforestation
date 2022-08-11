@@ -52,6 +52,11 @@ NFL_df <- property_df %>%
 mod <- lm(received_bonus ~  rptpro_tipo_concurso*rptpro_puntaje,
            data = NFL_df)
 summary(mod)
+
+mod <- lm(received_bonus ~  timber
+          ,
+          data = NFL_df)
+summary(mod)
 #### factors that predict compliance
 
 
@@ -99,20 +104,23 @@ other_df <- NFL_df %>%
 
 NFL_df <- rbind(other_df, small_df)
 library(rio)
-export(NFL_df, "compliance_df.rds")
+#export(NFL_df, "compliance_df.rds")
 
 compliance_mod1 <- lm(received_bonus ~ social_puntaje + adjusted_puntaje , data = NFL_df)
 compliance_mod2 <- lm(received_bonus ~ social_puntaje + adjusted_puntaje + extensionista , data = NFL_df)
 compliance_mod3 <- lm(received_bonus ~ social_puntaje + adjusted_puntaje + extensionista + as.factor(rptpro_tipo_concurso), data = NFL_df)
+compliance_mod4 <- lm(received_bonus ~ social_puntaje + adjusted_puntaje + extensionista + as.factor(rptpro_tipo_concurso)*social_puntaje, data = NFL_df)
+
 
 ext_mod1 <- lm(extensionista  ~ social_puntaje + adjusted_puntaje , data = NFL_df)
 ext_mod2 <- lm(extensionista  ~ social_puntaje + adjusted_puntaje + as.factor(rptpro_tipo_concurso) , data = NFL_df)
+
 
 library("stargazer")
 library("sandwich")
 
 
-model.lst = list(compliance_mod1, compliance_mod2, compliance_mod3)
+model.lst = list(compliance_mod1, compliance_mod2, compliance_mod3, compliance_mod4)
 
 stargazer(compliance_mod1, compliance_mod2, compliance_mod3,
           title="Displaying results for multiple response variables",
@@ -236,6 +244,12 @@ my_rol_match <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/d
 my_spatial_match <- data.frame(readRDS("C:/Users/garci/Dropbox/chile_reforestation/data/analysis/my_spatial_match.rds"))%>%
   mutate(match_type = "spatial")
 
+my_rol_match$geometry.x <- NULL
+my_rol_match$geometry.y <- NULL
+my_spatial_match$geometry.x <- NULL
+my_spatial_match$geometry.y <- NULL
+
+
 native_forest_law <- readRDS("C:/Users/garci/Dropbox/chile_collab/input_files/NFL_df.rds") %>%
   select(-c(rptprop_nombre, rptpre_rol, rptpre_nombre))%>%
   inner_join(bind_rows(my_spatial_match, my_rol_match), by = "rptpro_id")%>%
@@ -252,8 +266,7 @@ rol_compliance <- native_forest_law %>%
          max_priority = max(priority))%>%
   filter(priority == max_priority)%>%
   filter(area_diff == min(area_diff))%>%
-  ungroup()%>%
-  distinct(rptpro_id, .keep_all = TRUE)
+  slice_head()
 
 compliance_matches <- rol_compliance %>%
   mutate(forest = c_1,
@@ -277,6 +290,59 @@ compliance_matches <- rol_compliance %>%
          reforest = (regeneracion + `siembra-directa` + `corta-regeneracion` + `plantacion-suplementaria` + plantacion) > 0
          )%>%
   filter(rptpro_ano <= 2018)
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+## random forest 
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# urlPackage <- "https://cran.r-project.org/src/contrib/Archive/randomForest/randomForest_4.6-12.tar.gz"
+# install.packages(urlPackage, repos=NULL, type="source") 
+library(randomForest)
+
+predictors <- c("forest", "plantation", "pasture", "urban", "water", "baresoil", "shrub", "snow", "road_dist", "industry_dist", "native_industry_dist", "indigenous", "timber", "nontimber", "reforest", "extensionista", "elev", "slope", "proportion_erosion",
+             #   "rptprop_sexo", 
+                "lat", "long",
+                "rptpro_superficie", "rptpre_superficie_predial", "rptpro_monto_total")
+rhs <- paste(predictors, collapse = " + ")
+
+rf_data <- compliance_matches %>% 
+  drop_na(predictors) %>% 
+ mutate_at(vars(received_bonus, extensionista), as.factor) %>%
+  as.data.frame()
+
+set.seed(0930)
+rf <-randomForest(as.formula(paste("received_bonus", "~", rhs)), data = rf_data, 
+                  ntree = 500, importance=TRUE)
+print(rf)                  
+plot(rf)
+
+ImpData <- as.data.frame(importance(rf))%>%
+  mutate(Var.Names = row.names(.))%>%
+  arrange(desc(MeanDecreaseAccuracy))#%>%
+ # head(10)
+
+varImpPlot(rf)
+
+ggplot(ImpData, aes(x=Var.Names, y=`MeanDecreaseAccuracy`)) +
+  geom_segment( aes(x=Var.Names, xend=Var.Names, y=0, yend=`MeanDecreaseAccuracy`), color="skyblue") +
+  geom_point(aes(size = MeanDecreaseGini), color="blue", alpha=0.6) +
+  theme_light() +
+  coord_flip() +
+  theme(
+    legend.position="bottom",
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+
+partialPlot(rf, pred.data = rf_data, x.var = extensionista, which.class = 1,
+            ylab = "probability of receiving bonus",
+            xlab = "extensionista support",
+            main = "Partial dependence on extensionista"
+            )
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+## t-tests
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   
 
 evi <- t.test(evi_2007 ~ received_bonus, data = compliance_matches)

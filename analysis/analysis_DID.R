@@ -6,8 +6,6 @@ substrRight <- function(x, n){
   substr(x, nchar(x)-n+1, nchar(x))
 }
 
-matched_wide_main <- readRDS("analysis/matched_wide_2to1.rds")
-
 # unmatched_long <- pivot_longer(as_tibble(readRDS("analysis/pool_wide_rol.rds")), evi_2005:evi_2020, names_to = "Year", values_to =  "EVI2")%>%
 #   mutate(Year = substrRight(Year, 4),
 #          Year= as.numeric(Year))
@@ -25,6 +23,7 @@ matched_long <- gather(readRDS("analysis/matched_wide_1to1.rds"), "Year", "EVI2"
   #separate(Year, into = c(NA, "Year"), sep = "_") %>%
   mutate(Year = substrRight(Year, 4),
          Year= as.numeric(Year))
+
 
 evi_pretreat <- matched_long %>% filter(treat == 1 & Year == first.treat - 1)
 mean_evi <- mean(evi_pretreat$EVI2)
@@ -121,11 +120,21 @@ spec_results <- data.frame("ATT_ovr" = did.ovr$overall.att, "ovr_se" = did.ovr$o
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ###############  main did estimates
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+matched_wide_main <- readRDS("analysis/matched_wide_2to1.rds")#%>%
+#filter(area_diff < 200 | treat == 0)
 
 matched_long <- gather(matched_wide_main, "Year", "EVI2", evi_2005:evi_2020)%>%
   #separate(Year, into = c(NA, "Year"), sep = "_") %>%
   mutate(Year = substrRight(Year, 4),
          Year= as.numeric(Year))
+
+trend_contests <- matched_long %>%
+  group_by(Year, rptpro_tipo_concurso, treat)%>%
+  summarise(EVI2_base = mean(EVI2))
+
+ggplot(data = trend_contests , aes(x = Year, y = EVI2, color = rptpro_tipo_concurso, linetype = as.factor(treat)))+
+  geom_point()+geom_line()+
+  theme_minimal()
 
 data <- matched_long %>%
   mutate(G = first.treat,

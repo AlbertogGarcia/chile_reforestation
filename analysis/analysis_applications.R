@@ -19,7 +19,25 @@ actividades_df <- read_xlsx("C:/Users/garci/Dropbox/chile_reforestation/external
 property_df <- proyecto_df %>%
   full_join(predio_df, by = "rptpro_id") %>%
   full_join(propietario_df, by = "rptpre_id")%>%
-  mutate(`Contest type` = ifelse(rptpro_tipo_concurso == "Otros Interesados", "Other interested", "Smallholder"))
+  mutate(`Contest type` = ifelse(rptpro_tipo_concurso == "Otros Interesados", "Other interested", "Smallholder"),
+         received_bonus = as.numeric(ifelse(rptpro_tiene_bonificacion_saff == "No" | is.na(rptpro_tiene_bonificacion_saff) , 0, 1)),
+         submitted_management_plan = as.numeric(ifelse(rptpro_tiene_plan_saff == "No" | is.na(rptpro_tiene_plan_saff), 0, 1))
+  )
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#### Descriptive
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+past_2_years <- property_df %>% filter(rptpro_ano <= 2019)
+
+# proportion submitting management plan
+mean(past_2_years$submitted_management_plan)
+
+# proportion receiving bonus
+mean(past_2_years$received_bonus)
+
+# proportion receiving bonus conditional on submitting management plan
+df_with_management_plan <- past_2_years %>% filter(submitted_management_plan == 1)
+mean(df_with_management_plan$received_bonus)
 
 activity_df <- property_df %>%
   left_join(rodal_df, by = "rptpre_id") %>%
@@ -37,8 +55,7 @@ accents <- function(x){
 NFL_df <- property_df %>%
   filter(rptpro_ano <= 2019)%>%
   full_join(activity_df, by = c("rptpro_id", "rptpro_ano")) %>%
-  mutate(received_bonus = as.numeric(ifelse(rptpro_tiene_bonificacion_saff == "No" | is.na(rptpro_tiene_bonificacion_saff), 0, 1)),
-         indig_etnia = ifelse(is.na(rptprop_etnia) , 0, 1),
+  mutate(indig_etnia = ifelse(is.na(rptprop_etnia) , 0, 1),
          rptprop_razon_social = accents(tolower(rptprop_razon_social)), 
          ind_comunidad = grepl(pattern = "indigena", rptprop_razon_social)*1,
          indigenous = ifelse(ind_comunidad == 1 | indig_etnia == 1, 1, 0),
@@ -47,6 +64,9 @@ NFL_df <- property_df %>%
          nontimber = ifelse(rptpro_objetivo_manejo == "PRODUCCION NO MADERERA", 1, 0),
          reforest = (regeneracion + `siembra-directa` + `corta-regeneracion` + `plantacion-suplementaria` + plantacion) > 0)%>%
   distinct(rptpro_id, rptpre_id, received_bonus, .keep_all = TRUE)
+
+pct_compliance <- mean(NFL_df$received_bonus)
+
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### Property size Histogram
@@ -118,31 +138,31 @@ library(rio)
 #export(NFL_df, "compliance_df.rds")
 
 compliance_mod1 <- lm(received_bonus ~ log(social_puntaje + 1) + log(adjusted_puntaje + 1) 
-                      + reforest  + as.factor(rptpre_region)
+                      + reforest  + as.factor(rptpre_region) + as.factor(rptpro_objetivo_manejo)
                       , data = NFL_df)
 compliance_mod2 <- lm(received_bonus ~ log(social_puntaje + 1) + log(adjusted_puntaje + 1) + extensionista 
-                      + reforest + as.factor(rptpre_region)
+                      + reforest + as.factor(rptpre_region)+ as.factor(rptpro_objetivo_manejo)
                       , data = NFL_df)
 compliance_mod3 <- lm(received_bonus ~ log(social_puntaje + 1) + log(adjusted_puntaje + 1) + extensionista + smallholder + smallholder:log(social_puntaje + 1)
-                      + reforest  + as.factor(rptpre_region)
+                      + reforest  + as.factor(rptpre_region)+ as.factor(rptpro_objetivo_manejo)
                       , data = NFL_df)
 compliance_mod4 <- lm(received_bonus ~ log(social_puntaje + 1) + log(adjusted_puntaje + 1) + extensionista + smallholder + smallholder:log(social_puntaje + 1)
-                      + reforest  
+                      + reforest  + as.factor(rptpro_objetivo_manejo)
                       , data = NFL_df)
 save(compliance_mod1, compliance_mod2, compliance_mod3, compliance_mod4, file="paper/results/compliance_models.RData")
 
 
 ext_mod1 <- lm(extensionista  ~ log(social_puntaje + 1) + log(adjusted_puntaje + 1) 
-               + reforest +  as.factor(rptpre_region) 
+               + reforest +  as.factor(rptpre_region) + as.factor(rptpro_objetivo_manejo)
                , data = NFL_df)
 ext_mod2 <- lm(extensionista  ~ log(social_puntaje + 1) + log(adjusted_puntaje + 1) + smallholder*log(social_puntaje + 1) 
-               + reforest +  as.factor(rptpre_region)
+               + reforest +  as.factor(rptpre_region)+ as.factor(rptpro_objetivo_manejo)
                , data = NFL_df)
 ext_mod3 <- lm(extensionista  ~ log(social_puntaje + 1) + log(adjusted_puntaje + 1)
-               + reforest +  as.factor(rptpre_region) 
+               + reforest +  as.factor(rptpre_region) + as.factor(rptpro_objetivo_manejo)
                , data = small_df)
 ext_mod4 <- lm(extensionista  ~ log(social_puntaje + 1) + log(adjusted_puntaje + 1)
-               + reforest 
+               + reforest + as.factor(rptpro_objetivo_manejo)
                , data = small_df)
 
 save(ext_mod1, ext_mod2, ext_mod3, ext_mod4, file="paper/results/extension_models.RData")

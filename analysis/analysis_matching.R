@@ -5,8 +5,6 @@ library(MatchIt)
 pool_wide <- pool_wide %>%
   drop_na(elev, slope, baresoil)
 
-#love.plot(matched_2009, thresholds = c(m = .25))
-
 r=2
 
 my_match_method = "nearest"

@@ -24,7 +24,7 @@ roi <- c("ARAUCANÍA", "MAULE", "LOS_RÍOS", "LOS_LAGOS", "O_HIGGINS", "BIOBÍO"
 file_list_roi <- list.filter(file_list, str_contains(., roi, logic = "OR"))
 
 sf_list <- lapply(file_list_roi, st_read) # read in all files as sf objects
-sf.obj <- sf_list[[1]]
+sf.obj <- sf_list[[2]]
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### lu2001 extraction function
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

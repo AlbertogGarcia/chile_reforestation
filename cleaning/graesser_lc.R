@@ -9,8 +9,6 @@ library(data.table)
 setwd("C:/Users/garci/Dropbox/chile_reforestation/")
 
 graesser_annual <- terra::rast("data/graesser_lc/Chile_MOSAIC_99-19.tif")
-                                  
-lu2001_rast <- terra::rast("data/lu_2001/lu_2001.tif")
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### read in shapefile of property boundaries
@@ -53,8 +51,7 @@ graesser_extract_fcn <- function(sf.obj, id_name){
 
 }
 
-extracted_lc <- purrr::map(sf_list, ~graesser_extract_fcn(., "objectid"))%>%
-  rbindlist(idcol = "list_ID", fill = TRUE)
+extracted_lc <- purrr::map_dfr(sf_list, ~graesser_extract_fcn(., "objectid"), .id = "list_ID")
 
 lc_annual <- extracted_lc %>%
   replace(is.na(.), 0) %>%
@@ -82,10 +79,9 @@ sf_list_match <- lapply(property_match_list, st_read)
 
 id_cols <- c("ROL", "rptpre_id", "rptpre_comuna")
 
-extracted_lc_match <- purrr::map(sf_list, ~graesser_extract_fcn(., id_cols))%>%
-  rbindlist(idcol = "list_ID", fill = TRUE)
+extracted_lc_match <- purrr::map_dfr(sf_list_match, ~graesser_extract_fcn(., id_cols), .id = "list_ID")
 
-lc_annual_match <- extracted_lc %>%
+lc_annual_match <- extracted_lc_match %>%
   replace(is.na(.), 0) %>%
   rename(forest = "144",
          crop = "1",
@@ -95,7 +91,7 @@ lc_annual_match <- extracted_lc %>%
          water = "111",
          bare = "131",
          development = "124") %>%
-  dplyr::select(list_ID, id_cols, name, everything())%>%
-  mutate(polyarea = rowSums(.[, (length(id_cols)+3):ncol(extracted_lc)]))
+  dplyr::select(list_ID, id_cols, ID, name, everything())%>%
+  mutate(polyarea = rowSums(.[, (length(id_cols)+4):ncol(extracted_lc)]))
 
 export(lc_annual_match, "data/analysis_lc/cleaned_properties/lc_annual_enrolled.rds")

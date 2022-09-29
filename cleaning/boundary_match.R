@@ -8,6 +8,7 @@ source(here::here("cleaning", "crs_clean_fcn.R"))
 
 setwd("C:/Users/garci/Dropbox/chile_reforestation")
 
+select <- dplyr::select
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ####
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -91,14 +92,12 @@ all_rural_props <- rbind(propiedadesrurales, prop_rural)%>%
 #### join enrollees with property boundaries
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-max_area_difference = 100
-
 property_match_rol <- all_rural_props %>%
   inner_join(property_rols, by = "ROL")%>%
   mutate(area_diff = abs(polyarea - pre_area),
          match_mthd = "ROL",
          match_prty = 1) %>%
-  filter(stringdist(accents(tolower(comuna)), desccomu, method = "dl") <= 1 & area_diff <= max_area_difference)%>%
+  filter(stringdist(accents(tolower(comuna)), desccomu, method = "dl") <= 1 )%>%
   group_by(rptpre_id, ROL, comuna)%>%
   filter(area_diff == min(area_diff))%>%
   filter(src_prty == max(src_prty))%>%
@@ -132,7 +131,7 @@ property_match_spatial <- st_make_valid(all_rural_props) %>%
          match_prty = 0
   )%>%
   drop_na(rptpro_id)%>%
-  filter(stringdist(accents(tolower(comuna)), desccomu, method = "dl") <= 1 & area_diff <= max_area_difference)%>%
+  filter(stringdist(accents(tolower(comuna)), desccomu, method = "dl") <= 1 )%>%
   group_by(rptpre_id, ROL, comuna)%>%
   filter(area_diff == min(area_diff))%>%
   filter(src_prty == max(src_prty))%>%
@@ -146,9 +145,33 @@ st_write(property_match_spatial, "data/analysis_lc/matched_properties/property_m
 
 boundary_match <- rbind(property_match_spatial , property_match_rol %>% mutate(ROL_poly = NA) ) 
 
-property_map <- boundary_match %>%
+property_match <- boundary_match %>%
   group_by(rptpre_id, ROL, comuna)%>%
   filter(area_diff == min(area_diff) | match_prty == 1)%>%
-  select(rptpro_ano)
+  filter(match_prty == max(match_prty))%>%
+  filter(area_diff == min(area_diff))%>%
+  slice_head()%>%
+  filter(area_diff <= 200)
+
+st_write(property_match, "data/analysis_lc/matched_properties/property_match.shp")
+
+property_match <- st_read("data/analysis_lc/matched_properties/property_match.shp")%>%
+  group_by(rptpre_id, ROL, comuna) %>%
+  mutate(prop_ID = cur_group_id()) %>%
+  ungroup
+
+property_match_geoms <- property_match %>% select(prop_ID)
+st_write(property_match_geoms, "data/analysis_lc/matched_properties/property_match_geoms.shp")
+  
+property_match_ids <-  property_match %>% 
+  st_drop_geometry() %>%
+  select(prop_ID, rptpre_id, ROL, comuna)
+
+library(rio)
+export(property_match_ids, "data/analysis_lc/matched_properties/property_match_ids.rds")
+
+property_map <- property_match %>%
+  select(rptpro_ano, rptpre_id, ROL, comuna)
+
 
 st_write(property_map, "data/analysis_lc/matched_properties/property_map.shp")

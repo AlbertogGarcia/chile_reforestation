@@ -206,8 +206,9 @@ return_covs_neverenrolled <- purrr::map_dfr(sf_list, ~return_covs_fcn(., id_cols
 library(rio)
 export(return_covs_neverenrolled, "data/analysis_lc/cleaned_properties/neverenrolled/return_covs_neverenrolled.rds")
 
-covariates_neverenrolled <- readRDS("data/analysis_lc/cleaned_properties/neverenrolled/return_covs_neverenrolled.rds") %>%
-  left_join(readRDS("data/analysis_lc/cleaned_properties/neverenrolled/extracted_lu2001.rds"), by = c(id_cols_ciren))%>%
+covariates_neverenrolled <- readRDS("data/analysis_lc/cleaned_properties/neverenrolled/extracted_lu2001.rds")%>%
+  replace(is.na(.), 0)%>%
+  right_join(readRDS("data/analysis_lc/cleaned_properties/neverenrolled/return_covs_neverenrolled.rds") , by = c(id_cols_ciren))%>%
   left_join(readRDS("data/analysis_lc/cleaned_properties/neverenrolled/extracted_graesser.rds"), by = c("ID", id_cols_ciren))
 
 

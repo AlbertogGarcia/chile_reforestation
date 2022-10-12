@@ -1,95 +1,94 @@
-
-
+library(tidyverse)
+library(stringi)
+library(readxl)
 setwd("C:/Users/garci/Dropbox/chile_reforestation/")
 
-covariates_neverenrolled <- st_read("")
 
-lc_annual <- readRDS("")
+data_enrolled <- readRDS("data/analysis_lc/cleaned_properties/enrolled/data_enrolled.rds")%>%
+  mutate(treat = 1)
 
-roi <- c("ARAUCANÍA", "MAULE", "LOS_RÍOS", "LOS_LAGOS", "O_HIGGINS", "BIOBÍO")
-list_regions <- data.frame(
-  "Region" = c(roi, "Ñuble"),
-  "list_ID" = c(seq(from = 1, to = 6), 6)
-)
-
-neverenrolled <- left_join(covariates_neverenrolled, lc_annual, by = c("objectid", "ID", "list_ID"))%>%
-  left_join(list_regions, by = "list_ID")
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-######## Load EVI data
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-# load los rios evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/losrios_evi", pattern="*.csv", full.names =  T)
-losrios_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(Region = "LOS_RÍOS")
-
-# load los lagos evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/loslagos_evi", pattern="*.csv", full.names =  T)
-loslagos_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(Region = "LOS_LAGOS")
-
-# load BioBio evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/biobio_evi", pattern="*.csv", full.names =  T)
-biobio_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(Region = "BIOBÍO")
-
-# load O'Higgins evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/ohiggins_evi", pattern="*.csv", full.names =  T)
-ohiggins_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(Region = "O_HIGGINS")
-
-# load los rios evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/maule_evi", pattern="*.csv", full.names =  T)
-maule_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(Region = "MAULE")
-
-# load ARAUCANÍA evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/araucania_evi", pattern="*.csv", full.names =  T)
-araucania_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(Region = "ARAUCANÍA")
-
-# load Ñuble evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/nuble_evi", pattern="*.csv", full.names =  T)
-nuble_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(Region = "Ñuble")
+data_neverenrolled <- readRDS("data/analysis_lc/cleaned_properties/neverenrolled/data_neverenrolled.rds")%>%
+  mutate(treat = 0,
+         first.treat = 0)%>% 
+  mutate_at("polyarea", as.double)
 
 
+accents <- function(x){
+  x <- stri_trans_general(x, id = "Latin-ASCII")
+}
 
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-########
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# xls files downloaded from CONAF
+#projects
+proyecto_df <- read_xlsx("external_data/concurso_conaf/program/proyecto.xlsx")
 
-ciren_evi <- rbind(losrios_evi, loslagos_evi, ohiggins_evi, biobio_evi, araucania_evi, maule_evi, nuble_evi)%>%
-  inner_join(list_regions, by = "Region")
+#properties and coordinates
+predio_df <- read_xlsx("external_data/concurso_conaf/program/predio.xlsx")
+#owners
+propietario_df <- read_xlsx("external_data/concurso_conaf/program/propietario.xlsx")
+#stands
+rodal_df <- read_xlsx("external_data/concurso_conaf/program/rodal.xlsx")
+#activities
+actividades_df <- read_xlsx("external_data/concurso_conaf/program/actividad.xlsx")
 
-neverenrolled_panel <- neverenrolled %>%
-  inner_join(ciren_evi, by = c("list_ID", "objectid"))
+coordinadas_df <- read_xlsx("external_data/concurso_conaf/program/coordinadas_predio.xlsx")
+
+property_df <- proyecto_df %>%
+  full_join(predio_df, by = "rptpro_id") %>%
+  full_join(propietario_df, by = "rptpre_id")%>%
+  mutate(comuna = accents(tolower(rptpre_comuna)),
+         `Contest type` = ifelse(rptpro_tipo_concurso == "Otros Interesados", "Other interested", "Smallholder"),
+         received_bonus = as.numeric(ifelse(rptpro_tiene_bonificacion_saff == "No" | is.na(rptpro_tiene_bonificacion_saff) , 0, 1)),
+         submitted_management_plan = as.numeric(ifelse(rptpro_tiene_plan_saff == "No" | is.na(rptpro_tiene_plan_saff), 0, 1)),
+         timber = as.numeric(ifelse(rptpro_objetivo_manejo == "PRODUCCION MADERERA", 1, 0)),
+         proportion_subsidized = ifelse(rptpre_superficie_predial != 0, rptpro_superficie / rptpre_superficie_predial,NA),
+         extensionista = ifelse(rptpro_tipo_presenta == "Extensionista", 1, 0)
+  )%>%
+  separate(rptpre_rol, into = c("rol1", "rol2", "additional_props")
+  )%>%
+  mutate(ROL = paste0(rol1, "-", rol2),
+         additional_props = ifelse(is.na(additional_props), 0, 1))%>%
+  group_by(comuna, rptpre_id, ROL)%>%
+  slice_head()
+
+activity_df <- predio_df %>%
+  # full_join(predio_df, by = "rptpro_id") %>%
+  full_join(rodal_df, by = "rptpre_id") %>%
+  full_join(actividades_df, by = "rptro_id") %>%
+  separate(rptpre_rol, into = c("rol1", "rol2", "additional_props")
+  )%>%
+  mutate(comuna = accents(tolower(rptpre_comuna)),
+         ROL = paste0(rol1, "-", rol2),
+         additional_props = ifelse(is.na(additional_props), 0, 1),
+         blank = 1)%>%
+  select(rptac_tipo, ROL, rptpre_id, comuna, blank)%>%
+  pivot_wider(names_from = rptac_tipo, values_from = blank, values_fn = length)%>%
+  mutate_at(4:ncol(.), ~ ifelse(is.na(.), 0, 1))
+
+admin_df <- property_df %>%
+  group_by(rptpre_id, comuna, ROL)%>%
+  mutate(first.treat = min(rptpro_ano))%>%
+  filter(rptpro_ano == min(rptpro_ano))%>%
+  slice_head()%>%
+  ungroup %>%
+  left_join(activity_df, by = c("rptpre_id", "comuna", "ROL"))
+
+
+all_property_wide <- data_enrolled %>%
+  mutate(comuna = accents(tolower(comuna)))%>%
+  inner_join(admin_df, by = c("rptpre_id", "comuna", "ROL"))%>%
+  bind_rows(data_neverenrolled)%>%
+  group_by(rptpre_id, comuna, ROL, objectid, treat, ciren_region)%>%
+  mutate(property_ID = cur_group_id())%>%
+  ungroup 
+
+table(all_property_wide$first.treat)
+
+library(rio)
+export(all_property_wide, "data/analysis_lc/analysis_ready/all_property_wide.rds")
+
+
+
+
+
+
+  

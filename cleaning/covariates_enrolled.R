@@ -187,8 +187,9 @@ return_covs_enrolled <- return_covs_fcn(enrolled_properties, id_cols_enrolled, c
 export(return_covs_enrolled, "data/analysis_lc/cleaned_properties/enrolled/return_covs_enrolled.rds")
 
 
-covariates_enrolled <- readRDS("data/analysis_lc/cleaned_properties/enrolled/return_covs_enrolled.rds") %>%
-  left_join(readRDS("data/analysis_lc/cleaned_properties/enrolled/extracted_lu2001_enrolled.rds"), by = c(id_cols_enrolled))%>%
+covariates_enrolled <- readRDS("data/analysis_lc/cleaned_properties/enrolled/extracted_lu2001_enrolled.rds")%>%
+  replace(is.na(.), 0)%>%
+  right_join(readRDS("data/analysis_lc/cleaned_properties/enrolled/return_covs_enrolled.rds"), by = c(id_cols_enrolled))%>%
   left_join(readRDS("data/analysis_lc/cleaned_properties/enrolled/extracted_graesser_enrolled.rds"), by = c("ID", id_cols_enrolled))
 
 export(covariates_enrolled, "data/analysis_lc/cleaned_properties/enrolled/covariates_enrolled.rds")
@@ -196,9 +197,8 @@ export(covariates_enrolled, "data/analysis_lc/cleaned_properties/enrolled/covari
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### Reading in EVI data
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-file.list <- list.files("data/analysis_lc/matched_properties/enrolled_evi", pattern='*.csv', full.names = T)
-property_match_evi <- file.list %>%
-  map_dfr(~read.csv(.x)) %>%
+
+property_match_evi <- read.csv("data/analysis_lc/matched_properties/enrolled_evi/property_match_evi_roi.csv") %>%
   select(2:4)%>%
   mutate(year = paste0("evi_", year))%>%
   pivot_wider(names_from = year, values_from = mean)

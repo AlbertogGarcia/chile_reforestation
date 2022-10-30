@@ -202,6 +202,7 @@ return_covs_fcn <- function(sf.obj, id_cols, cores){
 pb <- progress_estimated(length(sf_list))
 ### getting other covariates
 return_covs_neverenrolled <- purrr::map_dfr(sf_list, ~return_covs_fcn(., id_cols_ciren, cores = 1))
+# 
 "C:\Users\garci\Dropbox\chile_reforestation\data\analysis_lc\cleaned_properties\neverenrolled\extracted_graesser.rds"
 library(rio)
 export(return_covs_neverenrolled, "data/analysis_lc/cleaned_properties/neverenrolled/return_covs_neverenrolled.rds")
@@ -291,5 +292,14 @@ ciren_evi <- rbind(losrios_evi, loslagos_evi, ohiggins_evi, biobio_evi, araucani
 data_neverenrolled <- covariates_neverenrolled %>%
   left_join(ciren_evi, by = c("ciren_region", "objectid"))
 
+comuna_neverenrolled <- bind_rows(sf_list) %>%
+  select(id_cols_ciren, desccomu) %>%
+  st_drop_geometry()
+
+data_neverenrolled1 <- data_neverenrolled %>%
+  left_join(comuna_neverenrolled, by = id_cols_ciren)
+
 library(rio)
-export(data_neverenrolled, "data/analysis_lc/cleaned_properties/neverenrolled/data_neverenrolled.rds")
+export(data_neverenrolled1, "data/analysis_lc/cleaned_properties/neverenrolled/data_neverenrolled.rds")
+
+

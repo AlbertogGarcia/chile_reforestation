@@ -7,15 +7,15 @@ setwd("C:/Users/garci/Dropbox/chile_reforestation/")
 data_enrolled <- readRDS("data/analysis_lc/cleaned_properties/enrolled/data_enrolled.rds")%>%
   mutate(treat = 1)
 
-data_neverenrolled <- readRDS("data/analysis_lc/cleaned_properties/neverenrolled/data_neverenrolled.rds")%>%
-  mutate(treat = 0,
-         first.treat = 0)%>% 
-  mutate_at("polyarea", as.double)
-
-
 accents <- function(x){
   x <- stri_trans_general(x, id = "Latin-ASCII")
 }
+
+data_neverenrolled <- readRDS("data/analysis_lc/cleaned_properties/neverenrolled/data_neverenrolled.rds")%>%
+  mutate(treat = 0,
+         first.treat = 0)%>% 
+  mutate_at("polyarea", as.double)%>%
+  mutate(comuna = tolower(accents(desccomu)))
 
 # xls files downloaded from CONAF
 #projects
@@ -72,16 +72,23 @@ admin_df <- property_df %>%
   ungroup %>%
   left_join(activity_df, by = c("rptpre_id", "comuna", "ROL"))
 
+comunal_pov <- read.csv("data/analysis_lc/comunal_poverty.csv", encoding = "Latin-1")%>%
+  mutate(comuna = tolower(accents(comuna)))
 
 all_property_wide <- data_enrolled %>%
   mutate(comuna = accents(tolower(comuna)))%>%
   inner_join(admin_df, by = c("rptpre_id", "comuna", "ROL"))%>%
   bind_rows(data_neverenrolled)%>%
   group_by(rptpre_id, comuna, ROL, objectid, treat, ciren_region)%>%
-  mutate(property_ID = cur_group_id())%>%
-  ungroup 
+  dplyr::mutate(property_ID = cur_group_id())%>%
+  ungroup %>%
+  left_join(comunal_pov, by = "comuna")%>%
+  mutate_at(vars(cpov_index_2007, cpov_pct_2007), as.numeric)
+  
 
 table(all_property_wide$first.treat)
+summary(all_property_wide$cpov_index_2007)
+
 
 library(rio)
 export(all_property_wide, "data/analysis_lc/analysis_ready/all_property_wide.rds")

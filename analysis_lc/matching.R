@@ -4,21 +4,21 @@ library(MatchIt)
 library(cobalt)
 library(rio)
 
-setwd("C:/Users/garci/Dropbox/chile_reforestation/")
-all_property_wide <- readRDS("data/analysis_lc/analysis_ready/all_property_wide.rds")%>%
+file_dir <- "C:/Users/garci/Dropbox/chile_reforestation/"
+
+all_property_wide <- readRDS(paste0(file_dir, "data/analysis_lc/analysis_ready/all_property_wide.rds"))%>%
   filter(pixels_count != 0
          )%>%
   mutate(ind_dist = unlist(ind_dist),
          natin_dist = unlist(natin_dist),
          treat = as.factor(treat))
 
-
+table(all_property_wide$first.treat)
 
 match_vars <- c("pretrend_Trees", 
                 "pretrend_Grassland", "pretrend_Crop", 
-                "pretrend_evi",
-                "Forest", "Plantation", 
-                "Trees_2005", 
+                "Forest", "Plantation",
+                "Trees_2005","Trees_2008",
                 "Grassland_baseline", "Crop_baseline", "Shrubs_baseline", "Development_baseline", "Water_baseline",
                 "slope", "elev", "lat",
                 "pixels_count",
@@ -40,8 +40,8 @@ pool_wide_pctg <- pool_wide %>%
   mutate_at(vars(Trees_1999:NA_2018), ~ . / pixels_count)%>%
   mutate_at(vars(Forest, Plantation), ~ . / lu_pixels_count)%>%
   mutate(pretrend_Trees = Trees_2008 - Trees_2005,
-         pretrend_Grassland = Trees_2008 - Trees_2005,
-         pretrend_Crop = Trees_2008 - Trees_2005,
+         pretrend_Grassland = Grassland_2008 - Grassland_2005,
+         pretrend_Crop = Crop_2008 - Crop_2005,
          pretrend_evi = evi_2008 - evi_2005
   )
 
@@ -51,8 +51,7 @@ enrolled_wide_pctg <- pool_wide_pctg %>%
   mutate(first.treat = ifelse(submitted_management_plan != 1, 0, first.treat),
          treat = ifelse(first.treat == 0, 0, 1))
 
-export(enrolled_wide_pctg, "data/analysis_lc/main/enrolled_wide_pctg.rds")
-
+export(enrolled_wide_pctg, paste0(file_dir, "data/analysis_lc/main/enrolled_wide_pctg.rds"))
 
 
 complier_wide_pctg <- pool_wide_pctg %>%
@@ -76,10 +75,12 @@ matchit_compliers_pctg <- matchit(reformulate(match_vars, "treat")
                                   method = my_match_method , ratio = r, distance = my_distance)
 
 matched_compliers_pctg <- match.data(matchit_compliers_pctg, subclass = "subclass")%>%
-  select(property_ID, treat)%>%
+  select(property_ID, treat, subclass)%>%
   left_join(complier_wide_pctg, by = c("property_ID", "treat"))
 
-export(matched_compliers_pctg, "data/analysis_lc/main/matched_compliers_pctg.rds")
+table(matched_compliers_pctg$first.treat)
+
+export(matched_compliers_pctg, paste0(file_dir, "data/analysis_lc/main/matched_compliers_pctg.rds"))
 
 matchit_noncompliers_pctg <- matchit(reformulate(match_vars, "treat")
                                      ,
@@ -87,36 +88,99 @@ matchit_noncompliers_pctg <- matchit(reformulate(match_vars, "treat")
                                      method = my_match_method , ratio = r, distance = my_distance)
 
 matched_noncompliers_pctg <- match.data(matchit_noncompliers_pctg, subclass = "subclass")%>%
-  select(property_ID, treat)%>%
+  select(property_ID, treat, subclass)%>%
   left_join(noncomplier_wide_pctg, by = c("property_ID", "treat"))
 
-export(matched_noncompliers_pctg, "data/analysis_lc/main/matched_noncompliers_pctg.rds")
+export(matched_noncompliers_pctg, paste0(file_dir,"data/analysis_lc/main/matched_noncompliers_pctg.rds"))
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ### Matching diagnostics
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-matched_diag_df <- matched_compliers %>% select(match_vars, treat)%>%
+diag_vars <- c("pretrend_Trees", 
+                "pretrend_Grassland", "pretrend_Crop", 
+                "Forest", "Plantation",
+                "Trees_2008",
+                "Grassland_baseline", "Crop_baseline", "Shrubs_baseline", "Development_baseline", "Water_baseline",
+                "slope", "elev", "lat",
+                "pixels_count",
+                "ind_dist", "natin_dist"
+)
+
+matched_diag_df <- matched_compliers_pctg %>% select(diag_vars, treat)%>%
   mutate(treat = ifelse(treat ==1, "Enrollees", "Non-enrollees"))
-unmatched_diag_df <- complier_wide %>% select(match_vars, treat) %>%
+unmatched_diag_df <- complier_wide_pctg %>% select(diag_vars, treat) %>%
   mutate(treat = ifelse(treat ==1, "Enrollees", "Non-enrollees"))
 
-matched_balance <- bal.tab(matched_diag_df, treat = matched_diag_df$treat, thresholds = c(m = .25))$Balance %>% as.data.frame() %>%
-  dplyr::rename(matched = 2,
-                matched_threshold = 3)%>%
+
+matched_balance <- bal.tab(matched_diag_df, stats = c("mean.diffs", "variance.ratios"), treat = matched_diag_df$treat)$Balance %>% as.data.frame() %>%
+  dplyr::rename(matched_mean = 2,
+                matched_variance = 3)%>%
   select(2, 3)%>%
   rownames_to_column("variable")
 
-unmatched_balance <- bal.tab(unmatched_diag_df, treat = unmatched_diag_df$treat, thresholds = c(m = .25))$Balance %>% as.data.frame() %>%
-  dplyr::rename(unmatched = 2,
-                unmatched_threshold = 3)%>%
-  select(2, 3)
+unmatched_balance <- bal.tab(unmatched_diag_df, stats = c("mean.diffs", "variance.ratios"), treat = unmatched_diag_df$treat)$Balance %>% as.data.frame() %>%
+  dplyr::rename(unmatched_mean = 2,
+                unmatched_variance = 3)%>%
+  select(2, 3)%>%
+  rownames_to_column("variable")
 
-varnames <- c("Native forest", "Plantation forest", "Baresoil", "Pasture", "Shrub", "Mod.-to-severe erosion", "Slope", "Elevation", "Lattitude", "Area (ha)", "Dist. to road", "Dist. to industry", "Dist. to native specific industry"
-              ,"Urban" , "Water")
 
-covar_balance <- cbind(#data.frame("covariate" = varnames),
+
+varnames <- c("Tree cover trend (05-08)",
+              "Crop trend (05-08)",
+              "Grassland trend (05-08)",
+              "Native forest (2001)",
+              "Plantation forest (2001)",
+              "Tree cover",
+              "Grassland", "Crop", "Shrubs", "Development", "Water",
+              "Slope", "Elevation", "Lattitude",
+              "Area",
+              "Dist. to industry", "Dist. to native specific industry"
+)
+
+covar_balance <- cbind(data.frame("covariate" = varnames),
                        matched_balance, unmatched_balance)%>%
-  select( - variable)
+  select( - variable)%>%
+  mutate_at(vars(matched_mean:unmatched_variance), ~round(., digits = 5))%>%
+  select(covariate, unmatched_mean, matched_mean, unmatched_variance, matched_variance)
+
+export(covar_balance, "paper/results/covar_balance_table.rds")
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+### Raw pre-trends
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+tree_vars <- paste0("Trees_", seq(2002, 2018, by = 1))
+
+rawtreetrends_cmatches <- matched_compliers_pctg %>%
+  select(property_ID, first.treat, treat, tree_vars) %>%
+  pivot_longer(tree_vars)%>%
+  separate(name, into = c(NA, "Year"))%>%
+  rename(Trees = value)%>%
+ # filter(Year < first.treat | treat == 0)%>%
+  group_by(Year, treat)%>%
+  summarize(Trees = mean(Trees, na.rm = T))%>%
+  mutate(group = ifelse(treat == 0, "Complier matches", "Compliers"))
+
+TreatTrees08 <- (rawtreetrends_cmatches %>% filter(treat ==1 & Year == 2008))$Trees
+MatchTrees08 <- (rawtreetrends_cmatches %>% filter(treat ==0 & Year == 2008))$Trees
+
+rawtreetrends_cmatches_even <- rawtreetrends_cmatches %>%
+  mutate(Trees = ifelse(treat == 1, Trees - TreatTrees08, Trees - MatchTrees08))
+
+rawtreetrends_unenrolled <- pool_wide_pctg %>% filter(treat == 0)%>%
+  select(tree_vars) %>%
+  summarise_at(vars(Trees_2002:Trees_2018), mean, na.rm = T)%>%
+  pivot_longer(tree_vars)%>%
+  separate(name, into = c(NA, "Year"))%>%
+  rename(Trees = value)%>%
+  mutate(group = "Unenrolled")
+
+rawtreetrends <- bind_rows(rawtreetrends_unenrolled, rawtreetrends_cmatches)
+  
+export(rawtreetrends_cmatches, "paper/results/rawtrends_trees_compliermatch.rds")
+
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ### Noncomplier vs. complier diagnostics

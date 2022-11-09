@@ -76,12 +76,10 @@ bonuscut_points <- c(0, 70, 150, 300, 500)
 
 points_regrowth <- regrowth_enrolled %>%
   mutate(cpov_pct_2007 = as.numeric(cpov_pct_2007),
-         middle_pov = ifelse(between(cpov_pct_2007, quantile(cpov_pct_2007, 1/3, na.rm = T), quantile(cpov_pct_2007, 2/3, na.rm = T) ), 1, 0),
-         bottom_pov = ifelse(cpov_pct_2007 < quantile(cpov_pct_2007, 1/3, na.rm = T), 1, 0),
-         upper_pov = ifelse(cpov_pct_2007 >= quantile(cpov_pct_2007, 2/3, na.rm = T), 1, 0),
+         above_medpov = ifelse(cpov_pct_2007 > median(cpov_pct_2007, na.rm = T), 1, 0),
          cpov_categ = ifelse(
-           middle_pov == 1, "Middle third quantile",
-           ifelse(upper_pov == 1, "Upper third quantile", "Bottom third quantile")
+           above_medpov == 1, "Above median",
+           "Below median"
          ),
          indig_etnia = ifelse(is.na(rptprop_etnia) , 0, 1),
          rptprop_razon_social = accents(tolower(rptprop_razon_social)), 
@@ -137,6 +135,33 @@ regrowth_scored <- rbind(other_df, small_df)
 
 year_lead = 10
 
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+##### By contest
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+enrolled_trends_bycontest <- regrowth_scored %>%
+  filter(pixels_count != 0)%>%
+  mutate_at(vars(Trees_1999:NA_2018), ~ . / pixels_count)%>%
+  pivot_longer(Trees_1999:NA_2018)%>%
+  separate(name, into = c("class", "year"))%>%
+  mutate(relative_year = as.numeric(year) - as.numeric(rptpro_ano))%>%
+  filter(class %in% c("Trees", "Crop", "Grassland"))%>%
+  group_by(relative_year, class, `Contest type`)%>%
+  summarise_at(vars(value), funs(mean, se=sd(.)/sqrt(n())))%>%
+  dplyr::rename(value = mean)%>%
+  ungroup %>%
+  dplyr::group_by(class, `Contest type`)%>%
+  dplyr::mutate(laggedval = lag(value, n = 1, default = NA),
+                rate_of_change = (value - laggedval)/laggedval
+  )
+library(rio)
+export(enrolled_trends_bycontest, paste0(results_dir, "enrolled_trends_bycontest.rds"))
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+##### By score
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 enrolled_trends_byscore <- regrowth_scored %>%
   filter(pixels_count != 0)%>%
   mutate_at(vars(Trees_1999:NA_2018), ~ . / pixels_count)%>%
@@ -146,20 +171,18 @@ enrolled_trends_byscore <- regrowth_scored %>%
   filter(class %in% c("Trees", "Crop", "Grassland"))%>%
   group_by(relative_year, class, above_medsocial)%>%
   summarise_at(vars(value), funs(mean, se=sd(.)/sqrt(n())))%>%
-  rename(value = mean)%>%
-  group_by(class, above_medsocial)%>%
-  mutate(baseline_indicator = ifelse(relative_year == -year_lead, 1, 0),
-         baseline = max(value * baseline_indicator),
-         level = value - baseline, 
-         above_medsocial = ifelse(above_medsocial == 1, "High social priority", "Low social priority")
-  )%>%
-  filter(between(relative_year, -year_lead, -1))
-
+  dplyr::rename(value = mean)%>%
+  ungroup %>%
+  dplyr::group_by(class, above_medsocial)%>%
+  dplyr::mutate(laggedval = lag(value, n = 1, default = NA),
+                rate_of_change = (value - laggedval)/laggedval,
+                above_medsocial = ifelse(above_medsocial == 1, "High social priority", "Low social priority")
+  )
 library(rio)
 export(enrolled_trends_byscore, paste0(results_dir, "enrolled_trends_byscore.rds"))
 
 ggplot(data = enrolled_trends_byscore %>% filter(class == "Trees"), 
-       aes(x = as.numeric(relative_year), y = level, color = above_medsocial))+
+       aes(x = as.numeric(relative_year), y = rate_of_change, color = above_medsocial))+
   theme_minimal()+
   geom_line(size = 1.2)+
   scale_y_continuous(labels = scales::percent)+
@@ -170,7 +193,7 @@ ggplot(data = enrolled_trends_byscore %>% filter(class == "Trees"),
                      labels=c("10", "5", "1"))
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-### By contest
+### By contest and score
 
 enrolled_trends_scorebycontest <- regrowth_scored %>%
   filter(pixels_count != 0)%>%
@@ -181,19 +204,17 @@ enrolled_trends_scorebycontest <- regrowth_scored %>%
   filter(class %in% c("Trees", "Crop", "Grassland"))%>%
   group_by(relative_year, class, above_medsocial, `Contest type`)%>%
   summarise_at(vars(value), funs(mean, se=sd(.)/sqrt(n())))%>%
-  rename(value = mean)%>%
+  dplyr::rename(value = mean)%>%
   group_by(class, `Contest type`, above_medsocial)%>%
-  mutate(baseline_indicator = ifelse(relative_year == -year_lead, 1, 0),
-         baseline = max(value * baseline_indicator),
-         level = value - baseline, 
-         above_medsocial = ifelse(above_medsocial == 1, "High social priority", "Low social priority")
-  )%>%
-  filter(between(relative_year, -year_lead, -1))
+  dplyr::mutate(laggedval = lag(value, n = 1, default = NA),
+                rate_of_change = (value - laggedval)/laggedval,
+                above_medsocial = ifelse(above_medsocial == 1, "High social priority", "Low social priority")
+  )
 
 export(enrolled_trends_scorebycontest, paste0(results_dir, "enrolled_trends_scorebycontest.rds"))
 
 ggplot(data = enrolled_trends_scorebycontest %>% filter(class == "Trees"), 
-       aes(x = as.numeric(relative_year), y = level, color = above_medsocial, linetype = `Contest type`))+
+       aes(x = as.numeric(relative_year), y = rate_of_change, color = above_medsocial, linetype = `Contest type`))+
   theme_minimal()+geom_line(size = 1.2)+scale_y_continuous(labels = scales::percent)+
   ggtitle("Enrollees' change in Tree cover") + xlab("Years prior to enrollment") + ylab("Change in share of property with tree cover")+
   labs(color='Application social score')+
@@ -212,20 +233,18 @@ enrolled_trends_cpov <- regrowth_scored %>%
   filter(class %in% c("Trees", "Crop", "Grassland"))%>%
   group_by(relative_year, class, cpov_categ)%>%
   summarise_at(vars(value), funs(mean, se=sd(.)/sqrt(n())))%>%
-  rename(value = mean)%>%
+  dplyr::rename(value = mean)%>%
   group_by(class, cpov_categ)%>%
-  mutate(baseline_indicator = ifelse(relative_year == -year_lead, 1, 0),
-         baseline = max(value * baseline_indicator),
-         level = value - baseline
+  dplyr::mutate(laggedval = lag(value, n = 1, default = NA),
+                rate_of_change = (value - laggedval)/laggedval
   )%>%
-  filter(between(relative_year, -year_lead, -1))%>%
   drop_na(cpov_categ)
 
 export(enrolled_trends_cpov, paste0(results_dir, "enrolled_trends_cpov.rds"))
 
 
 ggplot(data = enrolled_trends_cpov %>% filter(class == "Trees"), 
-       aes(x = as.numeric(relative_year), y = level, color = cpov_categ))+
+       aes(x = as.numeric(relative_year), y = rate_of_change, color = cpov_categ))+
   theme_minimal()+geom_line(size = 1.2)+scale_y_continuous(labels = scales::percent)+
   ggtitle("Enrollees' change in Tree cover") + xlab("Years prior to enrollment") + ylab("Change in share of property with tree cover")+
   labs(color='Comuna-level poverty')+
@@ -244,20 +263,18 @@ enrolled_trends_cpovbycontest <- regrowth_scored %>%
   filter(class %in% c("Trees", "Crop", "Grassland"))%>%
   group_by(relative_year, class, cpov_categ, `Contest type`)%>%
   summarise_at(vars(value), funs(mean, se=sd(.)/sqrt(n())))%>%
-  rename(value = mean)%>%
+  dplyr::rename(value = mean)%>%
   group_by(class, cpov_categ, `Contest type`)%>%
-  mutate(baseline_indicator = ifelse(relative_year == -year_lead, 1, 0),
-         baseline = max(value * baseline_indicator),
-         level = value - baseline
-  )%>%
-  filter(between(relative_year, -year_lead, -1))%>%
+  dplyr::mutate(laggedval = lag(value, n = 1, default = NA),
+                rate_of_change = (value - laggedval)/laggedval
+                )%>%
   drop_na(cpov_categ)
 
 export(enrolled_trends_cpovbycontest, paste0(results_dir, "enrolled_trends_cpovbycontest.rds"))
 
 
 ggplot(data = enrolled_trends_cpovbycontest %>% filter(class == "Trees"), 
-       aes(x = as.numeric(relative_year), y = level, color = cpov_categ, linetype = `Contest type`))+
+       aes(x = as.numeric(relative_year), y = rate_of_change, color = cpov_categ, linetype = `Contest type`))+
   theme_minimal()+geom_line(size = 1.2)+scale_y_continuous(labels = scales::percent)+
   ggtitle("Enrollees' change in Tree cover") + xlab("Years prior to enrollment") + ylab("Change in share of property with tree cover")+
   labs(color='Comuna-level poverty')+

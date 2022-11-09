@@ -1,6 +1,6 @@
 ---
 title: "Targeting in payments for forest restoration: evidence from Chile's Native Forest Law"
-author: Alberto Garcia^[University of California, Santa Barbara, albertogarcia@ucsb.edu. We thank Kelsey Jack, Andrew Plantinga, and many others for useful comments on this paper. We are grateful for feedback received at the FLARE 8th Annual Meeting. We thank the University of California, Santa Barbara's Graduate Division and the Schmidt Family Foundation for grants that supported this work.] 
+author: Alberto Garcia^[University of California, Santa Barbara, albertogarcia@ucsb.edu. We thank Kelsey Jack, Andrew Plantinga, and many others for useful comments on this paper. We are grateful for feedback received at the FLARE 8th Annual Meeting. We thank the University of California, Santa Barbara's Graduate Division, the Arnhold Foundation, and the Schmidt Family Foundation for grants that supported this work.]
 date: "October 25th, 2022"
 output:
   bookdown::pdf_document2:
@@ -81,49 +81,56 @@ usd_saved_millions <- round(usd_saved / 1000000, digits = 2)
 
 
 
+\doublespacing
 # Abstract {-}
 
 Widespread landscape restoration has become an important part of global efforts to address the intertwined challenges posed by climate change, biodiversity loss, and rural poverty. Payments for ecosystem services are popular, and policymakers often target priority groups in an effort to achieve dual objectives of increased forest cover and social development. This approach has proven to create tradeoffs in payments for avoided deforestation, however, limited evidence exists on its viability in the restoration context. We evaluate the land cover impacts and targeting strategy of a Chilean federal program that pays landowners to restore their property with native species and prioritizes engagement of rural smallholders and indigenous communities. While program compliance was only 31.8\%, we find positive tree cover impacts amongst compliant properties. Although prioritized social characteristics were negatively associated with compliance, administrators verified project completion, preventing nearly \$30 million USD in unconditional cash transfers. In contrast to many studies on avoided deforestation, complying smallholders in high poverty comunas generated the greatest tree cover gains per enrolled hectare. These findings illustrate key opportunities and challenges in targeting for social development in payments for restoration versus avoided deforestation. 
 
 
+To Dos:
 
+- Add carbon estimates 
+- add text more broadly
 
 \clearpage
 
-\doublespacing
 # Introduction
 
 In order to achieve the warming targets set by the IPCC, both emissions reductions and removals of carbon from the atmosphere will be necessary [@bastin_global_2019]. Restoration has been lauded as a potentially near term, large scale and low-cost option to achieve these carbon removals [@busch_potential_2019]. Global initiatives such as the Bonn Challenge, Trillion Trees Campaign, and UN Decade on Ecosystem Restoration highlight the enthusiasm for restoration and reforestation as a climate solution, however, there is limited evidence documenting the effectiveness of policies seeking to encourage restoration at large scales. Payments for ecosystem services (PES), which pay private landowners in exchange for providing environmental benefits, have been used extensively in the context of avoided deforestation [@borner_effectiveness_2017], and are likely to play a major role as countries begin to scale up restoration in line with global commitments [@gichuki_reviving_2019]. 
 
-Political processes often lead policymakers to design programs aimed at multiple objectives [@tinbergen]. PES programs are no different and because forest cover and poverty are correlated, they are frequently designed to achieve social development goals in addition to environmental gains [@zilberman2008; @lipper2009; @rios2011]. This is done by targeting payments toward landowners or communities with the greatest need for poverty alleviation [@wunder_payments_2008]. However, subsidies that reflect political processes have the potential to undermine environmental benefits [@jack2008], and this strategy has proven to create tradeoffs in many payments for avoided deforestation programs. 
+Political processes often lead policymakers to design programs aimed at multiple objectives [@tinbergen1952]. PES programs are no different, and because forest cover and poverty are correlated, they are frequently designed to achieve social development goals in addition to environmental gains [@zilberman2008; @lipper2009; @pagiola2008]. This is done by targeting payments toward landowners or communities with the greatest need for poverty alleviation [@wunder_payments_2008]. However, subsidies that reflect political processes have the potential to undermine environmental benefits [@jack2008], and this strategy of targeting for social development has proven to create tradeoffs in many payments for avoided deforestation programs. 
 
-The effectiveness of payments for avoided deforestation is driven by the presence of deforestation risk [@alix-garcia_payment_2014]. Targeting payments toward households that are unlikely to deforest in the absence of payments generates relatively little additional forest cover relative to the no-payment scenario [@pfaff1999]. For example, @cisneros_bolsa_2022 show that Brazil's Bolsa Floresta targeted payments toward areas where deforestation was already low, reducing the avoided deforestation achieved by the program. It is well documented that poverty is associated with lower levels of deforestation [@busch2017]. Because of this broad finding, it has often been shown that enrollment of landowners in high-poverty areas generates relatively fewer environmental benefits [@pfaff2007]. Further, credit constrained and low-income landowners may be prone to leakage, meaning that they deforest unenrolled land upon enrolling part of the property [@jack_leakage_2017; @alix-garcia_leakage_2012].
+The effectiveness of payments for avoided deforestation is driven by the presence of deforestation risk [@alix-garcia_payment_2014]. Targeting payments toward households that are unlikely to deforest in the absence of payments generates relatively little additional forest cover relative to the no-payment scenario [@pfaff1999; @cisneros_bolsa_2022]. It is well documented that poverty is associated with lower levels of deforestation [@busch2017]. Because of this broad finding, it has been shown that enrollment of landowners in high-poverty areas generates relatively fewer environmental benefits [@pfaff2007]. Further, credit constrained and low-income landowners may be prone to leakage, meaning that they deforest unenrolled land upon enrolling part of the property [@jack_leakage_2017; @alix-garcia_leakage_2012].
 
-While evidence detailing the pitfalls of targeting for "win-wins" in payments for avoided deforestation is widespread, there is a need for rigorous evidence in the restoration setting. Private information about the costs to providing forest often make targeting difficult [@jack_private_2013], and the underlying correlation between targeted characteristics and costs of producing forest may be different in the deforestation and restoration cases. For example, relatively poor households may be unlikely to deforest in the absence of payments, but it may also be costly for them to produce new forest without payments. In this scenario, it is relatively more costly for prioritized groups to provide forest in the restoration case, but less costly in the avoided deforestation case. Second, non-compliance often plays a role in the restoration context. Landowners may enroll in a PES program but fail to complete contracted activities if, for example, landowners are uncertain about restoration costs and benefits [@oliva_technology_2020]. If targeted characteristics are positively correlated with non-compliance, tension may arise between participation of priority groups and program effectiveness.
+While evidence detailing the pitfalls of targeting for "win-wins" in payments for avoided deforestation is widespread, there is a need for rigorous evidence in the restoration setting. Further, it is not clear that the same finding applies to payments for restoration. Private information about the costs to providing forest often make targeting difficult [@jack_private_2013], and the underlying correlation between targeted characteristics and costs of producing forest may be different in the deforestation and restoration cases. For example, relatively poor households may be unlikely to deforest in the absence of payments, but it may also be costly for them to produce new forest without payments. In this scenario, it is relatively more costly for prioritized groups to provide forest in the restoration case, but less costly in the avoided deforestation case. Second, non-compliance often plays a role in the restoration context. Landowners may enroll in a PES program but fail to complete contracted activities if, for example, landowners are uncertain about restoration costs and benefits [@oliva_technology_2020]. If targeted characteristics are positively correlated with non-compliance, tension may arise between participation of priority groups and program effectiveness.
 
-In this paper, we use novel data to quantify the land cover impacts of Chile’s Native Forest Law, which provided subsidies for native forest restoration and sought co-benefits such as economic development of smallholder, indigenous, and rural communities. We evaluate land cover impacts for ten cohorts (2009–2018) using annual data from 2000–2018. Temporally consistent annual landcover data detailing tree cover and other land classes such as grasslands and croplands allow us a unique opportunity to evaluate restoration outcomes using difference-in-differences approaches. We then evaluate the Native Forest Law's targeting strategy, which prioritized the participation of marginalized landowners. Applications were split into two separate contests based on property size and landowner assets. They were then explicitly scored to determine priority. This score is based not only project-specific characteristics, but also social characteristics that we show to have a clear positive association with poverty. 
+In this paper, we use novel data to quantify the land cover impacts of Chile’s Native Forest Law, which provided subsidies for native forest restoration and sought co-benefits such as economic development of smallholder, indigenous, and rural communities. We evaluate land cover impacts for ten cohorts (2009–2018) using annual data from 2000–2018. Temporally consistent annual landcover data detailing tree cover and other land classes such as grasslands and croplands provide a unique opportunity to evaluate restoration outcomes using panel difference-in-differences approaches. Even further, we can estimate the carbon impacts of the policy, taking into account tree cover changes and loss of carbon from alternative land-uses. 
+
+We then evaluate the Native Forest Law's targeting strategy, which prioritized the participation of marginalized landowners. Applications were split into two separate contests based on property size and landowner assets. They were then explicitly scored to determine priority. This score is based not only project-specific characteristics, but also social characteristics that we show to have a clear positive association with poverty. Few PES programs explicitly score applications by social characteristics, giving us a unique look at the explicit targeting of certain priority characteristics. 
 
 A key concern with evaluations of programs with voluntary participation is that apparent effectiveness may actually be due to different participation costs [@jack_self_2019]. The typical enrollee to the Native Forest Law competition was already increasing forest cover prior to enrollment in the program. If we were to simply compare enrolled and unenrolled properties after enrollment, we would likely overestimate the effect of the subsidies, since enrollees were producing new forest cover even without payments. In order to alleviate concerns surrounding selection, we use pre-processing techniques to construct a set of control properties from a pool of all rural properties in the major forested regions of Chile. These matched control properties are much more comparable to enrollees than the typical unenrolled property based on a detailed set of land use and property characteristics. These characteristics include pre-program land-uses, which are likely to drive enrollment decisions. Difference-in-differences methods further allow us to control for fixed differences in land cover between enrollees and the control group as well as time trends affecting both groups. Using this strategy to estimate treatment effects for properties that dropped out after the first six months and never received payment yields no statistically or economically meaningful treatment effect, lending creedence to our estimates for program beneficiaries. 
 
-We find that the program led to small increases in tree cover on the properties of landowners who received payment, coming largely from land that was previously cropland or grassland. A landowner having their entire property subsidized through the Native Forest Law contest led to a 0.21 \% increase in tree cover on average. Event study estimates based on weaker identification assumptions also suggest that the program led to a more substantial increase in tree cover on enrolled land 9 years post-enrollment for the typical property. These estimates likely represent lower bounds on the program's overall impact, since many enrollees engaged in a non-zero amount of subsidized restoration in already standing native forest, which is unlikely to be reflected in our satellite-derived measures of land cover extent. Further, environmental benefits may be understated if landowners substitute away from plantation forest into native forest, which is not observable in our study. 
+We find that the program led to small increases in tree cover on the properties of landowners who received payment, coming largely from land that was previously cropland or grassland. A landowner having their entire property subsidized through the Native Forest Law contest led to a 0.21 \% increase in tree cover on average. Event study estimates based on weaker identification assumptions also suggest that the program led to a more substantial increase in tree cover on enrolled land 9 years post-enrollment for the typical property. These estimates likely represent lower bounds on the program's overall impact, since many enrollees engaged in a non-zero amount of subsidized restoration in already standing native forest, which is unlikely to be reflected in our satellite-derived measures of tree cover extent. Further, environmental benefits may be understated if landowners substitute away from plantation forest into native forest, which is not observable in our study. 
 
-Non-compliance in the Native Forest Law was high, as over two-thirds of applicants never received payment. Landowners with higher application social scores did suffer from relatively higher levels of non-compliance, however program administrators avoided unconditional payments by requiring verification of activity completion. While program administrators in the Native Forest Law avoided increased losses, this association may reduce cost-effectiveness in contexts where checking compliance is difficult or costly. We find that smallholders drive the main treatment effect, while larger, wealthier landowners in the other interested party contest provided no positive tree cover benefits at all. Landowners in higher poverty communities were associated with increased tree cover effects, for which the program's scoring rules were a good predictor. 
+Non-compliance in the Native Forest Law was high, as over two-thirds of applicants never received payment. Landowners with higher application social scores did suffer from relatively higher levels of non-compliance, however program administrators avoided unconditional payments by requiring verification of activity completion. While program administrators in the Native Forest Law avoided increased losses, this association may reduce cost-effectiveness in contexts where checking compliance is difficult or costly. We find that smallholders drive the main treatment effect, while larger, wealthier landowners in the other interested party contest provided no positive tree cover benefits at all. Landowners in higher poverty communities were associated with increased tree cover impacts, for which the program's scoring rules were a good predictor. 
 
-\textbf{Contributions. }Our results make several contributions to the literature. First, we add to the limited existing evidence on the environmental effectiveness of large-scale native forest restoration programs. Between 2009 and 2019, the National Forest Corporation (CONAF) allocated approximately US $58 million to enroll more than 235 hectares of land through the Native Forest Law, making it one of the largest native forest restoration programs in the world. There are relatively few studies evaluating payments for forest restoration and even fewer quantifying the impacts of large-scale or national policies. Notable exceptions include @uchida2009, who examine land enrolled in China's Grain for Green program. While unable to examine land cover outcomes explicitly, they find that payments were relatively well targeted toward plots with low costs of conversion and high potential for erosion reduction. @heilmayr_impacts_2020 use econometric simulation to evaluate the land cover impacts of Chile's Decree Law 701, which subsidized monoculture plantations of exotic eucalyptus and pine. They find that additionality was quite low, and further, that native forest extent was reduced as landowners substituted toward plantation forest. @arriagada2021 is one of the few studies of which we are aware that quantifies land cover impacts of a national scale afforestation or reforestation policy using quasiexperimental methods. They quantify the effects of Chile's DL701 using difference-in-difference methods and find that the policy led to a 13\% increase in forest plantations amongst subsidy participants. As other countries begin to contemplate restoration policies, Chile’s experience provides a valuable case study from which to draw.
+\textbf{Contributions. }Our results make several contributions to the literature. First, we add to the limited existing evidence on the environmental effectiveness of large-scale native forest restoration programs. Between 2009 and 2019, the National Forest Corporation (CONAF) allocated approximately US $58 million to enroll more than 235 hectares of land through the Native Forest Law, making it one of the largest native forest restoration programs in the world. There are relatively few studies evaluating payments for forest restoration and even fewer quantifying the impacts of large-scale or national policies. Notable exceptions include @uchida2005, who examine land enrolled in China's Grain for Green program. While unable to examine land cover outcomes explicitly, they find that payments were relatively well targeted toward plots with low costs of conversion and high potential for erosion reduction. @heilmayr_impacts_2020 use econometric simulation to evaluate the land cover impacts of Chile's Decree Law 701, which subsidized monoculture plantations of exotic eucalyptus and pine. They find that additionality was quite low, and further, that native forest extent was reduced as landowners substituted toward plantation forest. @espana2022 is one of the few studies of which we are aware that quantifies land cover impacts of a national scale afforestation or reforestation policy using quasiexperimental methods. They quantify the effects of Chile's DL701 using difference-in-difference methods and find that the policy led to a 13\% increase in forest plantations amongst subsidy participants. 
 
-Our second contribution is to highlight key differences between targeting in payments for reforestation in contrast to avoided deforestation. Several studies find that targeting for social development has typically come at the cost of environmental gains in payments for avoided deforestation. @alix-garcia_only_2015 find that the landowners for which PES most effectively reduced poverty provided the least avoided deforestation. In another study, @alix-garcia_leakage_2012 identify leakage amongst capital-constrained landowners in Mexico's National PES program, reducing program benefits in high-poverty areas. No study to our knowledge has addressed whether targeting for social development is costly in the reforestation or restoration setting.
+<!-- As other countries begin to contemplate restoration policies, Chile’s experience provides a valuable case study from which to draw. -->
 
-In answering this question, we identify compliance as a key factor. Compliance has been explored by previous studies, but no previous study has identified non-compliance as such a major concern. One study by @oliva_technology_2020 show that uncertainty about the relative costs and benefits of reforestation may drive a lack of compliance. Other studies including @jayachandran2013 address low take-up by credit constrained individuals, but many prior studies have found that compliance is relatively high, conditional on take-up. Our study identifies a case where compliance is particularly low, and we further document that targeted characteristics were associated with increased non-compliance. This seems likely to be the case in other settings and could undermine program effectiveness unless payments are made after confirmation of contracted activities. While possible in Chile's Native Forest Law, this is often infeasible in low income countries [@alix-garcia_payment_2014]. 
+Our second contribution is to highlight key differences between targeting in payments for reforestation in contrast to avoided deforestation. Several studies find that targeting for social development has come at the cost of environmental gains in payments for avoided deforestation. @alix-garcia_only_2015 find that the landowners for which PES most effectively reduced poverty provided the least avoided deforestation. In another study, @alix-garcia_leakage_2012 identify leakage amongst capital-constrained landowners in Mexico's National PES program, reducing program benefits in high-poverty areas. No study to our knowledge has addressed whether targeting for social development is costly in the reforestation or restoration setting.
 
-In terms of environmental gains conditional on compliance, we identify a potential opportunity for win-wins in the restoration context, which to our knowledge, has not been documented before. Landowners in high-poverty areas actually yielded greater tree cover gains. Evidence suggests that this may be due to the fact that wealthier landowners were already expanding forest cover at relatively higher rates in the absence of payments. This highlights that poor landowners may experience relatively higher costs to producing new forest in the restoration setting, opposite to the avoided deforestation context. 
+In answering this question, we identify compliance as a key factor. Compliance has been explored by previous studies, but no previous study has identified non-compliance as such a major concern. One study by @oliva_technology_2020 show that uncertainty about the relative costs and benefits of reforestation may drive a lack of compliance. Other studies including @jayachandran_liquidity_2013 address low take-up by credit constrained individuals, but many prior studies have found that compliance is relatively high, conditional on take-up. Our study identifies a case where compliance is particularly low, and we further document that targeted characteristics were associated with increased non-compliance. This seems likely to be the case in other settings and could undermine program effectiveness unless payments are made after confirmation of contracted activities. While possible in Chile's Native Forest Law, this is often infeasible in low income countries [@alix-garcia_payment_2014]. 
 
-The remainder of this paper is structured as follows. Section 2 provides background on Chile's Native Forest law and its associated contest for restoration grants. In section 3, we outline the data and provide descriptive trends and statistics. We quantify the land cover impacts of the Native Forest Law subsidies in section 4. Section 5 explores whether targeting for social development undermined or enhanced environmental benefits, taking into account non-compliance. Section 6 concludes. 
+In terms of environmental gains conditional on compliance, we identify a potential opportunity for win-wins in the restoration context, which to our knowledge, has not been documented before. Landowners in high-poverty areas actually yielded greater tree cover gains. Evidence suggests that this may be due to the fact that wealthier landowners were already expanding tree cover at relatively higher rates in the absence of payments. This highlights that poor landowners may experience relatively higher costs to producing new forest in the restoration setting, opposite from the avoided deforestation context. 
+
+The remainder of this paper is structured as follows. Section 2 provides background on Chile's Native Forest law and its associated contest for restoration grants. In section 3, we outline the data and provide descriptive trends and statistics. We quantify the land cover impacts of the Native Forest Law subsidies in section 4. Section 5 explores whether targeting for social development undermined or enhanced environmental benefits, taking into account non-compliance. We estimate the price paid for carbon removals through the Native Forest Law in Section 6. Section 7 concludes. 
 
 # Background: Chile's Native Forest Law
 
-Chile’s long history of public policies supporting tree cover expansion provides an incredibly useful setting in which to measure the impacts of payments for restoration. Chile's decree law no. 701 (DL 701) is one of the world's longest operating afforestation subsidies, but mainly promoted even-aged mococulture plantations of eucalyptus and pine that had negative effects on biodiversity and native forest cover [@heilmayr_impacts_2020]. Further, only about 3\% of subsidized plantations were additional. 
+Chile’s long history of public policies supporting tree cover expansion provides an incredibly useful setting in which to measure the impacts of payments for restoration. Chile's decree law no. 701 (DL 701) is one of the world's longest operating afforestation subsidies, but mainly promoted even-aged mococulture plantations of eucalyptus and pine that had negative effects on biodiversity and native forest extent [@heilmayr_impacts_2020]. 
 
-In an attempt to encourage the recovery and protection of native forests, Chile sought to pass the Ley de Recuperación del Bosque Nativo y Fomento Forestal (Native Forest Law) as a successor to DL701 [@clapp1998]. Initially expected in 1994, it became frozen in legislature before finally passing in 2008. In addition to protections for native forests, the law established an annual competition for grants to support private landowners in their efforts to manage, restore, or reforest their land using native species. Since 2009, more than \$58 million have been allocated through these competitions for projects covering 235 thousand hectares. Much of this allocated funding has not been paid to landowners, however, as program follow-through is low. 
+In an attempt to encourage the recovery and protection of native forests, Chile sought to pass the Ley de Recuperación del Bosque Nativo y Fomento Forestal (Native Forest Law) as a successor to DL701 [@clapp1998]. Initially expected in 1994, it became frozen in legislature before finally passing in 2008. In addition to protections for native forests, the law established an annual competition for grants to support private landowners in their efforts to manage, restore, or reforest their land using native species. Between 2009 and 2019, more than \$58 million were allocated through these competitions for projects covering 235 thousand hectares. Much of this allocated funding has not been paid to landowners, however, as program follow-through is low. 
 
 The subsidy component of the law encourages three types of activities: 1) the regeneration, restoration or protection of native preservation forests; 2) silvicultural activities aimed at restoring native forests for timber production purposes; and 3) silvicultural activities aimed at restoring native forests for non-timber production purposes. Of the 12,889 projects enrolled between 2009 and 2019, 10,912 (84.66\%) restored native forest for the purposes of timber production. Few estimates on the impacts of the Native Forest Law on land cover currently exist. CONAF estimated the carbon impacts of the Native Forest Law through 2018 as it relates to Chile's Nationally Determined Contribution (NDC) as part of the Paris Argeement. These estimates, however, assume that the carbon stored by every eligible subsidized hectare is the direct result of the law. These types of estimates ignore the concept of additionality, since some of this forest would likely exist even in the absence of the law. 
 
@@ -133,7 +140,7 @@ In order to receive payment, landowners must clear two key administrative hurdle
 
 The timeframe for activities generally lasts multiple years, and landowners are not eligible to receive payment until a minimum of two years after enrollment. Landowners must also have the project's completion verified by a third party. Conditional on submitting the management plan, the rate of payment is relatively high at `r round(pct_compliers_given_plan * 100, digits = 2)`\%. Ultimately though, only `r round(pct_compliers*100, digits = 2)`\% of projects enrolled between 2009 and 2019 have actually been paid out on. Program administrators have cited both capital constraints and a lack of labor supply as potential causes for such high rates of non-compliance. Submission of the management plan requires submission of the property cartography, which may also deter some landowners who struggle with the administrative hurdle itself. 
 
-The Native Forest Law prioritizes not only forest cover in line with Chile's NDC goal of managing 200,000 ha of native forest, but also the participation of underrepresented groups. It is explicitly mentioned in the Native Forest Law seeks to meet the dual objectives of rural economic development in addition to protection of the environment. In the case of the Native Forest Law subsidy competition, this is done by prioritizing applications of landowners deemed to be of higher social priority. This is done in two main ways: 1) holding separate contests for smallholders and wealthier, larger properties; and 2) a scoring mechanism that gives higher scores to indigenous peoples, smaller properties, and those in rural regions. We further explore the ramifications of this targeting strategy in Section \@ref(targeting). 
+The Native Forest Law prioritizes not only forest cover in line with Chile's NDC goal of managing 200,000 hectares of native forest, but also the participation of underrepresented groups. It is explicitly mentioned in the Native Forest Law seeks to meet the dual objectives of rural economic development in addition to protection of the environment. In the case of the Native Forest Law subsidy competition, this is done by prioritizing applications of landowners deemed to be of higher social priority. This is done in two main ways: 1) holding separate contests for smallholders and wealthier, larger properties; and 2) a scoring mechanism that gives higher scores to indigenous peoples, smaller properties, and those in rural regions. We further explore the ramifications of this targeting strategy in Section \@ref(targeting). 
 
 
 # Data and descriptive trends
@@ -149,17 +156,16 @@ knitr::include_graphics( "figs/propertymap_sep2022.jpg")
 
 ## Satellite data
 
-In order to quantify environmental impacts of the Native Forest Law, we use annual measures of land use and land cover. Our primary outcomes of interest come from annual Landsat (30m) resolution maps of landcover developed in @graesser2022. These maps classify pixels into one of the following classes for each year between 1999-2018: forest, crop, grassland, shrub, and bareground. These land cover maps provide a unique opportunity to examine restoration outcomes. While many studies use satellite derived measures of deforestation to generate annual panels of forest loss, very few studies leverage annual variation in specific land cover types outside of those focused on North America and Europe. Further, the @graesser2022 product was developed specifically to produce more consistent land cover estimates over long time periods and gradual change events, such as restoration. 
+In order to quantify environmental impacts of the Native Forest Law, we use annual measures of land cover. Our primary outcomes of interest come from annual Landsat (30m) resolution maps of land cover developed in @graesser2022. These maps classify pixels into one of the following classes for each year between 1999-2018: forest, crop, grassland, shrub, and bareground. These land cover maps provide a unique opportunity to examine restoration outcomes. While many studies use satellite derived measures of deforestation to generate annual panels of forest loss, very few studies leverage annual variation in specific land cover types outside of those focused on North America and Europe. Further, the @graesser2022 product was developed specifically to produce more consistent land cover estimates over long time periods and gradual change events such as restoration, making it the ideal data product for our analyses.
 
 <!-- We use the enhanced vegetation index (EVI 2) as a proxy for each property's annual cumulative level of vegetation cover. To generate the outcome for each property, we compute the average maximum EVI value of each pixel within a property for a given year. One benefit of the use of EVI is the ability to capture both new forest cover and changes in forest quality within a single index measure. We prefer EVI to normalized difference vegetation index (NDVI) because of NDVI's propensity to become saturated in high biomass regions. Given Chile's extensive native and plantation forests and the fact that many enrolled properties already have some degree of existing forest cover, this could limit our ability to detect small changes in the area or density of vegetation through time. In contrast, EVI corrects for canopy background noise and is more sensitive in areas with dense vegetation.  -->
 
-Second, Landsat resolution land-use classification maps of these regions in Chile developed in [@heilmayr_impacts_2020] allow us to distinguish the proportion of each property engaged in specific land uses prior to the existence of the Native Forest Law. Of particular interest is the distinction between plantation forest and native forest, which cannot be disentangled in the @graesser2022 product. In contrast to native forest, high levels of plantation forest may indicate greater ability to manage forest and undertake contracted activities. All of our satellite derived measures of land use cover the extent of the major forested areas of Chile, representing the regions that contain the vast majority of Native Forest Law enrollees. 
+Second, Landsat resolution land-use classification maps of these regions in Chile developed in [@heilmayr_impacts_2020] allow us to distinguish the proportion of each property engaged in specific land uses prior to the existence of the Native Forest Law. Of particular interest is the distinction between plantation forest and native forest, which cannot be disentangled in the @graesser2022 product. In contrast to native forest, high levels of plantation forest may indicate greater ability to manage forest and undertake contracted activities. All of our satellite derived measures cover the extent of the major forested areas of Chile, representing the regions that contain the vast majority of Native Forest Law enrollees. 
 
 ## Descriptive statistics and trends
 
-Summary statistics for enrolled properties are shown in Table \@ref(tab:main-summarystats). Most enrollees enroll less than 15\% of their property through the competition, and typical enrollee properties already have quite a significant amount of native forest cover and some plantation forest prior to the existence of the Native Forest Law. Section \@ref(descriptive) in the Appendix shows how descriptive statistics vary across subgroupings of the data.
+Summary statistics for enrolled properties are shown in Table \@ref(tab:main-summarystats). Most enrollees enroll less than 15\% of their property through the competition, and typical enrollee properties already have quite a significant amount of native forest cover and some plantation forest prior to the existence of the Native Forest Law. Section \@ref(descriptive) in the Appendix shows how descriptive statistics vary across subgroupings of the data such as contest type and compliance. 
 
-\clearpage
 
 ```{r main-summarystats, results = 'asis'}
 
@@ -174,20 +180,66 @@ stargazer(main_summarystats, summary = FALSE, rownames = FALSE, header = FALSE,
 
 ```
 
-Figure \@ref(fig:descriptive-trends) shows the average change in tree cover in the 10 years leading up to enrollees' application. We see that the typical enrollee was increasing tree cover on their property prior to their application to the subsidy competition. This broad finding holds across different subsamples of enrollees, however, some groups were increasing tree cover at greater rates prior to enrollment. The top left panel shows that those with above median values of $social_i$, the application's social score, were increasing forest cover at a relatively lower rate than those with low social scores. The bottom panel suggests that properties within high-poverty comunas were also producing new forest cover at relatively lower rates prior to enrollment. This suggests that perhaps the most marginalized landowners were producing the least new forest cover prior to enrollment. This may suggest that low-income or indigenous smallholders had relatively higher costs to producing forest cover. 
+Figure \@ref(fig:descriptive-trends) shows the average change in tree cover in the 5 years leading up to enrollees' application to the subsidy competition. The left panel shows the raw trends in tree cover for the typical property across both the smallholder and other interested party contests. The right panel shows the rate of tree cover change (calculation in Appendix XX) in the years leading up to enrollment across the two contests. In both contests, we see that tree cover was already increasing on the typical enrollee's property prior to enrollment. This is evident by the raw trends (left panel) and the positive rate of tree cover change (right panel) for all years immediately leading up to enrollment. The right panel of Figure \@ref(fig:descriptive-trends) shows that the rates of tree cover gain across both contests was similar until the three years leading up to enrollment. At this point, the typical property in the other interested party contest increases the rate of tree cover gain. This means that by the time of application, landowners in the other interested party contest are already increasing forest cover at a rate nearly four times higher than enrollees in the smallholder contest. Smallholders on the other hand do not change their rate of tree cover gain at any point leading up to the enrollment year. This observation raises the question of whether landowners in the other interested party applied to the contest to subsidize tree cover expansion that they were already undertaking without any subsidization. 
 
 ```{r include = FALSE}
-enrolled_trends_byscore <- readRDS("results/enrolled_trends_byscore.rds")
-enrolled_trends_scorebycontest <- readRDS("results/enrolled_trends_scorebycontest.rds")
+enrolled_trends_bycontest <- readRDS("results/enrolled_trends_bycontest.rds")%>%
+  filter(between(relative_year, -6, -1))
 
-ymin = 0
-ymax = 0.03
+
+ymin = -0.05
+ymax = 0.028
+
+
+contest_trees <- ggplot(data = enrolled_trends_bycontest %>% filter(class == "Trees"), 
+       aes(x = as.numeric(relative_year), y = value, color = `Contest type`))+
+  theme_minimal()+
+  geom_line(size = 1.2)+
+  xlab("Years prior to enrollment") + ylab("Change in share of property with tree cover")+
+  scale_x_continuous(breaks = c(-7, -5, -3, -1),
+                     labels=c("7", "5", "3", "1"))+
+  scale_y_continuous(labels = scales::percent)+#, limits = c(ymin, ymax))+
+  scale_color_manual(values = c(palette$dark, palette$blue))
+
+contest_trees_rate <- ggplot(data = enrolled_trends_bycontest %>% filter(class == "Trees"), 
+       aes(x = as.numeric(relative_year), y = rate_of_change, color = `Contest type`))+
+  theme_minimal()+
+  geom_line(size = 1.2)+
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  xlab("Years prior to enrollment") +  ylab("Rate of tree cover change")+
+  scale_x_continuous(breaks = c(-5, -3, -1),
+                     labels=c("5", "3", "1"))+
+  scale_y_continuous(labels = scales::percent)+#, limits = c(ymin, ymax))+
+  scale_color_manual(values = c(palette$dark, palette$blue))+
+  theme (legend.position="none")
+
+combined <- (contest_trees | contest_trees_rate) & theme(legend.position = "bottom")
+
+```
+
+```{r change-contest,  fig.show="hold", fig.pos="H", out.width = '100%', fig.cap = "This figure shows rates of change by land cover type for enrollees in the years leading up to their application and enrollment in the Native Forest Law subsidy competition.", fig.width = 10, fig.height = 4, echo=FALSE}
+
+combined + plot_layout(
+ widths = c(50, 50), 
+  guides = "collect") 
+
+```
+
+```{r include = FALSE}
+enrolled_trends_byscore <- readRDS("results/enrolled_trends_byscore.rds")%>%
+  filter(between(relative_year, -6, -1))
+enrolled_trends_scorebycontest <- readRDS("results/enrolled_trends_scorebycontest.rds")%>%
+  filter(between(relative_year, -6, -1))
+
+ymin = -0.02
+ymax = 0.0125
 
 
 left <- ggplot(data = enrolled_trends_byscore %>% filter(class == "Trees"), 
-       aes(x = as.numeric(relative_year), y = level, color = above_medsocial))+
+       aes(x = as.numeric(relative_year), y = rate_of_change, color = above_medsocial))+
   theme_minimal()+
   geom_line(size = 1.2)+
+  geom_hline(yintercept = 0, linetype = "dashed")+
   xlab("Years prior to enrollment") + ylab("Net change in share of property with tree cover")+
   scale_x_continuous(breaks = c(-7, -5, -3, -1),
                      labels=c("7", "5", "3", "1"))+
@@ -196,8 +248,10 @@ left <- ggplot(data = enrolled_trends_byscore %>% filter(class == "Trees"),
   theme (legend.position="none")
 
 right <- ggplot(data = enrolled_trends_scorebycontest %>% filter(class == "Trees"), 
-       aes(x = as.numeric(relative_year), y = level, color = above_medsocial, linetype = `Contest type`))+
-  theme_minimal()+geom_line(size = 1.2)+scale_y_continuous(labels = scales::percent)+
+       aes(x = as.numeric(relative_year), y = rate_of_change, color = above_medsocial, linetype = `Contest type`))+
+  theme_minimal()+geom_line(size = 1.2)+
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  scale_y_continuous(labels = scales::percent, limits = c(ymin, ymax))+
   xlab("Years prior to enrollment") +
   labs(color='Social score')+
   scale_x_continuous(breaks = c(-7, -5, -3, -1),
@@ -219,32 +273,37 @@ combined <- p4 + (left | right)
 ```
 
 ```{r include = FALSE}
-enrolled_trends_cpov <- readRDS("results/enrolled_trends_cpov.rds")
-enrolled_trends_cpovbycontest <- readRDS("results/enrolled_trends_cpovbycontest.rds")
+enrolled_trends_cpov <- readRDS("results/enrolled_trends_cpov.rds")%>%
+  filter(between(relative_year, -6, -1))
+enrolled_trends_cpovbycontest <- readRDS("results/enrolled_trends_cpovbycontest.rds")%>%
+  filter(between(relative_year, -6, -1))
 
-ymin = -0.01
-ymax = 0.04
+ymin = -0.001
+ymax = 0.014
 
 
 left_cpov <- ggplot(data = enrolled_trends_cpov %>% filter(class == "Trees"), 
-       aes(x = as.numeric(relative_year), y = level, color = cpov_categ))+
+       aes(x = as.numeric(relative_year), y = rate_of_change, color = cpov_categ))+
   theme_minimal()+
   geom_line(size = 1.2)+
+  geom_hline(yintercept = 0, linetype = "dashed")+
   xlab("Years prior to enrollment") + ylab("Net change in share of property with tree cover")+
-  scale_x_continuous(breaks = c(-7, -5, -3, -1),
-                     labels=c("7", "5", "3", "1"))+
+  scale_x_continuous(breaks = c(-10, -7, -5, -3, -1),
+                     labels=c("10", "7", "5", "3", "1"))+
   scale_y_continuous(labels = scales::percent, limits = c(ymin, ymax))+
-  scale_color_manual(values = c(palette$dark, palette$blue, palette$red))+
+  scale_color_manual(values = c(palette$dark, palette$red))+
   theme (legend.position="none")
 
 right_cpov <- ggplot(data = enrolled_trends_cpovbycontest %>% filter(class == "Trees"), 
-       aes(x = as.numeric(relative_year), y = level, color = cpov_categ, linetype = `Contest type`))+
-  theme_minimal()+geom_line(size = 1.2)+scale_y_continuous(labels = scales::percent)+
+       aes(x = as.numeric(relative_year), y = rate_of_change, color = cpov_categ, linetype = `Contest type`))+
+  theme_minimal()+geom_line(size = 1.2)+
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  scale_y_continuous(labels = scales::percent, limits = c(ymin, ymax))+
   xlab("Years prior to enrollment") +
   labs(color='Comuna-level poverty')+
-  scale_x_continuous(breaks = c(-7, -5, -3, -1),
-                     labels=c("7", "5", "3", "1"))+
-  scale_color_manual(values = c(palette$dark, palette$blue, palette$red))+
+  scale_x_continuous(breaks = c(-10, -7, -5, -3, -1),
+                     labels=c("10", "7", "5", "3", "1"))+
+  scale_color_manual(values = c(palette$dark, palette$red))+
   theme(axis.text.y=element_blank(),
         axis.title.y = element_blank())
 
@@ -258,10 +317,10 @@ left_cpov$labels$y <- right_cpov$labels$y <- " "
 combined_cpov <- cpov + (left_cpov | right_cpov) 
 ```
 
-```{r descriptive-trends,  fig.show="hold", fig.pos="H", out.width = '100%', fig.cap = "This figure shows tree cover trends of enrollees in the years leading up to their application and enrollment in the Native Forest Law subsidy competition.", fig.width = 10, fig.height = 4, echo=FALSE}
+```{r descriptive-trends, include = FALSE, fig.show="hold", fig.pos="H", out.width = '100%', fig.cap = "This figure shows tree cover trends of enrollees in the years leading up to their application and enrollment in the Native Forest Law subsidy competition.", fig.width = 10, fig.height = 4, echo=FALSE}
 
 combined + plot_layout(
- widths = c(1, 60), 
+ widths = c(1, 60),
   guides = "collect") +
   plot_annotation(title = 'Enrollee pre-enrollment tree cover trends',
                   theme = theme(plot.title = element_text(hjust = 0.5)))
@@ -281,7 +340,7 @@ To quantify the environmental impacts of the Native Forest Law subsidy contest, 
 
 In order to move toward a more convincing counterfactual, we first use matching as a pre-processing technique to generate a control group from amongst all unenrolled rural properties in the major forested regions of Chile. This should yield control properties with more similar opportunity costs to enrollees than amongst the general population. This approach is similar to many recent studies in the literature [e.g., @cisneros_bolsa_2022]. 
 
-The covariates used for matching include environmental and economic characteristics likely to determine enrollment decisions and project performance. We include pre-enrollment property land-use including levels of native forest, plantation forest, and pasture. Landowners with similar levels of plantation forest, native forest, and other land uses on the property should face a similar decision about whether to enroll in a program involving native forest management. Other included covariates give a sense of a property's productive potential, remoteness, and timber market access. We also match on land cover pre-trends to help us to build confidence in the common trends identification assumptions we make in the next section. We exclude the two year trends leading up to the enrollment year in order to avoid concerns of overfitting. Thus, seeing that pre-trends in the pre-trend period prior to enrollment hold should lend further creedence to the matching process. Matches are made with replacement based on nearest neighbor propensity scores from a logit model. Our main strategy matches each program enrollee with two control properties, however, we also include estimates based on mahalanobis distance metrics (Appendix \@ref(pre-process)).
+The covariates used for matching include environmental and economic characteristics likely to determine enrollment decisions and project performance. We include pre-enrollment property land-use including levels of native forest, plantation forest, and pasture. Landowners with similar levels of plantation forest, native forest, and other land uses on the property should face a similar decision about whether to enroll in a program involving native forest management. Other included covariates give a sense of a property's productive potential, remoteness, and timber market access. We also match on land cover pre-trends to help us to build confidence in the common trends identification assumptions we make in the next section. We exclude the two year trends leading up to the enrollment year in order to avoid concerns of overfitting. Thus, seeing that pre-trends in the pre-trend period prior to enrollment hold should lend further creedence to the matching process. Matches are made with replacement based on nearest neighbor propensity scores from a logit model. Our main strategy matches each program enrollee with two nearest-neighbor control properties.
 
 Prior to pre-processing, enrolled and unenrolled properties differ significantly. The typical enrollee had significantly less land engaged in pasture or agriculture and significantly more native forest already relative to the typical unenrolled property. Table \@ref(tab:covar-balance) displays balance checks for all covariates used. The normalized mean difference and variance were reduced for nearly every covariate after the matching process. Figure \@ref(fig:m-dist) in the Appendix shows how comparability between selected covariate distributions drastically improved between treatment and control properties after matching. After processing, balance improved on every included covariate, and imbalance was reduced to below the often-used normalized mean difference threshold of 0.25 for every covariate. 
 
@@ -297,7 +356,6 @@ kable(covar_balance_table, format = "latex", row.names = FALSE, booktabs = T, es
   add_header_above(c(" " = 1, "Norm. mean diff." = 2, "Variance diff." = 2))
 
 ```
-
 
 One concern may be our decision to exclude rejected applicants from the control group. Given that these properties have revealed their intention to enroll in the program, it seems that they may have opportunity costs similar to program enrollees. However, the composition of the rejected applicants differs between smallholders and other interested parties depending on year, and the composition of the rejected applicant group is relatively unstable through time. Further, it would be difficult to make claims about the differences between the smallholders and other interested parties, because the rejected group differs through time and is not comparably balanced for each. We discuss the rejected applicants in more detail in Appendix \@ref(rejected). 
 
@@ -320,7 +378,7 @@ Importantly, $intensity_{it}$ represents a continuous treatment in the context o
 
 The dynamics of payments for ecosystem services are important, and perhaps moreso in the restoration context. Tree cover is not established instantaneously, including in satellite-derived measures of tree cover, where a pixel is only classified as tree cover if it is greater than 30\% canopy cover. Survivorship of trees is also key, as many planting initiatives have led to minimal long-term success [@coleman2021]. These factors are echoed in the Native Forest Law payment scheme, where landowners are not even eligible to receive their payment in the first year of enrollment.  
 
-We use the estimator developed in @callaway_did_2021 to generate event study treatment effects. It is important to note that this estimator relies on binary treatment. While this cannot account for the fact that properties enroll only a selected proportion of a property, it provides robustness properties not true of equation (1). First, our event study estimates rely on a relatively weaker conditional common trends assumption, meaning that common trends need only hold after conditioning on our detailed set of time-invariant pre-treatment characteristics. The @callaway_did_2021 estimator is also robust to general treatment effect heterogeneity, which, in severe cases, could flip the sign of our main specification's treatment effect estimates [@de_chaisemartin_2020].  
+We use the estimator developed in @callaway_did_2021 to generate event study treatment effects. It is important to note that this estimator relies on binary treatment. While this cannot account for the fact that properties enroll only a selected proportion of a property, it provides robustness properties not true of equation (1). First, our event study estimates rely on a relatively weaker conditional common trends assumption, meaning that common trends need only hold after conditioning on our detailed set of time-invariant pre-treatment characteristics. The @callaway_did_2021 estimator is also robust to general treatment effect heterogeneity, which, in severe cases, could flip the sign of our main specification's treatment effect estimates [@de_chaisemartin_2020].
 
 ## Program evaluation results
 
@@ -330,14 +388,11 @@ Table 3 shows that using the matched control group, the characteristic enrolled 
 
 In order to gauge the plausibility of the matched control group as a counterfactual, we consider a similar estimation strategy using program enrollees who never submitted a management plan. These non-compliant properties, although selected to participate, never again engaged administratively with the program after initial selection. They failed to provide a management plan within 6 months of enrollment, and therefore, were dropped from the program. Having dropped within such a short time-frame and never submitted a management plan indicates that few of these landowners likely ever engaged in what would have been subsidized restoration activities. We use the same pre-processing techniques to generate a matched control group for these non-compliers and again estimate Equation \ref{eqn:main-spec}. Table 4 shows that the estimated tree cover treatment effect is not only statistically insignificant, but also of no meaningful magnitude. Although there is a statistically significant effect for crop, the magnitude is very small. It may be the case that landowners in this group shifted away from crop cover in response to enrollment, but never could commit to establishing tree cover in its place. Finding no meaningful effect amongst properties that engaged with the program but dropped out soon after enrollment lends credence to our main estimation strategy. 
 
-\clearpage
 
 \input{results/twfe_nc_main_table.tex}
 
 
-Figure \@ref(fig:main-eventstudy) shows event study treatment effects based on the estimator developed in @callaway_did_2021. Similar to results based on equation \ref{eqn:main-spec}, these estimates indicate that the Native Forest Law subsidies increased tree cover, while reducing crop and grassland. These graphs indicate that most of the increased tree cover seems to have come from grassland conversion. Pre-treatment estimates in Figure \@ref(fig:main-eventstudy) represent pseudo-$ATT$s, which are all indistinguishable from zero across the three land cover types. The conditional common trends assumption on which these estimates rely, therefore, seems plausible.These event study estimates are robust against concerns surrounding general treatment heterogeneity and do not rely on assumptions as stringent as those from our main specification. Seeing that these results are similar to those from equation \ref{eqn:main-spec} lends confidence to our main results. In the Appendix (Figure XX), we include similar results based on inclusion of not yet treated properties in the control group. 
-
-The event study results do imply that the treatment effect is increasing over time, which is to be expected in the restoration setting where tree cover is not established instantaneously. This finding suggests that the estimates based on equation \ref{eqn:main-spec} may underestimate the ultimate impact of the program. The program led to a 1.45\% increase in tree cover nine years post-enrollment based on binary treatment. Assuming that tree cover gains were limited only to subsidized areas of the property, the effect is closer to 6\%.  
+Figure \@ref(fig:main-eventstudy) shows event study treatment effects based on the estimator developed in @callaway_did_2021. Similar to results based on equation \ref{eqn:main-spec}, these estimates indicate that the Native Forest Law subsidies increased tree cover, while reducing crop and grassland. These graphs indicate that most of the increased tree cover seems to have come from grassland conversion. Pre-treatment estimates in Figure \@ref(fig:main-eventstudy) represent pseudo-$ATT$s, which are all indistinguishable from zero across the three land cover types. The conditional common trends assumption on which these estimates rely, therefore, seems plausible. These event study estimates are robust against concerns surrounding general treatment heterogeneity and do not rely on assumptions as stringent as those from our main specification. Seeing that these results are similar to those from equation \ref{eqn:main-spec} lends confidence to our main results. Similar to the main TWFE specification, estimates are based relative to both the control group and not-yet-treated properties. In the Appendix (Figure XX), we include similar results based on inclusion of only the never-treated control properties in the control group. 
 
 ```{r include = FALSE}
 dyn.es_trees <- readRDS("results/dyn.es_trees.rds")%>%
@@ -424,6 +479,10 @@ combined + plot_layout(
 
 ```
 
+As expected, the event study results do imply that the treatment effect is increasing over time. Tree cover is not established instantaneously in the restoration or reforestation setting. This finding suggests that the estimates based on equation \ref{eqn:main-spec} may underestimate the ultimate impact of the program. The program led to a 1.45\% increase in tree cover nine years post-enrollment based on binary treatment. Assuming that tree cover gains were limited only to subsidized areas of the property, the effect is closer to 6\%, quite different from estimates based on equation \ref{eqn:main-spec}. 
+
+Looking at Figure \@ref(fig:main-eventstudy), the treatment effect has not leveled-off. This could be due to a couple different factors. First, landowners may still be establishing new tree cover 9 years post-treatment. In this case, the estimates from both equation \ref{eqn:main-spec} and the event study will underestimate the carbon and land cover impacts of the subsidies. However, it may also be the case that this sustained effect is due to the changing composition of cohorts in each event-time window. Appendix XX shows that there is no clear systematic relationship  between cohorts and treatment effect. We also present results of a "balanced" event study, proposed in @callaway_did_2020, in Figure \@ref(fig:balanced-eventstudy). This balanced event study estimates event-time treatment effects for cohorts that underwent treatment for at least 8 years. As such, there is no change in treatment unit composition across event-time windows. We see in Figure \@ref(fig:balanced-eventstudy) that balanced treatment effect estimates do see the sustained increase through time but seem to level off 7 years post-enrollment. This seems plausible. We expect biomass accumulation to continue through time, but tree cover extent is unlikely to continue to be established as a direct result of subsidized projects infinitely far in the future. 
+
 # Targeting for social development {#targeting}
 
 ## The Native Forest Law's targeting strategy
@@ -482,6 +541,9 @@ where $ComunaPov_i$ represents the percent of poverty in the Comuna where landow
 
 \input{results/twfe_matched_cpov_table.tex}
 \clearpage
+
+# The price of carbon through Native Forest Law subsidies
+
 # Discussion and conclusion
 
 Prominent initiatives such as the Bonn Challenge, Trillion Trees Initiative, and UN Decade on Ecosystem Restoration hope to address the intertwined challenges of rural poverty, climate change and biodiversity loss through large-scale afforestation and reforestation. Initial national plans indicate that many countries will follow Chile’s earlier model for tree cover expansion, relying heavily upon subsidies and plantation forests to achieve their commitments [@heilmayr_impacts_2020]. In light of the fact that this model may have negative impacts on native forest extent, biodiversity, and other outcomes, payments for native forest restoration may provide a more sustainable and socially beneficial path forward. Further, this may lead to increased additionality if alternative policies simply subsidize plantation forests that would have been planted anyways. Native Forest Law payments led to increased vegetation cover on enrolled properties, indicating that this model may a viable approach to designing payments for reforestation. 
@@ -545,8 +607,9 @@ kable(contest_ttest, format = "latex", row.names = FALSE, booktabs = T, col.name
 ```
 
 \clearpage
-## Matching diagnostics {#match-diagnostics}
+## Pre-processing {#match-diagnostics}
 
+### selected covariate distributions
 ```{r m-dist, fig.show="hold", fig.pos="H",  out.width = '40%', fig.cap = "Covariate distributions prior to and after matching for control and enrolled complier treatment groups.", fig.width = 10, fig.height = 12, echo=FALSE}
 knitr::include_graphics(c("figs/balplot_unmatched_pasture.png", "figs/balplot_matched_pasture.png",
                           "figs/balplot_unmatched_forest.png", "figs/balplot_matched_forest.png",
@@ -555,6 +618,7 @@ knitr::include_graphics(c("figs/balplot_unmatched_pasture.png", "figs/balplot_ma
                           "figs/balplot_unmatched_elev_legend.png", "figs/balplot_matched_elev_legend.png"
                           ))
 ```
+
 
 \clearpage
 ## Common trends assumption {#identification}
@@ -693,16 +757,169 @@ combined + plot_layout(
 # grid.rect(x= unit(0.56, "npc"), y = unit(0.605, "npc"), width = 0, height = .625, gp = gpar(lwd = 2, col = "black", fill = NA))
 
 ```
+
+\clearpage
 ## Event-study estimates
 
 ### Callaway and Sant'anna estimator
 
+Recent papers have shown that the typical two-way fixed effects estimator may generate biased results in the presence of treatment effect heterogeneity [e.g., @goodman-bacon_did_2018; @callaway_did_2021; @de_chaisemartin_2020]. This could be particularly important in our case, given that there are over 150 cohort-time cells. The estimator proposed in @callaway_did_2021 computes each 2x2 cohort-time treatment effect ($ATT_{g,t}$) individually, before aggregating them with intuitive weights. 
+
+The estimand for each of the $ATT_{g,t}$s is as follows:
+
+$$ATT_{g,t} =  E[outcome_{it}(1) - outcome_{it}(0) | G_i = g, t \geq t_o]$$
+
+Each $ATT_{g,t}$ then represents the treatment effect for cohort $g$ in time $t$. To generate the $ATT_{g,t}$s, we first subset the data to only contain observations at time $t$ and $g − 1$, from units with either $G_i = g$ or that are in the control group. For example, for the $ATT_{2015, 2019}$, we subset to only the 2015 cohort and control group for the years 2014 and 2019. Then using only the observations from this subset, we calculate $ATT_{g,t}$ using the doubly robust difference-in-differences estimator developed in @santanna_doubly_2020. This involves first estimating a propensity score using a logit model and allows for common trends to hold only after conditioning on pre-treatment covariates. With this method, we can identify the $ATT_{g,t}$s if either (but not necessarily both) the propensity score or outcome regression is correctly specified [@santanna_doubly_2020].
+
+We focus on event study measures of the $ATT$. Within each event time window, we aggregate the $ATT_{g,t}$s with weights corresponding to group size.
+
+$$ ATT_{es}(e) = \sum_{g\in G} \mathbb{1}\{ g+e \leq \Tau\} P(G_i=g | G_i+e\leq \Tau)ATT_{g,g+e} $$
+
+This is the average effect of participating in the treatment $e$ time periods after a characteristic property is enrolled in the program across all cohorts that are ever observed to have participated in the treatment for exactly $e$ time periods. The year a property enrolls in the program is denoted by $e=0$.
+
 ### Estimates based on not-yet-treated units
 
-## Other robustness
-### Cohort treatment effects
+In addition to estimating the event study treatment effects based on the control group, we also explore whether inclusion of not yet treated cohorts influences our estimates. Figure \@ref(fig:nyt-eventstudy) shows that using not-yet-treated cohorts in addition to the matched group in the control yields comparable event study estimates. This is comforting, given that this is perhaps more comparable to our main TWFE specification. 
 
-### Mahalanobis matching {#mahalanobis}
+```{r include = FALSE}
+dyn.es_trees_nyt <- readRDS("results/dyn.es_trees_nyt.rds")%>%
+  mutate(ci_upper = att+crit.val*se,
+         ci_lower = att-crit.val*se)
+
+dyn.es_crop_nyt <- readRDS("results/dyn.es_crop_nyt.rds")%>%
+  mutate(ci_upper = att+crit.val*se,
+         ci_lower = att-crit.val*se)
+
+dyn.es_grassland_nyt <- readRDS("results/dyn.es_grassland_nyt.rds")%>%
+  mutate(ci_upper = att+crit.val*se,
+         ci_lower = att-crit.val*se)
+
+ymin = min(dyn.es_grassland_nyt$ci_lower)
+ymax = max(dyn.es_trees_nyt$ci_upper)
+
+text_size = 14
+
+plot_trees_nyt <- ggplot(data=dyn.es_trees_nyt , aes(x=e, y=att, color = period)) +
+  geom_hline(yintercept = 0, linetype = "dashed", size = 0.2)+
+  geom_ribbon(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), color =NA ,alpha = 0.25) +
+  geom_point(size = 2) +
+  geom_line(size = 1) +
+  ggtitle("Tree cover event study") +
+  xlab("Years since enrollment") + ylab("Land cover share")+
+  theme_minimal(base_size = text_size) +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5))+
+  scale_color_manual(values = c(palette$blue, palette$dark))+
+  ylim(ymin, ymax)
+
+
+plot_crop_nyt <- ggplot(data=dyn.es_crop_nyt , aes(x=e, y=att, color = period)) +
+  geom_hline(yintercept = 0, linetype = "dashed", size = 0.2)+
+  geom_ribbon(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), color =NA ,alpha = 0.25) +
+  geom_point(size = 2) +
+  geom_line(size = 1) +
+  ggtitle("Crop event study") +
+  xlab("Years since enrollment") +
+  theme_minimal(base_size = text_size) +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5),
+        axis.text.y=element_blank())+
+  scale_color_manual(values = c(palette$blue, palette$dark))+
+  ylim(ymin, ymax)
+
+
+plot_grassland_nyt <- ggplot(data=dyn.es_grassland_nyt , aes(x=e, y=att, color = period)) +
+  geom_hline(yintercept = 0, linetype = "dashed", size = 0.25)+
+  geom_ribbon(aes(ymin=(att-crit.val*se), ymax=(att+crit.val*se)), color =NA ,alpha = 0.25) +
+  geom_point(size = 2) +
+  geom_line(size = 1) +
+  ggtitle("Grassland event study") +
+  xlab("Years since enrollment") +
+  theme_minimal(base_size = text_size) +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5),
+        axis.text.y=element_blank())+
+  scale_color_manual(values = c(palette$blue, palette$dark))+
+  ylim(ymin, ymax)
+
+p4 <- ggplot(data.frame(l = plot_trees_nyt$labels$y, x = 1, y = 1)) +
+      geom_text(aes(x, y, label = l), angle = 90) + 
+      theme_void() +
+      coord_cartesian(clip = "off")
+
+plot_trees_nyt$labels$y <- plot_crop_nyt$labels$y <- plot_grassland_nyt$labels$y <- " "
+
+combined <- p4 + (plot_trees_nyt | plot_crop_nyt | plot_grassland_nyt) & theme(legend.position = "bottom")
+
+
+
+```
+
+```{r nyt-eventstudy,  fig.show="hold", fig.pos="H", out.width = '100%', fig.cap = "This figure shows event time treatment effects of the Native Forest Law subsidy contest for beneficiary properties including both matched control and not-yet-treated cohorts in the control group. The three panels show event time treatment effects based on binary treatment for three land cover types: Tree cover, Crop, and Grassland.", fig.width = 12, fig.height = 7, echo=FALSE}
+
+
+combined + plot_layout(
+ widths = c(1, 60), 
+  guides = "collect") 
+
+```
+
+## Cohort treatment effects
+
+```{r tree-cohorts, fig.show="hold", fig.pos="H", out.width = '100%', fig.cap = "This figure shows tree cover treatment effects of the Native Forest Law subsidy contest for beneficiary properties based on equation 1, separated by cohort.", fig.width = 7, fig.height = 5, echo=FALSE}
+
+
+par(oma=c(1,0,1,1))
+cohort_results <- readRDS("results/cohort_results.rds")
+
+rownames(cohort_results) <- seq(1, nrow(cohort_results))
+
+cohort_chart <- ggplot(data = cohort_results, aes(y = coef, x = cohort))+
+  geom_errorbar(aes(y = coef, x = cohort, ymin=coef - 1.96*se, ymax=coef + 1.96*se), width=0.1, size=.75, color=palette$dark)+
+  geom_point(size = 4, shape = 21, fill = palette$blue)+
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  theme_minimal()+
+  xlab("Cohort") + ylab("Tree cover ATT estimate")
+cohort_chart
+
+```
 
 \clearpage
 ## Scoring system in the Native Forest Law competition {#scoring-rules}
+
+The program used a scoring system in order to assign project funding priority in each contest. Projects were granted funding in descending order of project score until the allocated funding had been assigned. This meant that projects sometimes went unfunded because of a low project score. This was particularly common in the other interested parties contests, which were granted funding after the smallholders. In some years, a second smallholder contest was held, causing smallholders to also go unfunded because of low scores. The scoring criteria include factors related both to landowner, property, and project characteristics. This score, although not always critical for smallholder applicants, provides insight to program administrators' preferences for project prioritization. 
+
+Projects are scored based on a weighted sum of four categories:
+  
+  $$score_{total} = \gamma_tVI + \beta_tVPS + \lambda_t VP + \psi_tVP$$
+  
+  , where
+
+- $VI$ = social characteristics of interest
+
+- $VPS$ = other priority social characteristics
+
+- $VP$ = project characteristics
+
+- $VT$ = land characteristics
+
+, and $\gamma_t$, $\beta_t$, $\lambda_t$, and $\psi_t$ represent the weights given to each category in year $t$.
+
+\clearpage
+## Rejected applicant histogram {#rejected}
+
+During the annual Native Forest Law contest, applicants submit a management plan detailing the specifics of the project to be considered for an award. Judges score each application based on a number of criteria including the size of the property, project extent, specific activities to be performed, and the cost of the project. After scores are tallied, awards are dispersed in order of project score. Awards are given to the smallholder contest first, and subsequently to the other interested party contest. Thus, in years when the contest's funds run out, other interested parties generally go unfunded. In years in which the contest does not exceed the funding theshold for both groups, a second smallholder-only contest is held for any additional project applicants. These contests generate unawarded smallholders. Projects can become rejected either by scoring below the threshold that receives funding or because of unapproved proposed activities in the application itself. Thus there are two ways to get rejected.
+
+Figure \@ref(fig:rejected-hist) shows the distribution of rejected applicants by contest across different contest years. One thing to note is that many of the rejected applicants are able to adjust their application, reapply, and enroll in subsequent years. We see that the two contests see different trends in the number of rejected applicants through time.
+
+```{r rejected-hist, fig.show="hold", fig.pos="H", out.width = '100%', fig.cap = "This figure shows rejected applicants by contest across years.", fig.width = 7, fig.height = 5, echo=FALSE}
+rejected_df <- readRDS("results/rejected_df.rds")
+
+ggplot(data = rejected_df, aes(x = `Contest year`, fill = `Contest type`)) + 
+  geom_histogram(binwidth = 1)+
+  theme_minimal()+
+  scale_x_continuous(labels = seq(from = 2010, to = 2020, by =1), breaks = seq(from = 2010, to = 2020, by =1))+
+  scale_fill_manual(values = c(palette$gold, palette$dark_green))
+
+
+```

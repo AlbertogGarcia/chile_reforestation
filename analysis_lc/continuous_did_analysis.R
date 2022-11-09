@@ -80,6 +80,23 @@ modelsummary(models,
   kableExtra::save_kable(paste0(results_dir, "twfe_main_table.tex"))
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+###############  Cohort twfe impacts
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+cohorts <- seq(2009, 2018, by = 1)
+cohort_results <- data.frame()
+for(i in cohorts){
+  this_twfe <- feols(Trees ~ treat : post : intensity| Year + property_ID, data = matched_data %>% filter(first.treat %in% c(0, i)))
+
+  this_summary <- summary(this_twfe, vcov = ~property_ID)
+  
+  cohort_results <- data.frame("cohort" = i, "coef" = this_summary$coefficients, "se" = this_summary$se)%>%
+    rbind(cohort_results)
+  print(i)
+  }
+
+library(rio)
+export(cohort_results, "paper/results/cohort_results.rds")
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ###############  TWFE estimates using matched group for noncompliers
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 matched_nc_wide <- readRDS(paste0(file_dir, "data/analysis_lc/main/matched_noncompliers_pctg.rds"))%>%

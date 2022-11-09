@@ -149,7 +149,7 @@ export(covar_balance, "paper/results/covar_balance_table.rds")
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ### Raw pre-trends
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+matched_compliers_pctg <- readRDS(paste0(file_dir, "data/analysis_lc/main/matched_compliers_pctg.rds"))
 
 tree_vars <- paste0("Trees_", seq(2002, 2018, by = 1))
 
@@ -157,10 +157,9 @@ rawtreetrends_cmatches <- matched_compliers_pctg %>%
   select(property_ID, first.treat, treat, tree_vars) %>%
   pivot_longer(tree_vars)%>%
   separate(name, into = c(NA, "Year"))%>%
-  rename(Trees = value)%>%
- # filter(Year < first.treat | treat == 0)%>%
-  group_by(Year, treat)%>%
-  summarize(Trees = mean(Trees, na.rm = T))%>%
+  dplyr::rename(Trees = value)%>%
+  dplyr::group_by(Year, treat)%>%
+  dplyr::summarise(Trees = mean(Trees, na.rm = T))%>%
   mutate(group = ifelse(treat == 0, "Complier matches", "Compliers"))
 
 TreatTrees08 <- (rawtreetrends_cmatches %>% filter(treat ==1 & Year == 2008))$Trees
@@ -174,12 +173,14 @@ rawtreetrends_unenrolled <- pool_wide_pctg %>% filter(treat == 0)%>%
   summarise_at(vars(Trees_2002:Trees_2018), mean, na.rm = T)%>%
   pivot_longer(tree_vars)%>%
   separate(name, into = c(NA, "Year"))%>%
-  rename(Trees = value)%>%
+  dplyr::rename(Trees = value)%>%
   mutate(group = "Unenrolled")
 
 rawtreetrends <- bind_rows(rawtreetrends_unenrolled, rawtreetrends_cmatches)
   
 export(rawtreetrends_cmatches, "paper/results/rawtrends_trees_compliermatch.rds")
+
+export(rawtreetrends, "paper/results/rawtrends_trees.rds")
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

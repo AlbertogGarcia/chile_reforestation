@@ -28,6 +28,8 @@ matched_long <- pivot_longer(matched_wide_main, Trees_1999:evi_2020)%>%
   filter(class %in% c("Trees", "Grassland", "evi", "Crop"))%>%
   pivot_wider(values_from = value, names_from = class, names_repair = "unique", values_fn = sum)
 
+table(matched_long$first.treat)
+
 ### TREES
 
 did_trees <- att_gt(yname="Trees",
@@ -35,6 +37,7 @@ did_trees <- att_gt(yname="Trees",
               idname="property_ID",
               gname="first.treat",
               est_method = "dr",
+              control_group = "notyettreated",
               xformla= ~ ind_dist + natin_dist + slope + elev + lat 
               + Forest + Plantation 
               + Trees_baseline 
@@ -46,7 +49,7 @@ did_trees <- att_gt(yname="Trees",
               print_details=FALSE
 )
 
-did.es <- aggte(did_trees, type="dynamic", min_e = -8)
+did.es <- aggte(did_trees, type="dynamic", min_e = -6)
 did.ovr <- aggte(did_trees, type = "simple")
 summary(did.ovr)
 did_results <- data.frame("outcome" = "Trees", "name" = "main", "ATT_ovr" = did.ovr$overall.att, "ovr_se" = did.ovr$overall.se, "ATT_dyn" = did.es$overall.att, "dyn_se" = did.ovr$overall.se, "N" = did_trees$n)
@@ -56,6 +59,11 @@ dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$
 
 library(rio)
 export(dyn.es, "paper/results/dyn.es_trees.rds")
+
+did.es_balanced <- aggte(did_trees, type="dynamic", min_e = -6, balance_e = 8)
+dyn.es_balanced <- data.frame("att" = did.es_balanced$att.egt, "se" = did.es_balanced$se.egt, "e" = did.es_balanced$egt, "crit.val" = did.es_balanced$crit.val.egt)%>%
+  mutate(period = ifelse(e >= 0 , "post", "pre"))
+export(dyn.es_balanced, "paper/results/dyn.es_trees_balanced.rds")
 
 plot_mgmt_trees <- ggplot(data=dyn.es , aes(x=e, y=att, color = period)) +
   geom_hline(yintercept = 0, linetype = "dashed", size = 0.1)+
@@ -78,6 +86,7 @@ did_grassland <- att_gt(yname="Grassland",
               idname="property_ID",
               gname="first.treat",
               est_method = "dr",
+              control_group = "notyettreated",
               xformla= ~ ind_dist + natin_dist + slope + elev + lat 
               + Forest + Plantation 
               + Trees_baseline + Water_baseline + Grassland_baseline + Shrubs_baseline + Crop_baseline 
@@ -89,7 +98,7 @@ did_grassland <- att_gt(yname="Grassland",
               print_details=FALSE
 )
 
-did.es <- aggte(did_grassland, type="dynamic", min_e = -8)
+did.es <- aggte(did_grassland, type="dynamic", min_e = -6)
 did.ovr <- aggte(did_grassland, type = "simple")
 summary(did.ovr)
 did_results <- data.frame("outcome" = "Trees", "name" = "main", "ATT_ovr" = did.ovr$overall.att, "ovr_se" = did.ovr$overall.se, "ATT_dyn" = did.es$overall.att, "dyn_se" = did.ovr$overall.se, "N" = did_grassland$n)
@@ -98,6 +107,12 @@ dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$
   mutate(period = ifelse(e >= 0 , "post", "pre"))
 
 export(dyn.es, "paper/results/dyn.es_grassland.rds")
+
+did.es_balanced <- aggte(did_grassland, type="dynamic", min_e = -6, balance_e = 8)
+dyn.es_balanced <- data.frame("att" = did.es_balanced$att.egt, "se" = did.es_balanced$se.egt, "e" = did.es_balanced$egt, "crit.val" = did.es_balanced$crit.val.egt)%>%
+  mutate(period = ifelse(e >= 0 , "post", "pre"))
+export(dyn.es_balanced, "paper/results/dyn.es_grassland_balanced.rds")
+
 
 plot_mgmt_grassland <- ggplot(data=dyn.es , aes(x=e, y=att, color = period)) +
   geom_hline(yintercept = 0, linetype = "dashed", size = 0.1)+
@@ -119,6 +134,7 @@ did_crop <- att_gt(yname="Crop",
               idname="property_ID",
               gname="first.treat",
               est_method = "dr",
+              control_group = "notyettreated",
               xformla= ~ ind_dist + natin_dist + slope + elev + lat 
               + Forest + Plantation 
               + Trees_baseline + Water_baseline + Grassland_baseline + Shrubs_baseline + Crop_baseline 
@@ -130,7 +146,7 @@ did_crop <- att_gt(yname="Crop",
               print_details=FALSE
 )
 
-did.es <- aggte(did_crop, type="dynamic", min_e = -8)
+did.es <- aggte(did_crop, type="dynamic", min_e = -6)
 did.ovr <- aggte(did_crop, type = "simple")
 summary(did.ovr)
 did_results <- data.frame("outcome" = "Trees", "name" = "main", "ATT_ovr" = did.ovr$overall.att, "ovr_se" = did.ovr$overall.se, "ATT_dyn" = did.es$overall.att, "dyn_se" = did.ovr$overall.se, "N" = did_crop$n)
@@ -141,6 +157,10 @@ dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$
 
 export(dyn.es, "paper/results/dyn.es_crop.rds")
 
+did.es_balanced <- aggte(did_crop, type="dynamic", min_e = -6, balance_e = 8)
+dyn.es_balanced <- data.frame("att" = did.es_balanced$att.egt, "se" = did.es_balanced$se.egt, "e" = did.es_balanced$egt, "crit.val" = did.es_balanced$crit.val.egt)%>%
+  mutate(period = ifelse(e >= 0 , "post", "pre"))
+export(dyn.es_balanced, "paper/results/dyn.es_crop_balanced.rds")
 
 plot_mgmt_crop <- ggplot(data=dyn.es , aes(x=e, y=att, color = period)) +
   geom_hline(yintercept = 0, linetype = "dashed", size = 0.1)+
@@ -154,6 +174,99 @@ plot_mgmt_crop <- ggplot(data=dyn.es , aes(x=e, y=att, color = period)) +
         plot.title = element_text(hjust = 0.5))+
   scale_color_manual(values = c("#FFDB6D", "black"))
 plot_mgmt_crop
+
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+###############  never treated control group
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+### TREES
+
+did_trees <- att_gt(yname="Trees",
+                    tname="Year",
+                    idname="property_ID",
+                    gname="first.treat",
+                    est_method = "dr",
+                    xformla= ~ ind_dist + natin_dist + slope + elev + lat 
+                    + Forest + Plantation 
+                    + Trees_baseline 
+                    + Water_baseline + Grassland_baseline + Shrubs_baseline + Crop_baseline 
+                    , 
+                    data=matched_long, 
+                    clustervars = "property_ID", 
+                    panel=TRUE, bstrap = TRUE,
+                    print_details=FALSE
+)
+
+did.es <- aggte(did_trees, type="dynamic", min_e = -8)
+did.ovr <- aggte(did_trees, type = "simple")
+summary(did.ovr)
+did_results <- data.frame("outcome" = "Trees", "name" = "main", "ATT_ovr" = did.ovr$overall.att, "ovr_se" = did.ovr$overall.se, "ATT_dyn" = did.es$overall.att, "dyn_se" = did.ovr$overall.se, "N" = did_trees$n)
+
+dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$egt, "crit.val" = did.es$crit.val.egt)%>%
+  mutate(period = ifelse(e >= 0 , "post", "pre"))
+
+library(rio)
+export(dyn.es, "paper/results/dyn.es_trees_nvr.rds")
+
+### Grassland
+
+did_grassland <- att_gt(yname="Grassland",
+                        tname="Year",
+                        idname="property_ID",
+                        gname="first.treat",
+                        est_method = "dr",
+                        xformla= ~ ind_dist + natin_dist + slope + elev + lat 
+                        + Forest + Plantation 
+                        + Trees_baseline + Water_baseline + Grassland_baseline + Shrubs_baseline + Crop_baseline 
+                        + pretrend_Grassland
+                        , 
+                        data=matched_long, 
+                        clustervars = "property_ID", 
+                        panel=TRUE, bstrap = TRUE,
+                        print_details=FALSE
+)
+
+did.es <- aggte(did_grassland, type="dynamic", min_e = -8)
+did.ovr <- aggte(did_grassland, type = "simple")
+summary(did.ovr)
+did_results <- data.frame("outcome" = "Trees", "name" = "main", "ATT_ovr" = did.ovr$overall.att, "ovr_se" = did.ovr$overall.se, "ATT_dyn" = did.es$overall.att, "dyn_se" = did.ovr$overall.se, "N" = did_grassland$n)
+
+dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$egt, "crit.val" = did.es$crit.val.egt)%>%
+  mutate(period = ifelse(e >= 0 , "post", "pre"))
+
+export(dyn.es, "paper/results/dyn.es_grassland_nvr.rds")
+
+### Crop
+
+did_crop <- att_gt(yname="Crop",
+                   tname="Year",
+                   idname="property_ID",
+                   gname="first.treat",
+                   est_method = "dr",
+                   xformla= ~ ind_dist + natin_dist + slope + elev + lat 
+                   + Forest + Plantation 
+                   + Trees_baseline + Water_baseline + Grassland_baseline + Shrubs_baseline + Crop_baseline 
+                   + pretrend_Grassland
+                   , 
+                   data=matched_long, 
+                   clustervars = "property_ID", 
+                   panel=TRUE, bstrap = TRUE,
+                   print_details=FALSE
+)
+
+did.es <- aggte(did_crop, type="dynamic", min_e = -8)
+did.ovr <- aggte(did_crop, type = "simple")
+summary(did.ovr)
+did_results <- data.frame("outcome" = "Trees", "name" = "main", "ATT_ovr" = did.ovr$overall.att, "ovr_se" = did.ovr$overall.se, "ATT_dyn" = did.es$overall.att, "dyn_se" = did.ovr$overall.se, "N" = did_crop$n)
+
+dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$egt, "crit.val" = did.es$crit.val.egt)%>%
+  mutate(period = ifelse(e >= 0 , "post", "pre"))
+
+
+export(dyn.es, "paper/results/dyn.es_crop_nvr.rds")
+
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ###############  Unconditional pre-treatment event study

@@ -173,83 +173,53 @@ export(main_summarystats, "paper/results/main_summarystats.rds")
 # Compliers vs. Non-compliers
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-ttest_df <- regrowth %>%
-  filter(pixels_count != 0)%>%
-  mutate(pre_Crop = Crop_2002/pixels_count,
-         pre_Shrubs = Shrubs_2002/pixels_count,
-         pre_Grassland = Grassland_2002/pixels_count,
-         pre_Plantation = Plantation/pixels_count,
-         pre_Forest = Forest/pixels_count,
-         pre_Trees = Trees_2002/pixels_count,
-         pre_Bare = Bare_2002/pixels_count)
-
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Compliers vs. non-compliers
-
-# variables needing matched set
-elev <- t.test(elev ~ received_bonus, data = ttest_df)
-slope <- t.test(slope ~ received_bonus, data = ttest_df)
-industry <- t.test(ind_dist ~ received_bonus, data = ttest_df)
-native_ind <- t.test(natin_dist ~ received_bonus, data = ttest_df)
-crop <- t.test(pre_Crop ~ received_bonus, data = ttest_df)
-shrub <- t.test(pre_Shrubs ~ received_bonus, data = ttest_df)
-grassland <- t.test(pre_Grassland ~ received_bonus, data = ttest_df)
-plantation <- t.test(pre_Plantation ~ received_bonus, data = ttest_df)
-forest <- t.test(pre_Forest ~ received_bonus, data = ttest_df)
-trees <- t.test(pre_Trees ~ received_bonus, data = ttest_df)
-bare <- t.test(pre_Bare ~ received_bonus, data = ttest_df)
-timber <- t.test(timber ~ received_bonus, data = ttest_df)
-
-# other variables - using full set of applicants
-area_prop <- t.test(rptpre_superficie_predial ~ received_bonus, data = property_df)
-area_bono <- t.test(rptpro_superficie ~ received_bonus, data = property_df)
-payment <- t.test(rptpro_monto_total ~ received_bonus, data = property_df)
-
-
-covar <- c("Award (UTM)", "Bonus area (ha)", "Property area (ha)","Timber production objective" ,  "Proportion native forest", "Proportion plantation", "Proportion grassland", "Proportion shrub", "Proportion crop", "Proportion bareground", "Slope", "Elevation", "Dist. to native timber industry (km)", "Dist. to any timber industry (km)")
-paid <- c(payment$estimate[2], area_bono$estimate[2],  area_prop$estimate[2], timber$estimate[2],  forest$estimate[2], plantation$estimate[2], grassland$estimate[2], shrub$estimate[2], crop$estimate[2], bare$estimate[2], slope$estimate[2], elev$estimate[2], native_ind$estimate[2]/1000, industry$estimate[2]/1000)
-unpaid <- c(payment$estimate[1], area_bono$estimate[1],  area_prop$estimate[1], timber$estimate[1],  forest$estimate[1], plantation$estimate[1], grassland$estimate[1], shrub$estimate[1], crop$estimate[1], bare$estimate[1], slope$estimate[1], elev$estimate[1], native_ind$estimate[1], industry$estimate[1])
-
-p_value <-  c(payment$p.value, area_bono$p.value,  area_prop$p.value, timber$p.value, forest$p.value, plantation$p.value, grassland$p.value, shrub$p.value, crop$p.value, bare$p.value, slope$p.value, elev$p.value, native_ind$p.value, industry$p.value)
-
-compliance_ttest <- data.frame(covar, paid, unpaid, p_value) %>%
-  mutate_at(vars(paid, unpaid, p_value), ~ round(., digits = 3))
-
-library(rio)
-export(compliance_ttest, "paper/results/compliance_ttest_table.rds")
-
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #### Contest types
 
-
 # variables needing matched set
-elev <- t.test(elev ~ `Contest type`, data = ttest_df)
-slope <- t.test(slope ~ `Contest type`, data = ttest_df)
-industry <- t.test(ind_dist ~ `Contest type`, data = ttest_df)
-native_ind <- t.test(natin_dist ~ `Contest type`, data = ttest_df)
-crop <- t.test(pre_Crop ~ `Contest type`, data = ttest_df)
-shrub <- t.test(pre_Shrubs ~ `Contest type`, data = ttest_df)
-grassland <- t.test(pre_Grassland ~ `Contest type`, data = ttest_df)
-plantation <- t.test(pre_Plantation ~ `Contest type`, data = ttest_df)
-forest <- t.test(pre_Forest ~ `Contest type`, data = ttest_df)
-trees <- t.test(pre_Trees ~ `Contest type`, data = ttest_df)
-bare <- t.test(pre_Bare ~ `Contest type`, data = ttest_df)
-timber <- t.test(timber ~ `Contest type`, data = ttest_df)
+#"Trees_trend", "Forest", "Plantation", "Trees_baseline", "Crop_baseline", "Grassland_baseline", "natin_dist", "ind_dist"
+
+trees_trend <- t.test(Trees_trend ~ `Contest type`, data = regrowth)
+native_forest <- t.test(Forest ~ `Contest type`, data = regrowth)
+plantation <- t.test(Plantation ~ `Contest type`, data = regrowth)
+trees <- t.test(Trees_baseline ~ `Contest type`, data = regrowth)
+crop <- t.test(Crop_baseline ~ `Contest type`, data = regrowth)
+shrub <- t.test(Shrubs_baseline ~ `Contest type`, data = regrowth)
+grassland <- t.test(Grassland_baseline ~ `Contest type`, data = regrowth)
+native_ind <- t.test(natin_dist ~ `Contest type`, data = regrowth)
+industry <- t.test(ind_dist ~ `Contest type`, data = regrowth)
+elev <- t.test(elev ~ `Contest type`, data = regrowth)
+slope <- t.test(slope ~ `Contest type`, data = regrowth)
 
 # other variables - using full set of applicants
+# "rptpre_superficie_predial", "rptpro_superficie", "proportion_subsidized", "rptpro_monto_total", "received_bonus", "submitted_management_plan", "timber", "extensionista"
 area_prop <- t.test(rptpre_superficie_predial ~ `Contest type`, data = property_df)
 area_bono <- t.test(rptpro_superficie ~ `Contest type`, data = property_df)
 payment <- t.test(rptpro_monto_total ~ `Contest type`, data = property_df)
+timber <- t.test(timber ~ `Contest type`, data = property_df)
+proportion <- t.test(proportion_subsidized ~ `Contest type`, data = property_df)
+managementplan <- t.test(submitted_management_plan ~ `Contest type`, data = property_df)
+received_bonus <- t.test(received_bonus ~ `Contest type`, data = property_df)
+
+covar <- c("Award (UTM)", "Bonus area (ha)", "Property area (ha)","Timber production objective" ,  
+           "Proportion native forest", "Proportion plantation", "Proportion grassland", "Proportion crop", "Proportion shrub", 
+           "Slope", "Elevation", "Dist. to native timber industry (km)", "Dist. to any timber industry (km)")
+smallholder <- c(payment$estimate[2], area_bono$estimate[2],  area_prop$estimate[2], timber$estimate[2],  
+                 native_forest$estimate[2], plantation$estimate[2], grassland$estimate[2], crop$estimate[2], shrub$estimate[2], 
+                 slope$estimate[2], elev$estimate[2], native_ind$estimate[2], industry$estimate[2])
 
 
-covar <- c("Award (UTM)", "Bonus area (ha)", "Property area (ha)","Timber production objective" ,  "Proportion native forest", "Proportion plantation", "Proportion grassland", "Proportion shrub", "Proportion crop", "Proportion bareground", "Slope", "Elevation", "Dist. to native timber industry (km)", "Dist. to any timber industry (km)")
-smallholder <- c(payment$estimate[2], area_bono$estimate[2],  area_prop$estimate[2], timber$estimate[2],  forest$estimate[2], plantation$estimate[2], grassland$estimate[2], shrub$estimate[2], crop$estimate[2], bare$estimate[2], slope$estimate[2], elev$estimate[2], native_ind$estimate[2]/1000, industry$estimate[2]/1000)
-other_interested <- c(payment$estimate[1], area_bono$estimate[1],  area_prop$estimate[1], timber$estimate[1],  forest$estimate[1], plantation$estimate[1], grassland$estimate[1], shrub$estimate[1], crop$estimate[1], bare$estimate[1], slope$estimate[1], elev$estimate[1], native_ind$estimate[1], industry$estimate[1])
+
+other_interested <- c(payment$estimate[1], area_bono$estimate[1],  area_prop$estimate[1], timber$estimate[1],  
+                      native_forest$estimate[1], plantation$estimate[1], grassland$estimate[1], crop$estimate[1], shrub$estimate[1], 
+                      slope$estimate[1], elev$estimate[1], native_ind$estimate[1], industry$estimate[1])
+
 other_df <- ttest_df %>% filter(`Contest type` == "Other interested")
 other_interested_med <- c(median())
 
-p_value <-  c(payment$p.value, area_bono$p.value,  area_prop$p.value, timber$p.value, forest$p.value, plantation$p.value, grassland$p.value, shrub$p.value, crop$p.value, bare$p.value, slope$p.value, elev$p.value, native_ind$p.value, industry$p.value)
+p_value <-  c(payment$p.value, area_bono$p.value,  area_prop$p.value, timber$p.value,  
+              native_forest$p.value, plantation$p.value, grassland$p.value, crop$p.value, shrub$p.value, 
+              slope$p.value, elev$p.value, native_ind$p.value, industry$p.value)
 
 contest_ttest <- data.frame(covar, smallholder, other_interested, p_value) %>%
   mutate_at(vars(smallholder, other_interested, p_value), ~ round(., digits = 3))

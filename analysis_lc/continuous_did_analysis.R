@@ -27,7 +27,8 @@ matched_long <- matched_wide_main %>%
   left_join(control_contest, by = "subclass") %>%
   pivot_longer(Trees_1999:evi_2020)%>%
   separate(name, into = c("class", "Year"), sep = "_") %>%
-  mutate(Year= as.numeric(Year))%>%
+  mutate(Year= as.numeric(Year),
+         property_hectares = pixels_count / 0.09 )%>%
   filter(class %in% c("Trees", "Grassland", "evi", "Crop"))%>%
   pivot_wider(values_from = value, names_from = class, names_repair = "unique", values_fn = sum)
 
@@ -44,6 +45,10 @@ summary(twfe_trees, vcov = ~property_ID)
 twfe_grassland <- feols(Grassland ~ treat : post : intensity| Year + property_ID, data = matched_data)
 
 twfe_crop <- feols(Crop ~ treat : post : intensity| Year + property_ID, data = matched_data)
+
+# weights 
+twfe_trees_weights <- feols(Trees ~ treat : post : intensity| Year + property_ID, weights = ~property_hectares, data = matched_data )#%>% filter( control_contest != "Otros Interesados"))
+summary(twfe_trees_weights, vcov = ~property_ID)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ###############  regression table
@@ -317,10 +322,62 @@ modelsummary(models,
   add_header_above(c("Outcome var." = 1, "Tree Cover" = 2, "Crop" = 2, "Grassland" = 2))%>%
   kableExtra::save_kable(paste0(results_dir, "twfe_enrolled_contest_table.tex"))
 
+#%%%%%%%%%%%%%%%%%%%%%%%%%
+### comuna poverty marginal effects plots
+#%%%%%%%%%%%%%%%%%%%%%%%%%
+library(patchwork)
+library(marginaleffects)
+me_data <- matched_data %>%
+  mutate(treatment = as.numeric(treat) * post * intensity,
+         log_cpov = log(cpov_pct_2007 + 1),
+         cpov_pct_2007 = cpov_pct_2007 / 100
+         )
+matched_trees_cpov <- feols(Trees ~ treatment   + treatment*log_cpov
+                            | Year + property_ID, data = me_data)
+
+
+log_cpov_ME <- plot_cme(matched_trees_cpov, effect = "treatment", condition = "log_cpov")+
+  #geom_rug(aes(x = cpov_pct_2007), data = me_data) +
+  theme_minimal()+
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  xlab("ln(ComunaPov)")+ylab("ATT")+
+  theme(axis.text.y = element_blank())+
+  geom_vline(xintercept = mean(me_data$log_cpov), linetype = "dashed", color = "#1c86ee")+
+  ylim(-0.007, 0.022)
+log_cpov_ME
+
+matched_trees_rawcpov <- feols(Trees ~ treatment   + treatment*cpov_pct_2007
+                            | Year + property_ID, data = me_data)
+
+cpov_ME <- plot_cme(matched_trees_rawcpov, effect = "treatment", condition = "cpov_pct_2007")+
+  #geom_rug(aes(x = cpov_pct_2007), data = me_data) +
+  theme_minimal()+
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  xlab("ComunaPov")+ylab("ATT")+
+  geom_vline(xintercept = mean(me_data$cpov_pct_2007), linetype = "dashed", color = "#1c86ee")+
+  scale_x_continuous(labels = scales::percent)+
+  ylim(-0.007, 0.022)
+cpov_ME
+
+p4 <- ggplot(data.frame(l = log_cpov_ME$labels$y, x = 1, y = 1)) +
+  geom_text(aes(x, y, label = l), angle = 90) + 
+  theme_void() +
+  coord_cartesian(clip = "off")
+
+log_cpov_ME$labels$y <- cpov_ME$labels$y <- " "
+
+combined <- p4 + ( cpov_ME | log_cpov_ME)
+cpov_marginaleffects <- combined + plot_layout(
+  widths = c(1, 100)) 
+cpov_marginaleffects
+
+ggsave(cpov_marginaleffects, path = "paper/figs", filename = "cpov_marginaleffects.png", width = 6, height = 3.5)
+
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%
 ### comuna poverty
 #%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 #Trees
 

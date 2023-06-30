@@ -68,78 +68,10 @@ regrowth_enrolled <- covariates_enrolled %>%
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-##### Recreating social and project score components
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-sizecut_points <- c(0, 40, 80, 120, 200)
-bonuscut_points <- c(0, 70, 150, 300, 500)
-
-points_regrowth <- regrowth_enrolled %>%
-  mutate(cpov_pct_2007 = as.numeric(cpov_pct_2007),
-         above_medpov = ifelse(cpov_pct_2007 > median(cpov_pct_2007, na.rm = T), 1, 0),
-         cpov_categ = ifelse(
-           above_medpov == 1, "Above median",
-           "Below median"
-         ),
-         indig_etnia = ifelse(is.na(rptprop_etnia) , 0, 1),
-         rptprop_razon_social = accents(tolower(rptprop_razon_social)), 
-         ind_comunidad = grepl(pattern = "indigena", rptprop_razon_social)*1,
-         indigenous = ifelse(ind_comunidad == 1 | indig_etnia == 1, 1, 0))
-
-small_df <- points_regrowth %>%
-  filter(rptpro_tipo_concurso != "Otros Interesados")%>%
-  mutate(VPI = ifelse(indigenous == 1, 100, 50),
-         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[1], sizecut_points[2]), 100, 25),
-         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[2], sizecut_points[3]), 75, 25),
-         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[3], sizecut_points[4]), 50, 25),
-         VI = TP*.5 + .5*VPI,
-         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[1], bonuscut_points[2]), 100, 15),
-         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[2], bonuscut_points[3]), 75, 15),
-         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[3], bonuscut_points[4]), 50, 15),
-         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[4], bonuscut_points[5]), 25, 15),
-         VP = .1*VMBS,
-         VPS = ifelse(indigenous == 1, 100, 0),
-         adjusted_puntaje = rptpro_puntaje - .2*VI - .35*VP - 0.05*VPS,
-         social_puntaje = .2*VI + .35*VP + 0.05*VPS,
-         smallholder = 1,
-         median_social = median(social_puntaje),
-         above_medsocial = ifelse(social_puntaje > median_social, 1, 0)) 
-
-sizecut_points <- c(0, 300, 600, 2000)
-bonuscut_points <- c(0, 300, 600, 1000)
-
-other_df <- points_regrowth %>%
-  filter(rptpro_tipo_concurso == "Otros Interesados")%>%
-  mutate(VPI = ifelse(indigenous == 1, 100, 50),
-         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[1], sizecut_points[2]), 100, 25),
-         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[2], sizecut_points[3]), 75, 25),
-         TP = ifelse(between(rptpre_superficie_predial, sizecut_points[3], sizecut_points[4]), 50, 25),
-         VI = TP*.5 + .5*VPI,
-         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[1], bonuscut_points[2]), 100, 25),
-         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[2], bonuscut_points[3]), 75, 25),
-         VMBS = ifelse(between(rptpro_monto_total, bonuscut_points[3], bonuscut_points[4]), 50, 25),
-         VP = .1*VMBS,
-         VPS = ifelse(indigenous == 1, 100, 0),
-         adjusted_puntaje = rptpro_puntaje - .25*VI - .25*VP - 0.05*VPS,
-         social_puntaje = .25*VI + .25*VP + 0.05*VPS,
-         smallholder = 0,
-         median_social = median(social_puntaje),
-         above_medsocial = ifelse(social_puntaje > median_social, 1, 0)
-  )
-
-regrowth_scored <- rbind(other_df, small_df)
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-##### Turning into panel for plotting
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-year_lead = 10
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### By contest
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-enrolled_trends_bycontest <- regrowth_scored %>%
+enrolled_trends_bycontest <- regrowth_enrolled %>%
   filter(pixels_count != 0)%>%
   mutate_at(vars(Trees_1999:NA_2018), ~ . / pixels_count)%>%
   pivot_longer(Trees_1999:NA_2018)%>%
@@ -155,129 +87,79 @@ enrolled_trends_bycontest <- regrowth_scored %>%
                 rate_of_change = (value - laggedval)/laggedval
   )
 library(rio)
-export(enrolled_trends_bycontest, paste0(results_dir, "enrolled_trends_bycontest.rds"))
+#export(enrolled_trends_bycontest, paste0(results_dir, "enrolled_trends_bycontest.rds"))
 
+dyn.es_smallholder <- readRDS(paste0(results_dir, "dyn.es_smallholder.rds"))%>%
+  mutate(`Contest type` = "Smallholder")
+dyn.es_other <- readRDS(paste0(results_dir, "dyn.es_other.rds"))%>%
+  mutate(`Contest type` = "Other interested")
+dyn.es_bycontest <- rbind(dyn.es_other, dyn.es_smallholder)
 
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-##### By score
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+treatment_trends <- enrolled_trends_bycontest %>%
+  filter(class == "Trees")%>%
+  ungroup()%>%
+  rename(e = relative_year,
+         observed = value)%>%
+  select(observed, e, `Contest type`)%>%
+  left_join(dyn.es_bycontest, by = c("e", "Contest type"))%>%
+  mutate(counterfactual = observed - att)%>%
+  filter(e >= -6)%>%
+  pivot_longer(c("counterfactual", "observed"), names_to = "pot_outcome")%>%
+  mutate(se = ifelse(pot_outcome == "observed", 0, se))
 
-enrolled_trends_byscore <- regrowth_scored %>%
-  filter(pixels_count != 0)%>%
-  mutate_at(vars(Trees_1999:NA_2018), ~ . / pixels_count)%>%
-  pivot_longer(Trees_1999:NA_2018)%>%
-  separate(name, into = c("class", "year"))%>%
-  mutate(relative_year = as.numeric(year) - as.numeric(rptpro_ano))%>%
-  filter(class %in% c("Trees", "Crop", "Grassland"))%>%
-  group_by(relative_year, class, above_medsocial)%>%
-  summarise_at(vars(value), funs(mean, se=sd(.)/sqrt(n())))%>%
-  dplyr::rename(value = mean)%>%
-  ungroup %>%
-  dplyr::group_by(class, above_medsocial)%>%
-  dplyr::mutate(laggedval = lag(value, n = 1, default = NA),
-                rate_of_change = (value - laggedval)/laggedval,
-                above_medsocial = ifelse(above_medsocial == 1, "High social priority", "Low social priority")
-  )
-library(rio)
-export(enrolled_trends_byscore, paste0(results_dir, "enrolled_trends_byscore.rds"))
-
-ggplot(data = enrolled_trends_byscore %>% filter(class == "Trees"), 
-       aes(x = as.numeric(relative_year), y = rate_of_change, color = above_medsocial))+
+treatment_trees_plot <- ggplot(data = treatment_trends , 
+                        aes(x = as.numeric(e), y = value, color = `Contest type`, linetype = pot_outcome))+
   theme_minimal()+
-  geom_line(size = 1.2)+
+  geom_vline(xintercept = -0.75, linetype = "dashed")+
+  geom_line()+
+  geom_point(size = 1)+
+  #geom_ribbon(aes(ymin=(value-crit.val*se), ymax=(value+crit.val*se)), alpha = 0.25)+
+  xlab("Years prior to enrollment") + ylab("Change in share of property with tree cover")+
+  scale_y_continuous(labels = scales::percent)+#, limits = c(ymin, ymax))+
+  scale_color_manual(values = c(palette$dark, palette$blue))
+treatment_trees_plot
+
+treatment_trends_small <- treatment_trends %>% filter(`Contest type` == "Smallholder")
+treatment_trends_other <- treatment_trends %>% filter(`Contest type` != "Smallholder")
+
+ggplot()+
+  theme_minimal()+
+  geom_vline(xintercept = -0.75, linetype = "dashed")+
+  geom_line(data = treatment_trends_small , 
+            aes(x = as.numeric(e), y = value, linetype = pot_outcome), color = palette$blue)+
+  geom_line(data = treatment_trends_other , 
+            aes(x = as.numeric(e), y = value, linetype = pot_outcome), color = palette$dark)+
+  geom_point(data = treatment_trends_small , 
+            aes(x = as.numeric(e), y = value, linetype = pot_outcome), color = palette$blue)+
+  geom_point(data = treatment_trends_other , 
+            aes(x = as.numeric(e), y = value, linetype = pot_outcome), color = palette$dark)+
+  geom_ribbon(data = treatment_trends_small %>% filter(se > 0), aes(x = as.numeric(e),ymin=(value-crit.val*se), ymax=(value+crit.val*se)), color = NA, alpha = 0.15)+
+  geom_ribbon(data = treatment_trends_other %>% filter(se > 0), aes(x = as.numeric(e),ymin=(value-crit.val*se), ymax=(value+crit.val*se)), color = NA, alpha = 0.15)+
+  xlab("event time") + ylab("Change in share of property with tree cover")+
   scale_y_continuous(labels = scales::percent)+
-  ggtitle("Enrollees' change in Tree cover") + 
-  xlab("Years prior to enrollment") +
-  labs(color='Application social score')+
-  scale_x_continuous(breaks = c(-10, -5, -1),
-                     labels=c("10", "5", "1"))
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-### By contest and score
-
-enrolled_trends_scorebycontest <- regrowth_scored %>%
-  filter(pixels_count != 0)%>%
-  mutate_at(vars(Trees_1999:NA_2018), ~ . / pixels_count)%>%
-  pivot_longer(Trees_1999:NA_2018)%>%
-  separate(name, into = c("class", "year"))%>%
-  mutate(relative_year = as.numeric(year) - as.numeric(rptpro_ano))%>%
-  filter(class %in% c("Trees", "Crop", "Grassland"))%>%
-  group_by(relative_year, class, above_medsocial, `Contest type`)%>%
-  summarise_at(vars(value), funs(mean, se=sd(.)/sqrt(n())))%>%
-  dplyr::rename(value = mean)%>%
-  group_by(class, `Contest type`, above_medsocial)%>%
-  dplyr::mutate(laggedval = lag(value, n = 1, default = NA),
-                rate_of_change = (value - laggedval)/laggedval,
-                above_medsocial = ifelse(above_medsocial == 1, "High social priority", "Low social priority")
-  )
-
-export(enrolled_trends_scorebycontest, paste0(results_dir, "enrolled_trends_scorebycontest.rds"))
-
-ggplot(data = enrolled_trends_scorebycontest %>% filter(class == "Trees"), 
-       aes(x = as.numeric(relative_year), y = rate_of_change, color = above_medsocial, linetype = `Contest type`))+
-  theme_minimal()+geom_line(size = 1.2)+scale_y_continuous(labels = scales::percent)+
-  ggtitle("Enrollees' change in Tree cover") + xlab("Years prior to enrollment") + ylab("Change in share of property with tree cover")+
-  labs(color='Application social score')+
-  scale_x_continuous(breaks = c(-10, -5, -1),
-                     labels=c("10", "5", "1"))
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-### By cpov 
-
-enrolled_trends_cpov <- regrowth_scored %>%
-  filter(pixels_count != 0)%>%
-  mutate_at(vars(Trees_1999:NA_2018), ~ . / pixels_count)%>%
-  pivot_longer(Trees_1999:NA_2018)%>%
-  separate(name, into = c("class", "year"))%>%
-  mutate(relative_year = as.numeric(year) - as.numeric(rptpro_ano))%>%
-  filter(class %in% c("Trees", "Crop", "Grassland"))%>%
-  group_by(relative_year, class, cpov_categ)%>%
-  summarise_at(vars(value), funs(mean, se=sd(.)/sqrt(n())))%>%
-  dplyr::rename(value = mean)%>%
-  group_by(class, cpov_categ)%>%
-  dplyr::mutate(laggedval = lag(value, n = 1, default = NA),
-                rate_of_change = (value - laggedval)/laggedval
-  )%>%
-  drop_na(cpov_categ)
-
-export(enrolled_trends_cpov, paste0(results_dir, "enrolled_trends_cpov.rds"))
+  scale_linetype_manual(values=c("dashed", "solid"))+
+  labs(linetype = "Potential outcome")
 
 
-ggplot(data = enrolled_trends_cpov %>% filter(class == "Trees"), 
-       aes(x = as.numeric(relative_year), y = rate_of_change, color = cpov_categ))+
-  theme_minimal()+geom_line(size = 1.2)+scale_y_continuous(labels = scales::percent)+
-  ggtitle("Enrollees' change in Tree cover") + xlab("Years prior to enrollment") + ylab("Change in share of property with tree cover")+
-  labs(color='Comuna-level poverty')+
-  scale_x_continuous(breaks = c(-10,-5, -1),
-                     labels=c("10", "5", "1"))
+initial_small <- subset(treatment_trends_small, e == -6)$value
+initial_other <-   subset(treatment_trends_other, e == -6)$value
 
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-### By cpov and contest
+treatment_even_small <- treatment_trends_small %>% mutate(value = value - initial_small)
+treatment_even_other <- treatment_trends_other %>% mutate(value = value - initial_other)
 
-enrolled_trends_cpovbycontest <- regrowth_scored %>%
-  filter(pixels_count != 0)%>%
-  mutate_at(vars(Trees_1999:NA_2018), ~ . / pixels_count)%>%
-  pivot_longer(Trees_1999:NA_2018)%>%
-  separate(name, into = c("class", "year"))%>%
-  mutate(relative_year = as.numeric(year) - as.numeric(rptpro_ano))%>%
-  filter(class %in% c("Trees", "Crop", "Grassland"))%>%
-  group_by(relative_year, class, cpov_categ, `Contest type`)%>%
-  summarise_at(vars(value), funs(mean, se=sd(.)/sqrt(n())))%>%
-  dplyr::rename(value = mean)%>%
-  group_by(class, cpov_categ, `Contest type`)%>%
-  dplyr::mutate(laggedval = lag(value, n = 1, default = NA),
-                rate_of_change = (value - laggedval)/laggedval
-                )%>%
-  drop_na(cpov_categ)
-
-export(enrolled_trends_cpovbycontest, paste0(results_dir, "enrolled_trends_cpovbycontest.rds"))
-
-
-ggplot(data = enrolled_trends_cpovbycontest %>% filter(class == "Trees"), 
-       aes(x = as.numeric(relative_year), y = rate_of_change, color = cpov_categ, linetype = `Contest type`))+
-  theme_minimal()+geom_line(size = 1.2)+scale_y_continuous(labels = scales::percent)+
-  ggtitle("Enrollees' change in Tree cover") + xlab("Years prior to enrollment") + ylab("Change in share of property with tree cover")+
-  labs(color='Comuna-level poverty')+
-  scale_x_continuous(breaks = c(-10,-5, -1),
-                     labels=c("10", "5", "1"))
-
+ggplot()+
+  theme_minimal()+
+  geom_vline(xintercept = -0.75, linetype = "dashed")+
+  geom_line(data = treatment_even_small , 
+            aes(x = as.numeric(e), y = value, linetype = pot_outcome), color = palette$blue)+
+  geom_line(data = treatment_even_other , 
+            aes(x = as.numeric(e), y = value, linetype = pot_outcome), color = palette$dark)+
+  geom_point(data = treatment_even_small , 
+             aes(x = as.numeric(e), y = value, linetype = pot_outcome), color = palette$blue)+
+  geom_point(data = treatment_even_other , 
+             aes(x = as.numeric(e), y = value, linetype = pot_outcome), color = palette$dark)+
+  geom_ribbon(data = treatment_even_small %>% filter(se > 0), aes(x = as.numeric(e),ymin=(value-crit.val*se), ymax=(value+crit.val*se)), color = NA, alpha = 0.2)+
+  geom_ribbon(data = treatment_even_other %>% filter(se > 0), aes(x = as.numeric(e),ymin=(value-crit.val*se), ymax=(value+crit.val*se)), color = NA, alpha = 0.2)+
+  xlab("Event time") + ylab("Change in share of property with tree cover")+
+  scale_y_continuous(labels = scales::percent)+
+  scale_linetype_manual(values=c("dashed", "solid"))

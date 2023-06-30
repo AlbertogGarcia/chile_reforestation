@@ -319,3 +319,83 @@ dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$
   mutate(period = ifelse(e >= 0 , "post", "pre"))
 export(dyn.es, "paper/results/unconditional_es_grassland.rds")
 
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+###############  Tree cover event study by contest
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+matched_long_other <- matched_wide_main %>%
+  filter(`Contest type` == "Other interested" | treat == 0) %>%
+  group_by(subclass)%>%
+ # filter(n() > 2)%>%
+  ungroup %>%
+  pivot_longer(Trees_1999:evi_2020)%>%
+  separate(name, into = c("class", "Year"), sep = "_") %>%
+  mutate(Year= as.numeric(Year))%>%
+  filter(class %in% c("Trees", "Grassland", "evi", "Crop"))%>%
+  pivot_wider(values_from = value, names_from = class, names_repair = "unique", values_fn = sum)
+
+set.seed(0930)
+did_other<- att_gt(yname="Trees",
+                    tname="Year",
+                    idname="property_ID",
+                    gname="first.treat",
+                    est_method = "dr",
+                    xformla= ~ ind_dist + natin_dist + slope + elev
+                    + Forest + Plantation 
+                    + Trees_baseline 
+                    + Water_baseline + Grassland_baseline + Shrubs_baseline + Crop_baseline 
+                    , 
+                    data=matched_long_other, 
+                    clustervars = "property_ID", 
+                    panel=TRUE, bstrap = TRUE,
+                    print_details=FALSE
+)
+
+did.es <- aggte(did_other, type="dynamic", min_e = -8)
+ggdid(did.es)
+did.ovr <- aggte(did_other, type = "simple")
+summary(did.ovr)
+
+dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$egt, "crit.val" = did.es$crit.val.egt)%>%
+  mutate(period = ifelse(e >= 0 , "post", "pre"))
+export(dyn.es, "paper/results/dyn.es_other.rds")
+
+### Now for other interested parties
+
+matched_long_small <- matched_wide_main %>%
+  filter(`Contest type` != "Other interested" | treat == 0) %>%
+  group_by(subclass)%>%
+#  filter(n() > 2)%>%
+  ungroup %>%
+  pivot_longer(Trees_1999:evi_2020)%>%
+  separate(name, into = c("class", "Year"), sep = "_") %>%
+  mutate(Year= as.numeric(Year))%>%
+  filter(class %in% c("Trees", "Grassland", "evi", "Crop"))%>%
+  pivot_wider(values_from = value, names_from = class, names_repair = "unique", values_fn = sum)
+
+
+did_small <- att_gt(yname="Trees",
+                    tname="Year",
+                    idname="property_ID",
+                    gname="first.treat",
+                    est_method = "dr",
+                    xformla= ~ ind_dist + natin_dist + slope + elev
+                    + Forest + Plantation 
+                    + Trees_baseline 
+                    + Water_baseline + Grassland_baseline + Shrubs_baseline + Crop_baseline 
+                    , 
+                    data=matched_long_small, 
+                    clustervars = "property_ID", 
+                    panel=TRUE, bstrap = TRUE,
+                    print_details=FALSE
+)
+
+did.es <- aggte(did_small, type="dynamic", min_e = -8)
+ggdid(did.es)
+did.ovr <- aggte(did_small, type = "simple")
+summary(did.ovr)
+
+dyn.es <- data.frame("att" = did.es$att.egt, "se" = did.es$se.egt, "e" = did.es$egt, "crit.val" = did.es$crit.val.egt)%>%
+  mutate(period = ifelse(e >= 0 , "post", "pre"))
+export(dyn.es, "paper/results/dyn.es_smallholder.rds")
+

@@ -12,7 +12,13 @@ library(raster)
 library(units)
 library(nngeo)
 
+my_data_dir <- here::here("remote")
+my_data_dir <- here::here("chile_reforestation")
+
 output_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
+
+landcover_2021_dir <- "C:\\Users\\AG2964\\Dropbox (YSE)\\chile_landcover"
+landcover_2021_dir <- here::here("chile_landcover")
 
 select <- dplyr::select
 
@@ -20,7 +26,11 @@ select <- dplyr::select
 ##### read in shapefile of property boundaries
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-enrolled_properties <- st_read("data/analysis_lc/matched_properties/property_match.shp")
+id_cols_enrolled <- c("rptpre_id", "rptpro_id", "ROL", "pre_comuna")
+
+# Load matched properies (created in data_clean/property_match-2.R)
+enrolled_properties <- st_read(paste0(output_dir, "/property_match.shp"))%>%
+  select(id_cols_enrolled, polyarea)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### Graesser et al., 2022 land uses
@@ -38,6 +48,7 @@ graesser_extract_fcn <- function(this_mosaic, sf.obj){
   
   # sf.obj <- sf.obj[1:100,]
   
+  # Convert sf.obj to spatvector and extract land cover
   temp <- terra::extract(
     this_mosaic,
     terra::vect(
@@ -54,10 +65,10 @@ graesser_extract_fcn <- function(this_mosaic, sf.obj){
   return <- temp %>%
     rename(class = old_colname)%>%
     group_by(ID, class)%>%
-    summarize(class_coverage = sum(weight, na.rm = T)) %>%
+    summarize(class_coverage = sum(weight, na.rm = T)) %>% #get total number of pixels from each class
     mutate(class = c(class_name, class)[match(class, c(class_number, class))],
-           class = paste0(class, "_", year))%>%
-    pivot_wider(names_from = class, values_from = class_coverage)%>%
+           class = paste0(class, "_", year))%>% # paste year onto name of land cover class
+    pivot_wider(names_from = class, values_from = class_coverage)%>% 
     ungroup()
   
   if(year == 1999){
@@ -72,12 +83,11 @@ graesser_extract_fcn <- function(this_mosaic, sf.obj){
   
 }
 
-
-id_cols_enrolled <- c("rptpre_id", "ROL", "comuna")
-
 options(dplyr.summarise.inform = FALSE)
 
-extracted_graesser <- purrr::map_dfc(annual_mosaic_list, ~graesser_extract_fcn(. , enrolled_properties))
+# run function using list of annual mosaics and enrolled property .shp
+extracted_graesser <- purrr::map_dfc(annual_mosaic_list, ~graesser_extract_fcn(. , enrolled_properties),
+                                     .progress = TRUE)
 
 extracted_graesser <- extracted_graesser %>%
     right_join(
@@ -123,7 +133,7 @@ lu2001_extract_fcn <- function(sf.obj, id_cols){
 extracted_lu2001 <- lu2001_extract_fcn(enrolled_properties, id_cols_enrolled)%>%
   dplyr::select(ID, id_cols_enrolled, everything())
 
-library(rio)
+
 export(extracted_lu2001, paste0(output_dir, "/extracted_lu2001_enrolled.rds"))
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -146,11 +156,10 @@ pattern <- paste0(native_especies, collapse = "|")
 native_industry.sf <- industry.sf %>%
   filter(grepl(pattern, especies, ignore.case = TRUE))
 
-# erosion_actual.sf <- st_read(
-#   "input_data/erosion_actual.shp"
-# ) %>%
-#   st_transform(st_crs(lu2001_rast))
-
+cities.sf <- st_read(
+  paste0(my_data_dir, "/external_data/CHL_FUrbanA/CHL_core.shp")
+) %>%
+  st_transform(terra::crs(lu2001_rast))
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### extracting, calculating covariate values by polygon function
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -167,11 +176,8 @@ return_covs_fcn <- function(sf.obj, id_cols, cores){
     )%>%
     st_centroid()%>%
     mutate(natin_dist = st_nn(., native_industry.sf, k = 1, returnDist = T, parallel = cores)[[2]],
-           ind_dist = st_nn(., industry.sf, k = 1, returnDist = T, parallel = cores)[[2]])
-  # mutate(road_dist = drop_units(st_distance(., roads.sf[st_nearest_feature(., roads.sf), ])),
-  #        natin_dist = drop_units(st_distance(., native_industry.sf[st_nearest_feature(., native_industry.sf), ])),
-  #        ind_dist = drop_units(st_distance(., industry.sf[st_nearest_feature(., industry.sf), ]))
-  # )
+           ind_dist = st_nn(., industry.sf, k = 1, returnDist = T, parallel = cores)[[2]],
+           city_dist = st_nn(., city.sf, k = 1, returnDist = T, parallel = cores)[[2]])
   
   return_covs <- return_covs %>%
     mutate(lat = unlist(map(return_covs$geometry,1)),
@@ -181,13 +187,10 @@ return_covs_fcn <- function(sf.obj, id_cols, cores){
   
 }
 
-
-
-# library(furrr)
-# future::plan(multisession, workers = 6)
+my_cores = 1
 
 ### getting other covariates
-return_covs_enrolled <- return_covs_fcn(enrolled_properties, id_cols_enrolled, cores = 1)
+return_covs_enrolled <- return_covs_fcn(enrolled_properties, id_cols_enrolled, cores = my_cores)
 
 
 export(return_covs_enrolled, paste0(output_dir, "/return_covs_enrolled.rds"))
@@ -201,34 +204,41 @@ covariates_enrolled <- readRDS(paste0(output_dir, "/extracted_lu2001_enrolled.rd
 export(covariates_enrolled, paste0(output_dir, "/covariates_enrolled.rds"))
 
 
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#### Read in 2021 landcover raster
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+landcover_2021_rast <- terra::rast(paste0(landcover_2021_dir, "/2021_chile_mosaic-001.tif"))
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#### Read in enrolled property boundaries
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+enrolled_properties.vec <- enrolled_properties %>%
+  terra::vect()
+  
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#### Get Native Forest polygons within enrolled properties
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+# limit landcover raster to native forest
+nativeforest_rast <- ifel(landcover_2021_rast == 6, 6, NA)%>%
+  terra::trim() # remove NAs
+
+# get only part of raster that intersects with property boundaries
+nativeforest_enrolled <- property_match %>%
+  terra::intersect(nativeforest_rast %>% project(terra::crs(property_match)))
+
+nativeforest2021_enrolled.sf <- nativeforest_enrolled %>%
+  st_as_sf()%>%
+  group_by(rptpre_id, pre_comuna, ROL)%>%
+  mutate(nf_poly_id = cur_group_id())%>%
+  ungroup %>%
+  mutate(nf_poly_area = st_area(.))
+
+st_write(nativeforest2021_enrolled.sf, 
+         paste0(output_dir, "/nativeforest2021_enrolled.shp"),
+         driver = "ESRI Shapefile")
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-##### Reading in EVI data
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-property_match_evi <- read.csv("data/analysis_lc/matched_properties/enrolled_evi/property_match_evi_roi.csv") %>%
-  select(2:4)%>%
-  mutate(year = paste0("evi_", year))%>%
-  pivot_wider(names_from = year, values_from = mean)
-
-property_match_ids <- readRDS("data/analysis_lc/matched_properties/property_match_ids.rds")
-
-data_enrolled <- property_match_evi %>%
-  full_join(property_match_ids, by = "prop_ID")%>%
-  left_join(covariates_enrolled, by = id_cols_enrolled)
-
-export(data_enrolled, "data/analysis_lc/cleaned_properties/enrolled/data_enrolled.rds")

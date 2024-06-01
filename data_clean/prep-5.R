@@ -4,14 +4,14 @@ library(readxl)
 setwd("C:/Users/garci/Dropbox/chile_reforestation/")
 
 
-data_enrolled <- readRDS("data/analysis_lc/cleaned_properties/enrolled/data_enrolled.rds")%>%
+data_enrolled <- readRDS("data/analysis_lc/cleaned_properties/enrolled/covariates_enrolled.rds")%>%
   mutate(treat = 1)
 
 accents <- function(x){
   x <- stri_trans_general(x, id = "Latin-ASCII")
 }
 
-data_neverenrolled <- readRDS("data/analysis_lc/cleaned_properties/neverenrolled/data_neverenrolled.rds")%>%
+data_neverenrolled <- readRDS("data/analysis_lc/cleaned_properties/neverenrolled/covariates_neverenrolled.rds")%>%
   mutate(treat = 0,
          first.treat = 0)%>% 
   mutate_at("polyarea", as.double)%>%

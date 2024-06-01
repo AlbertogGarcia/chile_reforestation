@@ -5,18 +5,24 @@ library(ggplot2)
 library(stringi)
 library(stringdist)
 library(rio)
-source(here::here("cleaning", "crs_clean_fcn.R"))
+source(here::here("data_clean", "crs_clean_fcn.R"))
 
+my_data_dir <- here::here("remote")
 output_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
 
 select <- dplyr::select
+
+# fcn to remove accents
+accents <- function(x){
+  x <- stri_trans_general(x, id = "Latin-ASCII")
+}
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #### read in property_df (output from admin_combine-1.R)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 property_df <- readRDS(paste0(output_dir, "/property_df.rds"))
 
 property_rols <- property_df %>% select(ROL, rptpro_id, rptpre_id, rptpre_comuna, rptpre_superficie_predial, rptpro_ano)%>%
-  rename(comuna = rptpre_comuna,
+  rename(pre_comuna = rptpre_comuna,
          pre_area = rptpre_superficie_predial)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -30,7 +36,9 @@ file_list <- list.files(paste0(my_data_dir, "/external_data/ciren_simef/PROPIEDA
 shapefile_list <- lapply(file_list, st_read)
 
 # bind rows into df, then to sf object
-propiedadesrurales <- st_make_valid(sf::st_as_sf(bind_rows(shapefile_list))) %>%
+propiedadesrurales <- st_make_valid(
+  sf::st_as_sf(bind_rows(shapefile_list))
+  ) %>%
   separate(rol, into = c("rol1", "rol2"))%>%
   mutate(polyarea = as.numeric(units::set_units(st_area(.), ha)),
          source = "ciren_simef",
@@ -62,8 +70,8 @@ property_match_rol <- all_rural_props %>%
   mutate(area_diff = abs(polyarea - pre_area),
          match_mthd = "ROL",
          match_prty = 1) %>%
-  filter(stringdist(accents(tolower(comuna)), desccomu, method = "dl") <= 1 )%>%
-  group_by(rptpre_id, ROL, comuna)%>%
+  filter(stringdist(accents(tolower(pre_comuna)), desccomu, method = "dl") <= 1 )%>%
+  group_by(rptpre_id, ROL, pre_comuna)%>%
   filter(area_diff == min(area_diff))%>%
   filter(src_prty == max(src_prty))%>%
   slice_head()
@@ -87,7 +95,7 @@ enrolled_coordinadas <- property_rols %>%
          huso = ifelse(is.na(rptro_huso), rptub_huso, rptro_huso))%>%
   crs_clean_fcn(.)%>%
   st_transform(crs = st_crs(propiedadesrurales))%>%
-  select(ROL, rptpro_id, rptpre_id, comuna, pre_area, rptpro_ano)
+  select(ROL, rptpro_id, rptpre_id, pre_comuna, pre_area, rptpro_ano)
 
 property_match_spatial <- st_make_valid(all_rural_props) %>%
   rename(ROL_poly = ROL)%>%
@@ -97,8 +105,8 @@ property_match_spatial <- st_make_valid(all_rural_props) %>%
          match_prty = 0
   )%>%
   drop_na(rptpro_id)%>%
-  filter(stringdist(accents(tolower(comuna)), desccomu, method = "dl") <= 1 )%>%
-  group_by(rptpre_id, ROL, comuna)%>%
+  filter(stringdist(accents(tolower(pre_comuna)), desccomu, method = "dl") <= 1 )%>%
+  group_by(rptpre_id, ROL, pre_comuna)%>%
   filter(area_diff == min(area_diff))%>%
   filter(src_prty == max(src_prty))%>%
   slice_head()
@@ -114,7 +122,7 @@ st_write(property_match_spatial,
 boundary_match <- rbind(property_match_spatial , property_match_rol %>% mutate(ROL_poly = NA) ) 
 
 property_match <- boundary_match %>%
-  group_by(rptpre_id, ROL, comuna)%>%
+  group_by(rptpre_id, ROL, pre_comuna)%>%
   filter(area_diff == min(area_diff) | match_prty == 1)%>%
   filter(match_prty == max(match_prty))%>%
   filter(area_diff == min(area_diff))%>%
@@ -124,20 +132,4 @@ property_match <- boundary_match %>%
 st_write(property_match, 
          paste0(output_dir, "/property_match.shp"),
          driver = "ESRI Shapefile")
-
-property_match <- property_match %>%
-  group_by(rptpre_id, ROL, comuna) %>%
-  mutate(prop_ID = cur_group_id()) %>%
-  ungroup
-
-
-st_write(property_match %>% select(prop_ID), 
-         paste0(output_dir, "/property_match_geoms.shp"),
-         driver = "ESRI Shapefile")
   
-property_match_ids <-  property_match %>% 
-  st_drop_geometry() %>%
-  select(prop_ID, rptpre_id, ROL, comuna)
-
-
-export(property_match_ids, paste0(output_dir, "/property_match_ids.rds"))

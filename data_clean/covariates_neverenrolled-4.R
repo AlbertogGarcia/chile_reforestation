@@ -11,13 +11,11 @@ library(exactextractr)
 library(raster)
 library(units)
 library(nngeo)
-setwd("C:/Users/garci/Dropbox/chile_reforestation/")
+
+my_data_dir <- here::here("remote")
+output_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
 
 select <- dplyr::select
-
-# graesser_annual <- terra::rast("data/graesser_lc/Chile_MOSAIC_99-19.tif")
-unzip("data/graesser_lc/AnnualMosaics.zip", list=TRUE)
-tif_file_list <- list.files("data/graesser_lc/AnnualMosaics", pattern = "*tif", full.names = TRUE)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### read in shapefile of property boundaries
@@ -44,11 +42,12 @@ enrolled_sf <- rbind(st_read("data/analysis_lc/matched_properties/property_match
 
 sf_list <- lapply(file_list_roi, my_read)
 
-# roi_sf <- sf::st_as_sf(bind_rows(sf_list)) # read in all files as sf objects and bind together
-
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### Graesser et al., 2022 land uses
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+tif_file_list <- list.files(paste0(my_data_dir, "/data/graesser_lc/AnnualMosaics"), 
+                            pattern = "*tif", 
+                            full.names = TRUE)
 
 annual_mosaic_list <- lapply(tif_file_list, terra::rast) #read in mosaic tifs as list of terra spatrast files
 
@@ -97,7 +96,8 @@ graesser_extract_fcn <- function(this_mosaic, sf.obj){
 graesser_extract_helper <- function(sf.obj, annual_mosaic_list, id_cols){
   pb$tick()$print()
   
-  purrr::map_dfc(annual_mosaic_list, ~graesser_extract_fcn(. , sf.obj))%>%
+  purrr::map_dfc(annual_mosaic_list, ~graesser_extract_fcn(. , sf.obj),
+                 .progress = TRUE)%>%
     inner_join(
       sf.obj %>% rowid_to_column("ID") %>% st_drop_geometry() %>% dplyr::select(ID, polyarea, id_cols)
     , by = "ID")
@@ -167,8 +167,6 @@ native_industry.sf <- industry.sf %>%
   filter(grepl(pattern, especies, ignore.case = TRUE))
 
 
-
-
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### extracting, calculating covariate values by polygon function
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -214,92 +212,3 @@ covariates_neverenrolled <- readRDS("data/analysis_lc/cleaned_properties/neveren
 
 
 export(covariates_neverenrolled, "data/analysis_lc/cleaned_properties/neverenrolled/covariates_neverenrolled.rds")
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-##### Reading in all EVI data
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-# load los rios evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/losrios_evi", pattern="*.csv", full.names =  T)
-losrios_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(ciren_region = "LOS_RÍOS")
-
-# load los lagos evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/loslagos_evi", pattern="*.csv", full.names =  T)
-loslagos_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(ciren_region = "LOS_LAGOS")
-
-# load BioBio evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/biobio_evi", pattern="*.csv", full.names =  T)
-biobio_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(ciren_region = "BIOBÍO")
-
-# load O'Higgins evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/ohiggins_evi", pattern="*.csv", full.names =  T)
-ohiggins_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(ciren_region = "LIBERTADOR_GENERAL_BERNARDO_O_HIGGINS")
-
-# load los rios evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/maule_evi", pattern="*.csv", full.names =  T)
-maule_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(ciren_region = "MAULE")
-
-# load ARAUCANÍA evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/araucania_evi", pattern="*.csv", full.names =  T)
-araucania_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(ciren_region = "ARAUCANÍA")
-
-# load Ñuble evi time series for all ciren properties
-temp = list.files("data/property_ndvi/new_CIREN_ndvi/match_evi/nuble_evi", pattern="*.csv", full.names =  T)
-nuble_evi = bind_rows(lapply(temp, read_csv))%>%
-  dplyr::select(objectid, year, mean) %>%
-  distinct(objectid, year, .keep_all = TRUE) %>%
-  mutate(year = paste0("evi_", year))%>%
-  spread(key = "year", value = "mean") %>%# cast evi into wide format
-  mutate(ciren_region = "BIOBÍO")
-
-ciren_evi <- rbind(losrios_evi, loslagos_evi, ohiggins_evi, biobio_evi, araucania_evi, maule_evi, nuble_evi)
-
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-##### Combine EVI with other covariates
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-data_neverenrolled <- covariates_neverenrolled %>%
-  left_join(ciren_evi, by = c("ciren_region", "objectid"))
-
-comuna_neverenrolled <- bind_rows(sf_list) %>%
-  select(id_cols_ciren, desccomu) %>%
-  st_drop_geometry()
-
-data_neverenrolled1 <- data_neverenrolled %>%
-  left_join(comuna_neverenrolled, by = id_cols_ciren)
-
-library(rio)
-export(data_neverenrolled1, "data/analysis_lc/cleaned_properties/neverenrolled/data_neverenrolled.rds")
-
-

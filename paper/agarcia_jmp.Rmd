@@ -56,19 +56,19 @@ Widespread landscape restoration has become an important part of global efforts 
 
 In order to achieve the warming targets set by the IPCC, both emissions reductions and removals of carbon from the atmosphere will be necessary [@bastin_global_2019]. Restoration has been lauded as a potentially near term, large scale and low-cost option to achieve these carbon removals [@busch_potential_2019]. Global initiatives such as the Bonn Challenge, Trillion Trees Campaign, and UN Decade on Ecosystem Restoration highlight the enthusiasm for restoration and reforestation as a climate solution. However, there is limited evidence documenting the effectiveness of policies seeking to encourage restoration at large scales. Payments for ecosystem services (PES), which pay private landowners in exchange for providing environmental benefits, have been used extensively in the context of avoided deforestation [@borner2015], and are likely to play a major role as countries begin to scale up restoration in line with global commitments [@gichuki2019]. 
 
-Political processes often lead policymakers to design programs aimed at multiple objectives []. PES programs are often designed to achieve social development goals in addition to environmental gains by targeting payments to alleviate povery [@wunder2008; @lipper2009]. However, subsidies that reflect political processes have the potential to undermine environmental benefits [@jack2008], and this strategy has proven to create significant tradeoffs in many payments for avoided deforestation programs [@alix-garcia2014]. Enrollment of groups targeted for poverty alleviation may be cost-ineffective for several reasons. Relatively poorer households and indigenous communities are often less likely to deforest even in the absence of payments. As such, their participation generates relatively little additional forest cover [@alix-garcia_only_2015]. Further, credit constrained and low-income landowners may be more prone to leakage, meaning that they deforest unenrolled plots of land  upon enrolling part of the property [@jack_leakage_2017; @alix-garcia2012]. 
+Political processes often lead policymakers to design programs aimed at multiple objectives []. PES programs are often designed to achieve social development goals in addition to environmental gains by targeting payments to alleviate povery [@wunder2008; @lipper2009]. However, subsidies that reflect political processes have the potential to undermine environmental benefits [@jack2008], and this strategy has proven to create significant tradeoffs in many payments for avoided deforestation programs [@alix-garcia2014]. Enrollment of groups targeted for poverty alleviation may be cost-ineffective for several reasons. Relatively poorer households and indigenous communities are often less likely to deforest even in the absence of payments [@pfaff1999; @cisneros_bolsa_2022]. As such, their participation generates relatively little additional forest cover [@alix-garcia_only_2015]. Further, credit constrained and low-income landowners may be more prone to leakage, meaning that they deforest unenrolled land  upon enrolling part of the property [@jack_leakage_2017; @alix-garcia2012]. 
 
-While evidence detailing the pitfalls of targeting for "win-wins" in payments for avoided deforestation is widespread, there is a need for rigorous evidence in the restoration setting. Private information about the costs to providing forest often make targeting difficult [@jack_private_2013]. The underlying correlation between targeted characteristics and costs of producing forest may be different in the deforestation and reforestation cases. For example, relatively poor households may be unlikely to deforest in the absence of payments, but they may not produce new forest without payments either. Second, non-compliance often plays a major role in the restoration context. Landowners may enroll in a PES program but fail to complete contracted activities if, for example, landowners are uncertain about restoration costs and benefits [@oliva2020]. If targeted characteristics are positively correlated with non-compliance, tension may arise.
+While evidence detailing the pitfalls of targeting for "win-wins" in payments for avoided deforestation is widespread, there is a need for rigorous evidence in the restoration setting. Private information about the costs to providing forest often make targeting difficult [@jack_private_2013], and the underlying correlation between targeted characteristics and costs of producing forest may be different in the deforestation and reforestation cases. For example, relatively poor households may be unlikely to deforest in the absence of payments, but it may be more costly for them to produce new forest without payments either. In this setup, it is relatively more costly for prioritized groups to provide forest in the restoration case, but less costly in the avoided deforestation case. Second, non-compliance often plays a major role in the restoration context. Landowners may enroll in a PES program but fail to complete contracted activities if, for example, landowners are uncertain about restoration costs and benefits [@oliva2020]. If targeted characteristics are positively correlated with non-compliance, tension may arise.
 
 In this paper, we use multiple novel datasets to quantify the land cover impacts of Chile’s Native Forest Law, which provided subsidies for native forest restoration and prioritized economic development of smallholder, indigenous, and rural communities. In fact, the Native Forest Law explicitly scored landowner applications based on both project-specific and social characteristics. We evaluate land cover impacts for eleven cohorts (2009–2019) using annual data from 2005–2020 and difference-in-differences approaches. Annual landcover data detailing tree cover and other land classes such as grasslands and croplands allow us a unique opportunity to evaluate restoration outcomes.
 
 A key concern with evaluations of voluntary PES programs is that apparent effectiveness may be driven by unobservable differences in participation costs, meaning that performance may be attributed to these omitted characteristics rather than participation in the program [@alix-garcia_only_2015]. In order to alleviate concerns surrounding selection, we use two different strategies to construct the no-payment counterfactual. First, from a pool of all rural properties in the major forested regions of Chile, we use pre-processing techniques to construct a set of control properties that are comparable based on a detailed set of land use and property characteristics. This strategy, however, also implies a positive treatment effect for properties that did not comply with early-stage program requirements, dropped out within the first six months, and never received payment. We argue that this is implausible, because these landowners never completed any action with the program beyond initial application. Therefore, the non-complying properties are a more plausible counterfactual to complying properties had they never received payment. 
 
-While non-compliance was high, estimates using both the matched properties and non-compliant properties as controls indicate the program increased tree cover amongst compliant properties, while reducing grassland and cropland. However, estimates based on the matched control group overestimate the impact of the program, highlighting the value of using control properties that actually indicated interest in the program. 
+Estimates using both the matched properties and non-compliant properties as controls indicate the program increased tree cover amongst compliant properties, while reducing grassland and cropland. However, estimates based on the matched control group overestimate the impact of the program, highlighting the value of using control properties that actually indicated interest in the program. 
 
-Using non-compliant properties as a control group further allows us to take a unique look at whether targeting for social development undermined environmental benefits in the Native Forest Law. All enrolled properties were assigned to either the smallholder or other interested party contest and given both a project and social score regardless of attrition within the first six months. We can therefore, take a unique look at treatment effect heterogeneity across contest type and components of the application scores. We find that properties located in high-poverty communities were associated with greater treatment effects. Further, an increase in smallholders' social score was associated with greater treatment effects, even accounting for the project-specific score. 
+Using non-compliant properties as a control group further allows us to take a unique look at whether targeting for social development undermined environmental benefits in the Native Forest Law. All enrolled properties were assigned to either the smallholder or other interested party contest and given both a project and social score regardless of attrition within the first six months. We can therefore, take a unique look at treatment effect heterogeneity across contest type and components of the application scores. We find that smallholders and properties located in high-poverty communities were associated with greater treatment effects. Further, an increase in smallholders' social score was associated with greater treatment effects, even accounting for the project-specific score. 
 
-Non-compliance in the Native Forest Law was high, as over two-thirds of applicants never received payment. Landowners with higher application social scores did suffer from relatively higher levels of non-compliance, however program administrators avoided unconditional payments by requiring verification of activity completion. While program administrators in the Native Forest Law avoided increased losses, this association may reduce cost-effectiveness in contexts where checking compliance in difficult or costly. 
+Non-compliance in the Native Forest Law was high, as over two-thirds of applicants never received payment. Landowners with higher application social scores did suffer from relatively higher levels of non-compliance, however program administrators avoided unconditional payments by requiring verification of activity completion. While program administrators in the Native Forest Law avoided increased losses, this association may reduce cost-effectiveness in contexts where checking compliance is difficult or costly. 
 
 Our results make several contributions to the literature. First, we add to the limited existing evidence on the environmental effectiveness of large-scale native forest restoration programs. Between 2009 and 2019, the National Forest Corporation (CONAF) allocated approximately US $58 million to enroll more than 235 hectares of land through the Native Forest Law, making it one of the largest native forest restoration programs in the world. As other countries begin to contemplate reforestation policies, Chile’s experience provides a valuable case study from which to draw.
 
@@ -78,9 +78,9 @@ Our second contribution is to highlight key differences between targeting in pay
 
 ## Chile's Native Forest Law
 
-Chile’s long history of public policies supporting tree cover expansion provides an incredibly useful natural experiment in which to measure the impacts of payments for reforestation. Chile's decree law no. 701 (DL 701) is one of the world's longest operating afforestation subsidies, but mainly promoted even-aged mococulture plantations of eucalyptus and pine that had negative effects on biodiversity and native forest cover [@heilmayr_impacts_2020]. Further, only about 3\% of subsidized plantations were additional. 
+Chile’s long history of public policies supporting tree cover expansion provides an incredibly useful setting in which to measure the impacts of payments for restoration. Chile's decree law no. 701 (DL 701) is one of the world's longest operating afforestation subsidies, but mainly promoted even-aged mococulture plantations of eucalyptus and pine that had negative effects on biodiversity and native forest cover [@heilmayr_impacts_2020]. Further, only about 3\% of subsidized plantations were additional. 
 
-In an attempt to encourage the recovery and protection of native forests, Chile sought to pass the Ley de Recuperación del Bosque Nativo y Fomento Forestal (Native Forest Law) as a successor to DL701 [@clapp1998]. Initially expected in 1994, it became frozen in legislature before finally passing in 2008. In addition to protections for native forests, the law established an annual competition for grants to support private landowners in their efforts to manage, restore, or reforest their land using native species. Since 2009, more than \$58 million have been allocated through these competitions for projects covering 235 thousand hectares. Much of this allocated funding has not been paid to landowners, however, as program follow-through is relatively low. In order to receive payment, landowners must complete the project and have the completed activities verified by a third party. Roughly 32\% of projects enrolled between 2009 and 2019 have actually been paid out on. Program administrators have cited both capital constraints and a lack of labor supply as potential causes.
+In an attempt to encourage the recovery and protection of native forests, Chile sought to pass the Ley de Recuperación del Bosque Nativo y Fomento Forestal (Native Forest Law) as a successor to DL701 [@clapp1998]. Initially expected in 1994, it became frozen in legislature before finally passing in 2008. In addition to protections for native forests, the law established an annual competition for grants to support private landowners in their efforts to manage, restore, or reforest their land using native species. Since 2009, more than \$58 million have been allocated through these competitions for projects covering 235 thousand hectares. Much of this allocated funding has not been paid to landowners, however, as program follow-through is relatively low. 
 
 The subsidy component of the law encourages three types of activities: 1) the regeneration, restoration or protection of native preservation forests; 2) silvicultural activities aimed at restoring native forests for timber production purposes; and 3) silvicultural activities aimed at restoring native forests for non-timber production purposes. Of the 12,889 projects enrolled between 2009 and 2019, 10,912 (84.66\%) restored native forest for the purposes of timber production. Few estimates on the impacts of the Native Forest Law on land cover currently exist. CONAF estimated the carbon impacts of the Native Forest Law through 2018 as it relates to Chile's Nationally Determined Contribution (NDC) as part of the Paris Argeement. These estimates, however, assume that the carbon stored by every eligible subsidized hectare is the direct result of the law. These types of estimates ignore the concept of additionality, since some of this forest would likely exist even in the absence of the law. 
 
@@ -88,7 +88,11 @@ The Native Forest Law prioritizes not only forest cover in line with Chile's NDC
 
 In response to concerns that large companies benefited disproportionately from the DL701 subsidies, Native Forest Law bonuses place an emphasis upon supporting smallholders and indigenous peoples. The contest provides additional support for properties awarded through the smallholder contest. In particular, smallholder awards are worth 15\% more than awards in the other interested parties contest for the same set of activities. It is also easier to be selected for a grant in the smallholder contest. Even within contests, smaller properties and those with indigenous status are given higher scores in the social component of the application score. 
 
-Upon having an application selected by the program, landowners must first provide an updated native forest management plan. This management plan details the property cartography, including the specific activities to be performed in each area of the property, and a timeline for activity completion. Landowners generally have six months from the date of selection to provide the management plan or be dropped from the program. The timeframe for activities generally lasts over a year, and landowners are not eligible to receive their bonification until two years after enrollment. 
+### Receiving payment in the Native Forest Law
+
+In order to receive payment, landowners must clear two primary administrative hurdles. Upon having an application selected by the program, landowners must first provide an updated native forest management plan. This management plan details the specific activities to be performed on the property and a timeline for activity completion. Landowners generally have six months from the date of selection to provide the management plan or be dropped from the program. Many landowners drop out at this stage of the program, as only XX \% of enrollees submitting the management plan within the required window. 
+
+The timeframe for activities generally lasts over a year, and landowners are not eligible to receive their bonification until a minimum of two years after enrollment. Landowners must also have the project's completion verified by a third party, at which point they receive the payment. Roughly 32\% of projects enrolled between 2009 and 2019 have actually been paid out on. Conditional on submitting the management plan, this rate of payment jumps to 74\%. Program administrators have cited both capital constraints and a lack of labor supply as potential causes for such high rates of non-compliance. Submission of the management plan requires submission of the property cartography, which may also deter some landowners.
 
 ## Data
 
@@ -103,7 +107,7 @@ knitr::include_graphics( "figs/propertymap_updated.jpg")
 
 ### satellite data
 
-We use annual Landsat (30m) resolution maps of landcover developed in @graesser2022 in order to examine how the law affected land uses on the extensive margin. These maps classify pixels into one of the following classes for each year between 1999-2018: forest, agriculture, pasture, shrub, and bareground.
+We use annual Landsat (30m) resolution maps of landcover developed in @graesser2022 in order to examine how the law affected land cover on the extensive margin. These maps classify pixels into one of the following classes for each year between 1999-2018: forest, crop, grassland, shrub, and bareground.
 
 We use the enhanced vegetation index (EVI 2) as a proxy for each property's annual cumulative level of vegetation cover. To generate the outcome for each property, we compute the average maximum EVI value of each pixel within a property for a given year. One benefit of the use of EVI is the ability to capture both new forest cover and changes in forest quality within a single index measure. We prefer EVI to normalized difference vegetation index (NDVI) because of NDVI's propensity to become saturated in high biomass regions. Given Chile's extensive native and plantation forests and the fact that many enrolled properties already have some degree of existing forest cover, this could limit our ability to detect small changes in the area or density of vegetation through time. In contrast, EVI corrects for canopy background noise and is more sensitive in areas with dense vegetation. 
 
@@ -119,13 +123,16 @@ Trends through time of the following groups and variables:
 
 Put table showing differences on observables here
 
-# Targeting and compliance in the Native Forest Law
+# Targeting in the Native Forest Law
 
 Compliance plays a major role in the Native Forest Law contest. Less than one-third of enrollees ever actually completed the agreed upon activities and received payment. Because the law requires several steps in order to receive payment, landowners could drop from the program at multiple times. First, landowners needed to submit a management plan within six months of selection in the contest. Then landowners must receive third-party verification that contracted activities were indeed completed.
 
 In the case of the Native Forest Law, targeting is done in two main ways: 1) holding separate contests for smallholders and larger properties; and 2) a scoring mechanism that prioritizes indigenous peoples, smaller properties, and other landowner and property characteristics. 
 
-In order to qualify for the smallholder contest, landowners must have a property size and assets below a set threshold for each region. The benefits of qualifying for the smallholder contest include 15\% higher payments as well as increased odds of receiving a grant through the contest. In addition to holding separate contests, the program used a scoring system in order to assign project funding priority within each contest. Projects were granted funding in descending order of score until the allocated funding had been assigned. This meant that projects sometimes went unfunded because of a low score, although no ex-ante cutoff existed. This was particularly common in the other interested parties contests, which were granted funding after the smallholders. In some years, a second smallholder contest was held, causing smallholders to go unfunded because of low scores. The scoring criteria include factors related both to landowner, property, and project characteristics. This score, although not always critical for smallholder applicants, provides insight to program administrators' preferences for project prioritization. We provide a more detailed outline of the program's scoring system in Appendix XX, however, it amounts to a sum of social and project specific characteristics.
+In order to qualify for the smallholder contest, landowners must have a property size and assets below a set threshold for each region. The benefits of qualifying for the smallholder contest include 15\% higher payments as well as increased odds of receiving a grant through the contest. While the Native Forest Law used these separate contests to alleviate concerns that large corporations would reap the rewards from the program, smallholder classification is still quite broad. In some regions, properties up to 500 hectares can qualify for the smallholder contest. Figure \@ref(psize) shows that while many applicants in the smallholder contests are truly landowners with small properties, many larger properties are able to enter the smallholder contest.
+
+In addition to holding separate contests, the program used a scoring system in order to assign project funding priority within each contest. Projects were granted funding in descending order of score until the allocated funding had been assigned. This meant that projects sometimes went unfunded because of a low score, although no ex-ante cutoff existed. This was particularly common in the other interested parties contests, which were granted funding after the smallholders. In some years, a second smallholder contest was held, causing smallholders to go unfunded because of low scores. The scoring criteria include factors related both to landowner, property, and project characteristics. This score, although not always critical for smallholder applicants, provides insight to program administrators' preferences for project prioritization. We provide a more detailed outline of the program's scoring system in Appendix \@ref(scoring-system), however, it amounts to a sum of social and project specific characteristics.
+
 
 $$ score_i = social_i + project_i$$
 - $social_i$ represents components of the score deemed to be of social importance by program designers. This includes factors such as property size and indigenous status. 
@@ -148,58 +155,14 @@ $$ score_i = social_i + project_i$$
 
 <!-- , and $\gamma_t$, $\beta_t$, $\lambda_t$, and $\psi_t$ represent the weights given to each category in year $t$. -->
 
-## Compliance and targeting for social development
-
-Targeting payments toward groups that suffer from high levels of non-complance may be costly. This is particularly true in contexts where non-compliance is particularly low, such as the Native Forest Law. Targeting groups that suffer from relatively greater levels of non-compliance may degrade the cost-effectiveness of the program if checking compliance is difficult or costly. 
-
-To explore this relationship, we would ideally compare landowners in the smallholder and other interested party contest. However, it is not possible to disentangle the influence of priority characteristics and poverty from the influence of the higher payment. This is particularly true, because increased payments may have induced selection of different types of landowners into the program. For this reason, we focus on the social component of the score and measures of communal poverty.
-
-In order to examine how prioritization of social characteristics in the Native Forest Law scoring system was correlated with compliance, we use regressions of the following form:
-
-$$ complied_i = \beta_0 + \beta_1 social_i + \beta_2 project_i + \beta_3X_i + \epsilon_i $$
-
-- $complied_i$ is a dummy variable equal to 1 if landowner $i$ followed through and received payment for successful project completion. 
-
-Table 3 shows the results of these regressions. Our main coefficient of interest in these regressions is $\beta_1$, which captures the association of an increase in the $score_{social}$ on compliance, holding the other parts of the project component constant. We see that higher values of $score_{social}$ are associated with a decreased probability of compliance, indicating that landowners who were prioritized by the program were less likely to comply. That said, the smallholder contest saw increased levels of compliance on average, relative to the other interested party contest. Columns (2) and (3) show that extensionists were associated with large increases in compliance probability, perhaps indicating that some of the risk of non-compliance by priority groups can be mitigated. 
-
-<!-- Insert results table here -->
-```{r compliance-tab, results = 'asis'}
-load("results/compliance_models.rdata")
-model.lst = list(compliance_mod1, compliance_mod2, compliance_mod3, compliance_mod4)
-
-stargazer(compliance_mod1, compliance_mod2, compliance_mod3, compliance_mod4,
-          title="Social scoring is associated with compliance",
-          type = "latex",
-          float = TRUE,
-          report = "vcs*",
-          se=lapply(model.lst, function(x) sqrt(diag(vcovHC(x, type = "HC1")))),
-          no.space = TRUE,
-          header=FALSE,
-          single.row = TRUE,
-          #font.size = "small",
-          intercept.bottom = T,
-          covariate.labels = c("ln(Social score)", "ln(Project score)", "Extensionist", "Smallholder", "ln(Social score) x Smallholder"),#, "intercept"),
-         keep = c(1, 2, 'extensionista', 'smallholder', 'log(social_puntaje + 1):smallholder'),#, 'Constant'),
-          dep.var.labels= c("Received bonus"),
-          digits = 3,
-          keep.stat = c("n","adj.rsq"),
-          add.lines=list(c('Region FE', 'Yes','Yes', 'Yes', 'No'))
-)
-```
-
-## Verification saved significant resources
-
-CONAF saved significant resources in not paying landowners who never completed contracted activities. In cases where compliance checks are costly or infeasible, as may be the case in many developing countries, non-compliance may degrade a program's cost-effectiveness. Program administrators may spend resources checking compliance or by paying landowner who never provided environmental benefits. Because Chile is a country with stong institutional capacity, this was avoided in the Native Forest Law.
-
-CONAF required verification of a project's completion prior to providing the bonus. Landowners were not eligible to receive the payments until after third-party varification of completed activities. For most projects, this verification was not accepted until two years after enrollment, meaning that landowners had to sustain progress for a substantial period of time. This hurdle may have made compliance more difficult for credit constrained individuals. We see evidence of this through reduced compliance by relatively poorer and socially prioritized landowners. However, these compliance checks prevented payment of XX USD to landowners who never completed their planned forest restoration activities. 
 
 # Program evaluation
 
 ## Generating a counterfactual
 
-### Candidate 1: matched control group
-
 As is the problem with many PES impact evaluations, enrollment is non-random. Landowners choose to enroll in the program and, in theory, have an opportunity cost equal to or lower than program payment. It is then ill-advised to simply use unenrolled properties as the counterfactual, since unobservable factors affecting enrollment could drive changes in forest cover outcomes, not enrollment. 
+
+### Candidate 1: matched control group
 
 In order to move toward a more convincing counterfactual, we first use matching as a pre-processing technique to generate a control group from amongst all unenrolled rural properties in the major forested regions of Chile. This should yield control properties with more similar opportunity costs to enrollees than amongst the general population. This approach is similar to many studies in the literature. 
 
@@ -220,6 +183,8 @@ knitr::include_graphics(c("figs/balplot_unmatched_pasture.png", "figs/balplot_ma
 ### Candidate 2: non-compliant properties
 
 Another candidate control group is the set of enrolled properties who never submitted a management plan within the first six months of their application being selected. These properties indicated some desire to participate in the program, but dropped out before taking any meaningful action - administrative or physical. Table XX shows that this group of early non-compliers is already quite similar to the treatment group based on observable characteristics. 
+
+<!-- insert table here -->
 
 One concern may be our decision to exclude rejected applicants from the control group. Given that these properties have revealed their intention to enroll in the program, it seems that they may have opportunity costs similar to program enrollees. However, the composition of the rejected applicants differs between smallholders and other interested parties depending on year, and the composition of the rejected applicant group is relatively unstable through time. Further, it would be difficult to make claims about the differences between the smallholders and other interested parties, because the rejected group differs through time and is not comparably balanced for each. We discuss the rejected applicants in more detail in Appendix \@ref(rejected). 
 
@@ -262,22 +227,63 @@ event study = eventy
 
 ## Program evaluation results
 
-We first measure the impact of the program on compliant properties. This is the impact of the program conditional on successfully completing the project and subsequently receiving payment. Table XX shows that using the matched control group, the characteristic enrolled property sees an increase in tree cover after enrollment relative to the counterfactual. It also sees a decline in grassland and cropland. For the average property, a 1 percentage point increase in land enrolled through the contest led to a XX \% increase in tree cover. It also led to a XX \% and XX \% decline in grassland and cropland, respectively. However, using the non-compliant properties as the treatment group yields a similar interpretation, which is highly implausible (Table XX). These non-compliant properties, although selected to participate, never engaged with the program after initial selection. They failed to provide a management plan within 6 months of enrollment, and thuerefore, were dropped from the program quickly.  
+We first measure the impact of the program on compliant properties. This is the impact of the program conditional on successfully completing the project and subsequently receiving payment. Table XX shows that using the matched control group, the characteristic enrolled property sees an increase in tree cover after enrollment relative to the counterfactual. It also sees a decline in grassland and cropland. For the average property, a 1 percentage point increase in land enrolled through the contest led to a XX \% increase in tree cover. It also led to a XX \% and XX \% decline in grassland and cropland, respectively. 
 
+<!-- Insert regression table of compliant results using matched control -->
+
+However, using the non-compliant properties as the treatment group yields a similar interpretation, which is highly implausible (Table XX). These non-compliant properties, although selected to participate, never again engaged with the program after initial selection administratively. They failed to provide a management plan within 6 months of enrollment, and therefore, were dropped from the program. Having dropped within such a short time-frame and never submitted a management plan indicates that these landowners never engaged in what would have been subsidized restoration activities. 
 
 # Targeting for social development
 
-The Native Forest Law was explicitly designed to achieve not only environmental goals, but also social development. 
+## The relationship between non-compliance and targeting
 
-## Specification to explore heterogeneity
+Targeting payments toward groups that suffer from high levels of non-complance may be costly. This is particularly true in contexts where non-compliance is particularly low, such as the Native Forest Law. Targeting groups that suffer from relatively greater levels of non-compliance may degrade the cost-effectiveness of the program if checking compliance is difficult or costly. 
 
-The clearest way in which the Native Forest Law subsidy contest targets specific groups is through holding separate contests for smallholders and larger, other interested party applicants. 
+To explore this relationship, we would ideally compare landowners in the smallholder and other interested party contest. However, it is not possible to disentangle the influence of priority characteristics and poverty from the influence of the higher payment. This is particularly true, because increased payments may have induced selection of different types of landowners into the program. For this reason, we focus on the social component of the score and measures of communal poverty.
 
-### Smallholder vs. other interested party contest
+In order to examine how prioritization of social characteristics in the Native Forest Law scoring system was correlated with compliance, we use regressions of the following form:
 
-### Application social and project scores
+$$ complied_i = \beta_0 + \beta_1 social_i + \beta_2 project_i + \beta_3X_i + \epsilon_i $$
 
-### Comuna-level poverty
+- $complied_i$ is a dummy variable equal to 1 if landowner $i$ followed through and received payment for successful project completion. 
+
+Table XX shows the results of these regressions. Our main coefficient of interest in these regressions is $\beta_1$, which captures the association of an increase in the $score_{social}$ on compliance, holding the other parts of the project component constant. We see that higher values of $score_{social}$ are associated with a decreased probability of compliance, indicating that landowners who were prioritized by the program were less likely to comply. That said, the smallholder contest saw increased levels of compliance on average, relative to the other interested party contest. Columns (2) and (3) show that extensionists were associated with large increases in compliance probability, perhaps indicating that some of the risk of non-compliance by priority groups can be mitigated. 
+
+<!-- Insert results table here -->
+```{r compliance-tab, results = 'asis'}
+load("results/compliance_models.rdata")
+model.lst = list(compliance_mod1, compliance_mod2, compliance_mod3, compliance_mod4)
+
+stargazer(compliance_mod1, compliance_mod2, compliance_mod3, compliance_mod4,
+          title="Social scoring is associated with compliance",
+          type = "latex",
+          float = TRUE,
+          report = "vcs*",
+          se=lapply(model.lst, function(x) sqrt(diag(vcovHC(x, type = "HC1")))),
+          no.space = TRUE,
+          header=FALSE,
+          single.row = TRUE,
+          #font.size = "small",
+          intercept.bottom = T,
+          covariate.labels = c("ln(Social score)", "ln(Project score)", "Extensionist", "Smallholder", "ln(Social score) x Smallholder"),#, "intercept"),
+         keep = c(1, 2, 'extensionista', 'smallholder', 'log(social_puntaje + 1):smallholder'),#, 'Constant'),
+          dep.var.labels= c("Received bonus"),
+          digits = 3,
+          keep.stat = c("n","adj.rsq"),
+          add.lines=list(c('Region FE', 'Yes','Yes', 'Yes', 'No'))
+)
+```
+
+## Verification saved significant resources
+
+CONAF saved significant resources in not paying landowners who never completed contracted activities. In cases where compliance checks are costly or infeasible, as may be the case in many developing countries, non-compliance may degrade a program's cost-effectiveness. Program administrators may spend resources checking compliance or by paying landowner who never provided environmental benefits. Because Chile is a country with stong institutional capacity, this was avoided in the Native Forest Law.
+
+Landowners were not eligible to receive the payments until after third-party varification of completed activities. For most projects, this verification was not accepted until two years after enrollment, meaning that landowners had to sustain progress for a substantial period of time. This hurdle may have made compliance more difficult for credit constrained individuals. We see evidence of this through reduced compliance by relatively poorer and socially prioritized landowners. However, these compliance checks prevented payment of XX USD to landowners who never completed their planned forest restoration activities, greatly improving overall cost-effectiveness.  
+
+
+## The relationship between program impact and targeting
+
+### Results
 
 ```{r, include = FALSE}
 contest_ttest <- readRDS("results/contest_ttest.rds")
@@ -293,23 +299,11 @@ kable(contest_ttest, format = "latex", row.names = FALSE, booktabs = T, col.name
   row_spec(0,bold=TRUE)
 ```
 
-## Social scoring mechanism
-
-While the Native Forest Law used these separate contests to alleviate concerns that large corporations would reap the rewards from the program, smallholder classification is still quite broad. In some regions, properties up to 500 hectares can qualify for the smallholder contest. Figure \@ref(psize) shows that while many applicants in the smallholder contests are truly landowners with small properties, many larger properties are able to enter the smallholder contest. Within the smallholder contest, the average smallholder had property in excess of 130 hectares. While this is influenced by a few particularly large properties, 20.22\% of landowners have properties in excess of 100 hectares, and 39.47\% have properties over 50 hectares within the smallholder contest. Further, administrators provided higher payments in the smallholder contest, likely increasing compliance and influencing selection of landowners and projects into the contest that may not have applied with lower rates. This makes it difficult to disentangle the influence of the payment from prioritized characteristics. 
-
-In order to prioritize projects within the contests, the Native Forest Law subsidy contest assigned a score to each project. This score depends not only on specific project characteristics, but also includes landowner characteristics deemed to be of social importance. For example, smallholders receive a higher score if they have a smaller property, are located in an indigenous community, and depends on whether a landowner is located in a less populated region. A more detailed description of the scoring breakdown can be found in Appendix \@ref(scoring-system).  
-
-The association of the score with program impacts also has ramifications for whether targeting on social characteristics is optimal. In the context of avoided deforestation, studies have found that payments targeted on social characteristics may have low impact, because they have relatively lower levels of deforestation risk [@cisneros_bolsa_2022]. In order to examine this in the restoration context, Figure \@ref(fig:qdid-assigned) plots DID results against the assigned score for both contests. Within the smallholder contest, projects in the first quartile of the assigned score did not see statistically or economically meaningful vegetation cover effects. This indicates that the score as currently designed seems to be an effective way to screen out projects in the smallholder contest. The score did not seem to be associated with program impact at all within the other interested party contest. 
-
-
 # Discussion and conclusion
 
 Prominent initiatives such as the Bonn Challenge, Trillion Trees Initiative, and UN Decade on Ecosystem Restoration hope to address the intertwined challenges of rural poverty, climate change and biodiversity loss through large-scale afforestation and reforestation. Initial national plans indicate that many countries will follow Chile’s model for tree cover expansion, relying heavily upon subsidies and plantation forests to achieve their commitments [@heilmayr_impacts_2020]. In light of the fact that this model may have negative impacts on native forest extent, biodiversity, and other outcomes, payments for native forest restoration may provide a more sustainable and socially beneficial path forward. Further, this may lead to increased additionality if alternative policies simply subsidize plantation forests that would have been planted anyways. Native Forest Law payments led to increased vegetation cover on enrolled properties, indicating that this model may a viable approach to designing payments for reforestation. 
 
-Whether or not program administrators can successfully target priority groups without sacrificing environmental benefits depends on two key factors. First, priority groups that have relatively lower costs of providing forest cover are likely to generate little additional carbon benefits. Second, if priority groups are less likely to complete contracted activities, benefits may be lost to both program administrators and landowners in rural or poor communities. In the context of Chile's Native Forest Law, we find that smallholders, including prioritized landowners in smallholder, rural, and indigenous communities were unlikely to be nonadditional. However, landowners with prioritized social characteristics suffered from relatively higher levels of non-compliance. As such, the Native forest Law's goals of rural, smallholder, and indigenous development may have fallen short. Non-compliant properties had indicated interest in providing native forest, but were unable to complete projects at a high rate. Extensionists were associated with large increases in compliance. While prioritized landowners were less likely to receive this support in the other interested party contest, prioritized smallholders were more likely to engage with extensionists. The use of extensionists may have alleviated priority groups' relatively higher rates of non-compliance. 
-
-Chile's native forest law did yield positive, although small vegetation cover impacts amongst beneficiary properties. Unfortunately, the potential for greater impact was hampered by low compliance, which was higher amongst socially prioritized landowners. In order to maximize program impacts, ensure participation of marginalized groups, and properly allocate extension services, payment for reforestation plans must carefully consider which landowners are likely to generate additional forest cover and successfully complete restoration activities. 
-
+Whether or not program administrators can successfully target priority groups without sacrificing environmental benefits depends on two key factors. First, priority groups that have relatively lower costs of providing forest cover are likely to generate little additional carbon benefits. Second, if priority groups are less likely to complete contracted activities, benefits may be lost to both program administrators and landowners in rural or poor communities. In the context of Chile's Native Forest Law, we find that smallholders, including prioritized landowners in smallholder, rural, and indigenous communities were less likely to comply with the PES contracts. However, this did not undermine program cost-effectiveness, because administrators only paid landowners who were confirmed to have completed projects. Further, these prioritized landowners had greater environmental impacts, indicating that targeting these groups was not detrimental to environmental benefits, as has often been seen in payments for avoided deforestation. 
 
 # References
 

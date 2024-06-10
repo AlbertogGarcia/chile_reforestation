@@ -5,7 +5,7 @@ library(ggplot2)
 library(stringi)
 library(stringdist)
 library(rio)
-source(here::here("data_clean", "crs_clean_fcn.R"))
+source(here::here("data_prep", "crs_clean_fcn.R"))
 
 my_data_dir <- here::here("remote")
 output_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")

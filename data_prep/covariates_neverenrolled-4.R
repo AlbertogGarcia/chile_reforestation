@@ -13,14 +13,15 @@ library(units)
 library(nngeo)
 
 my_data_dir <- here::here("remote")
-output_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
+clean_data_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
+output_dir <- clean_data_dir
 
 select <- dplyr::select
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### read in shapefile of property boundaries
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-ciren_path <- "external_data/ciren_simef/PROPIEDADES_RURALES"
+ciren_path <- paste0(my_data_dir, "/external_data/ciren_simef/PROPIEDADES_RURALES")
 file_list <- list.files(ciren_path, pattern = "*shp", full.names = TRUE)
 
 roi <- c("ARAUCANÍA", "MAULE", "LOS_RÍOS", "LOS_LAGOS", "O_HIGGINS", "BIOBÍO")
@@ -36,9 +37,9 @@ my_read <- function(x){
   return(return)
 }
 
-enrolled_sf <- rbind(st_read("data/analysis_lc/matched_properties/property_match_spatial.shp"),
-                     st_read("data/analysis_lc/matched_properties/property_match_rol.shp") %>% mutate(ROL_poly = NA)
-)
+enrolled_sf <- rbind(st_read(paste0(clean_data_dir, "/enrolled_match_rol.shp")),
+                     st_read(paste0(clean_data_dir, "/enrolled_match_spatial.shp")) %>% select(- ROL_poly)
+                     )
 
 sf_list <- lapply(file_list_roi, my_read)
 
@@ -94,10 +95,10 @@ graesser_extract_fcn <- function(this_mosaic, sf.obj){
 
 
 graesser_extract_helper <- function(sf.obj, annual_mosaic_list, id_cols){
-  pb$tick()$print()
   
   purrr::map_dfc(annual_mosaic_list, ~graesser_extract_fcn(. , sf.obj),
-                 .progress = TRUE)%>%
+                 .progress = TRUE
+                 )%>%
     inner_join(
       sf.obj %>% rowid_to_column("ID") %>% st_drop_geometry() %>% dplyr::select(ID, polyarea, id_cols)
     , by = "ID")
@@ -113,11 +114,14 @@ extracted_graesser <- purrr::map_dfr(sf_list, ~graesser_extract_helper(. , annua
   replace(is.na(.), 0)%>%
   dplyr::select(ID, pixels_count, polyarea, id_cols_ciren, everything())
 
-
+library(rio)
+export(extracted_graesser, paste0(output_dir, "/extracted_graesser_neverenrolled.rds"))
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### lu2001 extraction function
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-lu2001_rast <- terra::rast("data/lu_2001/lu_2001.tif")
+lu2001_rast <- terra::rast(
+  paste0(my_data_dir, "/data/lu_2001/lu_2001.tif")
+)
 
 library(readr)
 lu2001_extract_fcn <- function(sf.obj, id_cols){
@@ -147,17 +151,19 @@ pb <- progress_estimated(length(sf_list))
 extracted_lu2001 <- purrr::map_dfr(sf_list, ~lu2001_extract_fcn(., id_cols_ciren))%>%
   dplyr::select(ID, id_cols_ciren, everything())
 
+export(extracted_lu2001, paste0(output_dir, "/extracted_lu2001_neverenrolled.rds"))
+
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### read in covariates: dist to road, industry, slope, elev, etc.
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-elevation <- getData('alt', country='CHL')[[1]]
-terr <- terrain(elevation, opt=c('slope'), unit='degrees')
-
+elevation <- geodata::elevation_30s("Chile", path = tempdir())
+population <- geodata::population(year = 2005, path = tempdir())
+prec_monthly <- geodata::worldclim_country("Chile", var = "prec", path = tempdir())
+prec <- app(prec_monthly, mean)
 industry.sf <- st_read(
-  "external_data/ciren_simef/INDUSTRIA_FORESTAL/Catastro_Industria_Forestal_Primaria_Infor_2019.shp"
+  paste0(my_data_dir, "/external_data/ciren_simef/INDUSTRIA_FORESTAL/Catastro_Industria_Forestal_Primaria_Infor_2019.shp")
 ) %>%
-  st_transform(terra::crs(lu2001_rast)) %>%
+  st_transform(terra::crs(lu2001_rast))%>%
   st_cast("POINT")
 
 native_especies <- c("Roble", "Tepa", "Raulí", "nativas", "Olivillo", "Mañío", "Ulmo", "Lingue", "Lenga", "Coihue", "Tineo", "Canelo", "Alerce", "Álamo")
@@ -166,7 +172,11 @@ pattern <- paste0(native_especies, collapse = "|")
 native_industry.sf <- industry.sf %>%
   filter(grepl(pattern, especies, ignore.case = TRUE))
 
-
+cities.sf <- st_read(
+  paste0(my_data_dir, "/external_data/CHL_FUrbanA/CHL_core.shp")
+)%>%
+  st_transform(terra::crs(lu2001_rast))%>%
+  st_zm()
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### extracting, calculating covariate values by polygon function
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -175,15 +185,17 @@ return_covs_fcn <- function(sf.obj, id_cols, cores){
   #pb$tick()$print()
    #sf.obj <- sf.obj[1:100,]
   
-  return_covs <- sf.obj %>%
+  return_covs <- st_make_valid(sf.obj) %>%
     dplyr::select(id_cols)%>%
     st_transform(terra::crs(lu2001_rast))%>%
     mutate(elev = unlist(exact_extract(elevation, ., 'mean')),
-           slope = unlist(exact_extract(terr, ., 'mean'))
+           pop = unlist(exact_extract(population, ., 'mean')),
+           precip = unlist(exact_extract(prec, ., 'mean'))
     )%>%
-    st_centroid() %>%
-   mutate(natin_dist = st_nn(., native_industry.sf, k = 1, returnDist = T, parallel = cores)[[2]],
-           ind_dist = st_nn(., industry.sf, k = 1, returnDist = T, parallel = cores)[[2]])
+    st_centroid()%>%
+    mutate(natin_dist = st_nn(., native_industry.sf, k = 1, returnDist = T, parallel = cores)[[2]],
+           ind_dist = st_nn(., industry.sf, k = 1, returnDist = T, parallel = cores)[[2]],
+           city_dist = st_nn(., cities.sf, k = 1, returnDist = T, parallel = cores)[[2]])
   
   
   return_covs <- return_covs %>%
@@ -195,11 +207,33 @@ return_covs_fcn <- function(sf.obj, id_cols, cores){
 }
 
 
-# library(furrr)
-# future::plan(multisession, workers = 6)
-pb <- progress_estimated(length(sf_list))
 ### getting other covariates
-return_covs_neverenrolled <- purrr::map_dfr(sf_list, ~return_covs_fcn(., id_cols_ciren, cores = 1))
+return_covs_neverenrolled <- purrr::map_dfr(sf_list, ~return_covs_fcn(., c(id_cols_ciren, "desccomu"), cores = 1)
+                                            , .progress= T
+                                            )
+
+export(return_covs_neverenrolled, paste0(output_dir, "/return_covs_neverenrolled.rds"))
+
+
+covariates_neverenrolled <- readRDS(paste0(output_dir, "/extracted_lu2001_neverenrolled.rds"))%>%
+  replace(is.na(.), 0)%>%
+  right_join(readRDS(paste0(output_dir, "/return_covs_neverenrolled.rds")), by = c(id_cols_ciren))%>%
+  left_join(readRDS(paste0(output_dir, "/extracted_graesser_neverenrolled.rds")), by = c("ID", id_cols_ciren))
+
+export(covariates_neverenrolled, paste0(output_dir, "/covariates_neverenrolled.rds"))
+
+
+
+
+
+
+
+
+
+
+
+
+
 # 
 "C:\Users\garci\Dropbox\chile_reforestation\data\analysis_lc\cleaned_properties\neverenrolled\extracted_graesser.rds"
 library(rio)

@@ -37,7 +37,7 @@ property_df <- proyecto_df %>%
          received_bonus = as.numeric(ifelse(rptpro_tiene_bonificacion_saff == "No" | is.na(rptpro_tiene_bonificacion_saff) , 0, 1)),
          submitted_management_plan = as.numeric(ifelse(rptpro_tiene_plan_saff == "No" | is.na(rptpro_tiene_plan_saff), 0, 1))
   )%>%
-  separate(rptpre_rol, into = c("rol1", "rol2", "additional_props"))%>%
+  separate(rptpre_rol, into = c("rol1", "rol2", "additional_props"), remove = F)%>%
   mutate(ROL = paste0(rol1, "-", rol2),
          additional_props = ifelse(is.na(additional_props), 0, 1))
 

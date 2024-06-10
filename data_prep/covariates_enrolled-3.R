@@ -13,7 +13,7 @@ library(units)
 library(nngeo)
 
 my_data_dir <- here::here("remote")
-my_data_dir <- here::here("chile_reforestation")
+#my_data_dir <- here::here("chile_reforestation")
 
 output_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
 
@@ -26,11 +26,8 @@ select <- dplyr::select
 ##### read in shapefile of property boundaries
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-id_cols_enrolled <- c("rptpre_id", "rptpro_id", "ROL", "pre_comuna")
-
-# Load matched properies (created in data_clean/property_match-2.R)
-enrolled_properties <- st_read(paste0(output_dir, "/property_match.shp"))%>%
-  select(id_cols_enrolled, polyarea)
+# Load matched properies (created in ciren_matches-2.R)
+enrolled_properties <- st_read(paste0(output_dir, "/enrolled_match_rol.shp"))
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### Graesser et al., 2022 land uses
@@ -91,10 +88,9 @@ extracted_graesser <- purrr::map_dfc(annual_mosaic_list, ~graesser_extract_fcn(.
 
 extracted_graesser <- extracted_graesser %>%
     right_join(
-      enrolled_properties %>% rowid_to_column("ID") %>% st_drop_geometry() %>% dplyr::select(ID, polyarea, id_cols_enrolled)
+      enrolled_properties %>% rowid_to_column("ID") %>% st_drop_geometry()
       , by = "ID")%>%
-  replace(is.na(.), 0)%>%
-  dplyr::select(ID, pixels_count, polyarea, id_cols_enrolled, everything())
+  replace(is.na(.), 0)
 
 library(rio)
 export(extracted_graesser, paste0(output_dir, "/extracted_graesser_enrolled.rds"))
@@ -130,6 +126,8 @@ lu2001_extract_fcn <- function(sf.obj, id_cols){
   return(return)
 }
 
+id_cols_enrolled <- c("rptpro_id", "rptpre_id")
+
 extracted_lu2001 <- lu2001_extract_fcn(enrolled_properties, id_cols_enrolled)%>%
   dplyr::select(ID, id_cols_enrolled, everything())
 
@@ -139,11 +137,10 @@ export(extracted_lu2001, paste0(output_dir, "/extracted_lu2001_enrolled.rds"))
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### read in covariates: dist to road, industry, slope, elev, etc.
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-elevation <- getData('alt', country='CHL')[[1]]
-terr <- terrain(elevation, opt=c('slope'), unit='degrees')%>%
-  projectRaster(crs(lu2001_rast))
-
+elevation <- geodata::elevation_30s("Chile", path = tempdir())
+population <- geodata::population(year = 2005, path = tempdir())
+prec_monthly <- geodata::worldclim_country("Chile", var = "prec", path = tempdir())
+prec <- app(prec_monthly, mean)
 industry.sf <- st_read(
   paste0(my_data_dir, "/external_data/ciren_simef/INDUSTRIA_FORESTAL/Catastro_Industria_Forestal_Primaria_Infor_2019.shp")
 ) %>%
@@ -158,8 +155,9 @@ native_industry.sf <- industry.sf %>%
 
 cities.sf <- st_read(
   paste0(my_data_dir, "/external_data/CHL_FUrbanA/CHL_core.shp")
-) %>%
-  st_transform(terra::crs(lu2001_rast))
+)%>%
+  st_transform(terra::crs(lu2001_rast))%>%
+  st_zm()
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### extracting, calculating covariate values by polygon function
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -172,12 +170,13 @@ return_covs_fcn <- function(sf.obj, id_cols, cores){
     dplyr::select(id_cols)%>%
     st_transform(terra::crs(lu2001_rast))%>%
     mutate(elev = unlist(exact_extract(elevation, ., 'mean')),
-           slope = unlist(exact_extract(terr, ., 'mean'))
+           pop = unlist(exact_extract(population, ., 'mean')),
+           precip = unlist(exact_extract(prec, ., 'mean'))
     )%>%
     st_centroid()%>%
     mutate(natin_dist = st_nn(., native_industry.sf, k = 1, returnDist = T, parallel = cores)[[2]],
            ind_dist = st_nn(., industry.sf, k = 1, returnDist = T, parallel = cores)[[2]],
-           city_dist = st_nn(., city.sf, k = 1, returnDist = T, parallel = cores)[[2]])
+           city_dist = st_nn(., cities.sf, k = 1, returnDist = T, parallel = cores)[[2]])
   
   return_covs <- return_covs %>%
     mutate(lat = unlist(map(return_covs$geometry,1)),
@@ -202,6 +201,28 @@ covariates_enrolled <- readRDS(paste0(output_dir, "/extracted_lu2001_enrolled.rd
   left_join(readRDS(paste0(output_dir, "/extracted_graesser_enrolled.rds")), by = c("ID", id_cols_enrolled))
 
 export(covariates_enrolled, paste0(output_dir, "/covariates_enrolled.rds"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

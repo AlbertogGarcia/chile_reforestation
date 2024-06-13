@@ -84,14 +84,17 @@ export(all_property_wide, paste0(output_dir, "/all_property_wide.rds"))
 all_property_share_wide <- all_property_wide %>%
   mutate(lu_pixels_count = Forest + Plantation + Urban + Water + `Snow/ice` + `No data` + `Pasture and ag` + Shrub + `Permanent bare soil` + `Temporary bare soil`)%>%
   mutate_at(vars(Trees_2000:`0_2018`), ~ . / pixels_count)%>%
-  mutate_at(vars(Forest, Plantation), ~ . / lu_pixels_count)
+  mutate_at(vars(Forest, Plantation), ~ . / lu_pixels_count)%>%
+  mutate(property_hectares = pixels_count / 0.09 ,
+         ind_dist = unlist(ind_dist),
+         natin_dist = unlist(natin_dist),
+         city_dist = unlist(city_dist)
+  )
 
 export(all_property_share_wide, paste0(output_dir, "/all_property_share_wide.rds"))
 
 # property_share_long <- all_property_share_wide %>%
 #   pivot_longer(Trees_2000:`0_2018`)%>%
 #   separate(name, into = c("class", "Year"), sep = "_") %>%
-#   mutate(Year= as.numeric(Year),
-#          property_hectares = pixels_count / 0.09 )%>%
 #   pivot_wider(values_from = value, names_from = class, names_repair = "unique", values_fn = sum)
 

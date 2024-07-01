@@ -25,9 +25,9 @@ all_property_wide <- readRDS(paste0(clean_data_dir, "/all_property_share_wide.rd
          Grassland_baseline = Grassland_2005,
          Development_baseline = Development_2005,
          Water_baseline = Water_2005,
-         Trees0800 = Trees_2008 - Trees_2002,
-         Grassland0800 = Grassland_2008 - Grassland_2002,
-         Crop0800 = Crop_2008 - Crop_2002
+         Trees0800 = Trees_2008 - Trees_2000,
+         Grassland0800 = Grassland_2008 - Grassland_2000,
+         Crop0800 = Crop_2008 - Crop_2000
   )
 
 

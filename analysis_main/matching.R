@@ -19,12 +19,12 @@ clean_data_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_
 
 all_property_wide <- readRDS(paste0(clean_data_dir, "/all_property_share_wide.rds"))%>%
   filter(pixels_count != 0)%>%
-  mutate(Trees_baseline = Trees_2005,
-         Crop_baseline = Crop_2005,
-         Shrubs_baseline = Shrubs_2005,
-         Grassland_baseline = Grassland_2005,
-         Development_baseline = Development_2005,
-         Water_baseline = Water_2005,
+  mutate(Trees_baseline = Trees_2000,
+         Crop_baseline = Crop_2000,
+         Shrubs_baseline = Shrubs_2000,
+         Grassland_baseline = Grassland_2000,
+         Development_baseline = Development_2000,
+         Water_baseline = Water_2000,
          Trees0800 = Trees_2008 - Trees_2000,
          Grassland0800 = Grassland_2008 - Grassland_2000,
          Crop0800 = Crop_2008 - Crop_2000
@@ -150,7 +150,7 @@ matched_data_long <- matched_data_wide %>%
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ### Matching diagnostics
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 diag_vars <- match_vars
 
 matched_diag_df <- matched_data_wide %>% select(diag_vars, treat)%>%
@@ -174,15 +174,15 @@ unmatched_balance <- bal.tab(unmatched_diag_df, stats = c("mean.diffs", "varianc
 
 
 named_vars <- c("Tree cover trend (00-08)",
-              "Crop trend (00-08)",
-              "Grassland trend (00-08)",
-              "Native forest (Heilmayr et al., 2020)",
-              "Plantation forest (Heilmayr et al., 2020)",
-              "Tree cover",
-              "Grassland", "Crop", "Shrubs", "Development", "Water",
-              "Slope", "Elevation", "Lattitude",
-              "Area",
-              "Dist. to industry", "Dist. to native specific industry"
+                "Crop trend (00-08)",
+                "Grassland trend (00-08)",
+                "Native forest (Heilmayr et al., 2020)",
+                "Plantation forest (Heilmayr et al., 2020)",
+                "Tree cover",
+                "Grassland", "Crop", "Shrubs", "Development", "Water",
+                "Slope", "Elevation", "Lattitude",
+                "Area",
+                "Dist. to industry", "Dist. to native specific industry"
 )
 
 named_vars <- c("Trees0800" = "Tree cover trend (00-08)", 
@@ -207,12 +207,91 @@ named_vars <- c("Trees0800" = "Tree cover trend (00-08)",
 )
 
 covar_balance <- cbind(#data.frame("covariate" = varnames),
-                       matched_balance, unmatched_balance %>% select(- variable))%>%
- mutate_at(vars(matched_mean:unmatched_variance), ~round(., digits = 5))%>%
+  matched_balance, unmatched_balance %>% select(- variable))%>%
+  mutate_at(vars(matched_mean:unmatched_variance), ~round(., digits = 5))%>%
   mutate(variable = named_vars[variable]) %>% drop_na(variable)%>%
   select(variable, unmatched_mean, matched_mean, unmatched_variance, matched_variance)
 
 export(covar_balance, paste0(clean_data_dir, "/covar_balance_table.rds"))
+
+
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+####Same for noncompliers 
+
+matched_noncompliercohorts <- data.frame()
+for(c in cohort_years){
+  
+  noncomplier_pool_data <- noncomplier_pool_wide %>% 
+    filter(first.treat == c | treat == 0)
+  
+  these_match_vars = match_vars
+  
+  if(c <= 2018){
+    
+    noncomplier_pool_data <- noncomplier_pool_data %>% 
+      filter(
+        !(property_ID %in% matched_noncompliercohorts$property_ID),
+        !(property_ID %in% matched_compliercohorts$property_ID)
+      )%>%
+      rename(Trees_start = paste0("Trees_", c - 1),
+             Crop_start = paste0("Crop_", c - 1),
+             Grassland_start = paste0("Grassland_", c - 1))%>%
+      mutate(Trees_trend = Trees_start - Trees_2007,
+             Crop_trend = Crop_start - Crop_2007,
+             Grassland_trend = Grassland_start - Grassland_2007)%>%
+      select(match_vars, property_ID, treat, first.treat, rptpro_tipo_concurso, rptpro_ano, Trees_trend, Crop_trend, Grassland_trend)
+    
+    
+  } else{
+    
+    noncomplier_pool_data <- noncomplier_pool_data %>% 
+      filter(
+        !(property_ID %in% matched_noncompliercohorts$property_ID),
+        !(property_ID %in% matched_compliercohorts$property_ID)
+      )%>%
+      mutate(Trees_trend = Trees_2018 - Trees_2007,
+             Crop_trend = Crop_2018 - Crop_2007,
+             Grassland_trend = Grassland_2018 - Grassland_2007)%>%
+      select(match_vars, property_ID, treat, first.treat, rptpro_tipo_concurso, rptpro_ano, Trees_trend, Crop_trend, Grassland_trend)
+    
+  }
+  
+  noncomplier_matches <- matchit(reformulate(match_vars, "treat")
+                     ,
+                     data = noncomplier_pool_data,
+                     method = my_match_method , ratio = r, distance = my_distance)
+  
+  noncomplier_matched_ids <- match.data(noncomplier_matches) 
+  
+  subclass_contest <- noncomplier_matched_ids %>%
+    select(subclass, rptpro_tipo_concurso, rptpro_ano)%>%
+    drop_na(rptpro_tipo_concurso)%>%
+    dplyr::rename(control_contest = rptpro_tipo_concurso,
+                  control_year = rptpro_ano)%>%
+    select(subclass, control_contest, control_year)
+  
+  matched_noncompliercohorts <- noncomplier_matched_ids %>%
+    left_join(subclass_contest, by = "subclass") %>%
+    select(property_ID, treat, subclass, control_contest, control_year, Trees_trend, Crop_trend, Grassland_trend) %>%
+    bind_rows(matched_noncompliercohorts)
+  
+  
+}
+
+matched_noncomplier_data_wide <- matched_noncompliercohorts %>%
+  group_by(subclass, control_year)%>%
+  mutate(subclass = cur_group_id())%>%
+  ungroup()%>%
+  left_join(complier_pool_wide, by = c("property_ID", "treat"))
+
+matched_noncomplier_data_long <- matched_noncomplier_data_wide %>%
+  pivot_longer(Trees_2000:`0_2018`)%>%
+  separate(name, into = c("class", "Year"), sep = "_") %>%
+  mutate(Year= as.numeric(Year),
+         property_hectares = pixels_count / 0.09 )%>%
+  pivot_wider(values_from = value, names_from = class, names_repair = "unique", values_fn = sum)
 
 
 
@@ -272,7 +351,9 @@ raw_trends_all
 
 library(did)
 
-### TREES
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#### SMALLHOLDERS
 
 did_trees <- att_gt(yname="Trees",
                     tname="Year",
@@ -280,18 +361,16 @@ did_trees <- att_gt(yname="Trees",
                     gname="first.treat",
                     control_group = "notyettreated",
                     xformla= ~ ind_dist + natin_dist + city_dist + elev + pop
-                  + Trees_trend + Trees0800 
-                  # + Crop_trend + Crop0800 
-                  # + Grassland_trend + Grassland0800
-                    + Forest + Plantation + Trees_baseline + Grassland_baseline + Shrubs_baseline + Crop_baseline 
+                    + Trees_trend + Trees0800 
+                     + Forest + Plantation + Grassland_baseline + Crop_baseline 
                     , 
                     base_period = "universal",
-                #  anticipation = 1,
-                    data=matched_data_long, 
+                    data=
+                      matched_data_long %>% filter(control_contest == "Otros Interesados")
+                    , 
                     clustervars = "property_ID"
 )
 did.ovr <- aggte(did_trees, type="simple")
 did.ovr
-did.es <- aggte(did_trees, type="dynamic", min_e = -10)
+did.es <- aggte(did_trees, type="dynamic", min_e = -15)
 ggdid(did.es)
-

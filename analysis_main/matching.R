@@ -14,7 +14,7 @@ palette <- list("white" = "#FAFAFA",
                 "dark_green" = "#496F5D",
                 "gold" = "#DAA520")
 
-my_data_dir <- here::here("remote")
+#my_data_dir <- here::here("remote")
 clean_data_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
 
 all_property_wide <- readRDS(paste0(clean_data_dir, "/all_property_share_wide.rds"))%>%
@@ -141,6 +141,8 @@ matched_data_wide <- matched_compliercohorts %>%
   ungroup()%>%
   left_join(complier_pool_wide, by = c("property_ID", "treat"))
 
+export(matched_data_wide, paste0(clean_data_dir, "/matched_data_wide.rds"))
+
 matched_data_long <- matched_data_wide %>%
   pivot_longer(Trees_2000:`0_2018`)%>%
   separate(name, into = c("class", "Year"), sep = "_") %>%
@@ -148,6 +150,7 @@ matched_data_long <- matched_data_wide %>%
          property_hectares = pixels_count / 0.09 )%>%
   pivot_wider(values_from = value, names_from = class, names_repair = "unique", values_fn = sum)
 
+export(matched_data_long, paste0(clean_data_dir, "/matched_data_long.rds"))
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ### Matching diagnostics
 
@@ -286,6 +289,8 @@ matched_noncomplier_data_wide <- matched_noncompliercohorts %>%
   ungroup()%>%
   left_join(complier_pool_wide, by = c("property_ID", "treat"))
 
+export(matched_noncomplier_data_wide, paste0(clean_data_dir, "/matched_noncomplier_data_wide.rds"))
+
 matched_noncomplier_data_long <- matched_noncomplier_data_wide %>%
   pivot_longer(Trees_2000:`0_2018`)%>%
   separate(name, into = c("class", "Year"), sep = "_") %>%
@@ -293,6 +298,7 @@ matched_noncomplier_data_long <- matched_noncomplier_data_wide %>%
          property_hectares = pixels_count / 0.09 )%>%
   pivot_wider(values_from = value, names_from = class, names_repair = "unique", values_fn = sum)
 
+export(matched_noncomplier_data_long, paste0(clean_data_dir, "/matched_noncomplier_data_long.rds"))
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -367,6 +373,30 @@ did_trees <- att_gt(yname="Trees",
                     base_period = "universal",
                     data=
                       matched_data_long %>% filter(control_contest == "Otros Interesados")
+                    , 
+                    clustervars = "property_ID"
+)
+did.ovr <- aggte(did_trees, type="simple")
+did.ovr
+did.es <- aggte(did_trees, type="dynamic", min_e = -15)
+ggdid(did.es)
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#### Other interested
+
+did_trees <- att_gt(yname="Trees",
+                    tname="Year",
+                    idname="property_ID",
+                    gname="first.treat",
+                    control_group = "notyettreated",
+                    xformla= ~ ind_dist + natin_dist + city_dist + elev + pop
+                    + Trees_trend + Trees0800 
+                    + Forest + Plantation + Grassland_baseline + Crop_baseline 
+                    , 
+                    base_period = "universal",
+                    data=
+                      matched_data_long %>% filter(control_contest != "Otros Interesados")
                     , 
                     clustervars = "property_ID"
 )

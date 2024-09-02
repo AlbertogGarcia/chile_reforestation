@@ -408,9 +408,6 @@ matched_grassland_cpov <- feols(Grassland ~ treat : post : intensity   +
 matched_grassland_cpov_smallholder <- feols(Grassland ~ treat : post : intensity * log(cpov_pct_2007 + 1)
                                        | Year + property_ID, data = matched_data %>% filter( control_contest != "Otros Interesados"))
 
-
-
-
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ###############  Conumal-poverty regression tables
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

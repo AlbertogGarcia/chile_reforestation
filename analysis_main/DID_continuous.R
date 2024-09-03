@@ -123,13 +123,16 @@ plot_models <- tidy_models %>%
          term = group)
 
 dwplot(plot_models,
-dot_args = list(
-  aes(colour = model, shape = model), 
-  size = 3)
-) + 
+       whisker_args = list(size = 1.1),
+       dot_args = list(
+         aes(colour = model
+           #  , shape = model
+             ), 
+         size = 3)
+       ) + 
   theme_bw() + 
   geom_vline(xintercept = 0, linetype = "dashed")+
-  labs(title = "ATT estimates by contest group", 
+  labs(#title = "ATT estimates by contest group", 
        x = "ATT Estimate with 95% CI", 
        y = "") +
   theme(plot.title = element_text(face="bold"),
@@ -138,8 +141,7 @@ dot_args = list(
         legend.title.align = .5
         ) +
   scale_x_continuous(minor_breaks = c(-0.02, -0.01, 0, 0.01, 0.02, 0.03))+
-  scale_shape_discrete(name  = "Outcome", breaks = c(0, 1, 2)) + # breaks assign shapes
-#  scale_size_manual(name = "Outcome", values = c(3, 3, 3)) + # breaks assign shapes
+#  scale_shape_discrete(name  = "Outcome", breaks = c(0, 1, 2)) + # breaks assign shapes
   scale_color_manual(values = c(palette$brown, palette$gold, palette$green), name = "Outcome") # start/end for light/dark greys
 
 

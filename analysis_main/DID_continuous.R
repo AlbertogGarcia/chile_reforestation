@@ -123,12 +123,15 @@ plot_models <- tidy_models %>%
          term = group)
 
 dwplot(plot_models,
-       whisker_args = list(size = 1.1),
+       whisker_args = list(size = 1.1,
+                           aes(colour = model)),
        dot_args = list(
-         aes(colour = model
+         aes(fill = model
            #  , shape = model
              ), 
-         size = 3)
+         size = 3,
+         shape = 21,
+         color = palette$white)
        ) + 
   theme_bw() + 
   geom_vline(xintercept = 0, linetype = "dashed")+
@@ -142,7 +145,8 @@ dwplot(plot_models,
         ) +
   scale_x_continuous(minor_breaks = c(-0.02, -0.01, 0, 0.01, 0.02, 0.03))+
 #  scale_shape_discrete(name  = "Outcome", breaks = c(0, 1, 2)) + # breaks assign shapes
-  scale_color_manual(values = c(palette$brown, palette$gold, palette$green), name = "Outcome") # start/end for light/dark greys
+  scale_color_manual(values = c(palette$brown, palette$gold, palette$green), name = "Outcome") +# start/end for light/dark greys
+scale_fill_manual(values = c(palette$brown, palette$gold, palette$green), name = "Outcome") # start/end for light/dark greys
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

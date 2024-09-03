@@ -1,7 +1,23 @@
 library(dplyr)
 library(fixest)
+library(sf)
 library(kableExtra)
 library(modelsummary)
+
+clean_data_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
+
+palette <- list("white" = "#FAFAFA",
+                "light_grey" = "#d9d9d9",
+                "dark_grey" = "grey30",
+                "dark" = "#0c2230",
+                "red" = "#ed195a",
+                "blue" = "#1c86ee",
+                "green" = "#7CAE7A",
+                "dark_green" = "#496F5D",
+                "gold" = "#DAA520",
+                "brown" = "#613104")
+
+
 matched_data_long <- readRDS(paste0(clean_data_dir, "/matched_data_long.rds"))%>%
   mutate(treat = (first.treat > 0)*1,
          post = ifelse(treat == 1 & Year >= first.treat, 1, 0),
@@ -87,6 +103,44 @@ modelsummary(models,
   add_header_above(c("Outcome" = 1, "Tree cover" = 1, "Crop" = 1, "Grassland" = 1, "Tree cover" = 1, "Crop" = 1, "Grassland" = 1))%>%
   add_header_above(c(" " = 1, "Smallholders" = 3, "Other Interested Parties" = 3))
 #  kableExtra::save_kable(paste0(results_dir, "twfe_main_table.tex"))
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+###############  Spec chart
+
+library(dotwhisker)
+tidy_models <- twfe_crop_other %>% tidy(vcov = ~property_ID) %>% mutate(group = "Other interested", outcome = "Crop") 
+tidy_models <- twfe_grassland_other %>% tidy(vcov = ~property_ID) %>% mutate(group = "Other interested", outcome = "Grassland") %>% rbind(tidy_models)
+tidy_models <- twfe_trees_other %>% tidy(vcov = ~property_ID) %>% mutate(group = "Other interested", outcome = "Tree cover") %>% rbind(tidy_models)
+
+tidy_models <- twfe_crop_smallholder %>% tidy(vcov = ~property_ID) %>% mutate(group = "Smallholders", outcome = "Crop") %>% rbind(tidy_models)
+tidy_models <- twfe_grassland_smallholder %>% tidy(vcov = ~property_ID) %>% mutate(group = "Smallholders", outcome = "Grassland")  %>% rbind(tidy_models)
+tidy_models <- twfe_trees_smallholder %>% tidy(vcov = ~property_ID) %>% mutate(group = "Smallholders", outcome = "Tree cover") %>% rbind(tidy_models)
+
+
+plot_models <- tidy_models %>%
+  select(-term)%>%
+  rename(model = outcome,
+         term = group)
+
+dwplot(plot_models,
+dot_args = list(
+  aes(colour = model, shape = model), 
+  size = 3)
+) + 
+  theme_bw() + 
+  geom_vline(xintercept = 0, linetype = "dashed")+
+  labs(title = "ATT estimates by contest group", 
+       x = "ATT Estimate with 95% CI", 
+       y = "") +
+  theme(plot.title = element_text(face="bold"),
+        legend.position = "bottom",
+        legend.background = element_rect(colour="grey80"),
+        legend.title.align = .5
+        ) +
+  scale_x_continuous(minor_breaks = c(-0.02, -0.01, 0, 0.01, 0.02, 0.03))+
+  scale_shape_discrete(name  = "Outcome", breaks = c(0, 1, 2)) + # breaks assign shapes
+#  scale_size_manual(name = "Outcome", values = c(3, 3, 3)) + # breaks assign shapes
+  scale_color_manual(values = c(palette$brown, palette$gold, palette$green), name = "Outcome") # start/end for light/dark greys
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

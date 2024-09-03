@@ -1,5 +1,6 @@
 library(did)
 library(dplyr)
+clean_data_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
 
 matched_data_long <- readRDS(paste0(clean_data_dir, "/matched_data_long.rds"))
 

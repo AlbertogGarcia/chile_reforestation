@@ -3,6 +3,8 @@ library(sf)
 library(MatchIt)
 library(cobalt)
 library(rio)
+library(kableExtra)
+library(here)
 
 palette <- list("white" = "#FAFAFA",
                 "light_grey" = "#d9d9d9",
@@ -215,6 +217,13 @@ covar_balance <- cbind(#data.frame("covariate" = varnames),
   mutate(variable = named_vars[variable]) %>% drop_na(variable)%>%
   select(variable, unmatched_mean, matched_mean, unmatched_variance, matched_variance)
 
+kbl(covar_balance,
+    format = "latex",
+    booktabs = T,
+    col.names = c("Variable", "Unmatched", "Matched", "Unmatched", "Matched"))%>%
+  add_header_above(c(" " = 1, "Norm. mean difference" = 2, "Variance" = 2))%>%
+  save_kable(here("results", "covar_balance.tex"))
+  
 export(covar_balance, paste0(clean_data_dir, "/covar_balance_table.rds"))
 
 
@@ -287,7 +296,7 @@ matched_noncomplier_data_wide <- matched_noncompliercohorts %>%
   group_by(subclass, control_year)%>%
   mutate(subclass = cur_group_id())%>%
   ungroup()%>%
-  left_join(complier_pool_wide, by = c("property_ID", "treat"))
+  left_join(noncomplier_pool_wide, by = c("property_ID", "treat"))
 
 export(matched_noncomplier_data_wide, paste0(clean_data_dir, "/matched_noncomplier_data_wide.rds"))
 
@@ -337,12 +346,13 @@ raw_trends <- ggplot(rawtreetrends_cmatches, aes(x = as.numeric(Year), y = Trees
   geom_vline(xintercept = 2008, linetype = "dashed")+
   scale_color_manual(values = c(palette$blue, palette$red))+
   ylab("Share of property with tree cover") + xlab("Year") + guides(color = guide_legend(title = "Group"))
+raw_trends
 
 raw_trends_even <- ggplot(rawtreetrends_cmatches_even, aes(x = as.numeric(Year), y = Trees, color = group))+
   geom_line() + geom_point() + theme_minimal()+
   geom_vline(xintercept = 2008, linetype = "dashed")+
   scale_color_manual(values = c(palette$blue, palette$red))+
-  ylab("Change in tree cover relative to 2008") + xlab("Year")+ guides(color = guide_legend(title = "Group"))
+  ylab("Tree cover relative to 2008") + xlab("Year")+ guides(color = guide_legend(title = "Group"))
 raw_trends_even
 
 raw_trends_all <- ggplot(rawtreetrends, aes(x = as.numeric(Year), y = Trees, color = group))+
@@ -351,6 +361,18 @@ raw_trends_all <- ggplot(rawtreetrends, aes(x = as.numeric(Year), y = Trees, col
   scale_color_manual(values = c(palette$blue, palette$red, palette$dark))+
   ylab("Share of property with tree cover") + xlab("Year") + guides(color = guide_legend(title = "Group"))
 raw_trends_all
+
+
+library(ggpubr)
+ggarrange(raw_trends, raw_trends_even, ncol = 2, nrow = 1,
+          labels = c("A", "B"),
+          legend = "bottom", common.legend = T)
+ggsave(paste0(here("analysis_main", "figs"), "/raw_trends.png"), width = 10, height = 4)
+
+
+
+
+
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ### DID test with panel
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

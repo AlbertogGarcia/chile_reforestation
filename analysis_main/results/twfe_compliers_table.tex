@@ -1,0 +1,24 @@
+\begin{table}[!h]
+\centering\centering
+\caption{Estimates of subsidy impact using matched control group}
+\centering
+\begin{tabular}[t]{lcccccc}
+\toprule
+\multicolumn{1}{c}{ } & \multicolumn{3}{c}{All compliers} & \multicolumn{3}{c}{Noncompliers} \\
+\cmidrule(l{3pt}r{3pt}){2-4} \cmidrule(l{3pt}r{3pt}){5-7}
+\multicolumn{1}{c}{Outcome} & \multicolumn{1}{c}{Tree cover} & \multicolumn{1}{c}{Crop} & \multicolumn{1}{c}{Grassland} & \multicolumn{1}{c}{Tree cover} & \multicolumn{1}{c}{Crop} & \multicolumn{1}{c}{Grassland} \\
+\cmidrule(l{3pt}r{3pt}){1-1} \cmidrule(l{3pt}r{3pt}){2-2} \cmidrule(l{3pt}r{3pt}){3-3} \cmidrule(l{3pt}r{3pt}){4-4} \cmidrule(l{3pt}r{3pt}){5-5} \cmidrule(l{3pt}r{3pt}){6-6} \cmidrule(l{3pt}r{3pt}){7-7}
+  & (1) & (2) & (3) & (4) & (5) & (6)\\
+\midrule
+treat:post:intensity & 0.01355** & -0.00344 & -0.0097* & 4e-04 & -0.00491** & 0.00517\\
+ & (0.00521) & (0.00217) & (0.00527) & (0.00353) & (0.00218) & (0.00405)\\
+\midrule
+Num.Obs. & 197082 & 197082 & 197082 & 333162 & 333162 & 333162\\
+R2 & 0.974 & 0.921 & 0.961 & 0.971 & 0.909 & 0.958\\
+Control group & matched 3-to-1 & matched 3-to-1 & matched 3-to-1 & matched 3-to-1 & matched 3-to-1 & matched 3-to-1\\
+Pre-treat mean & 0.695 & 0.029 & 0.252 & 0.696 & 0.023 & 0.258\\
+\bottomrule
+\multicolumn{7}{l}{\rule{0pt}{1em}* p $<$ 0.1, ** p $<$ 0.05, *** p $<$ 0.01}\\
+\multicolumn{7}{l}{\rule{0pt}{1em}Standard errors are clustered at the property level.}\\
+\end{tabular}
+\end{table}

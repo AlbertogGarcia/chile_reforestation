@@ -1,10 +1,25 @@
+library(tidyverse)
+library(fixest)
+library(sf)
+library(kableExtra)
 library(did)
-library(dplyr)
 clean_data_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
+
+palette <- list("white" = "#FAFAFA",
+                "light_grey" = "#d9d9d9",
+                "dark_grey" = "grey30",
+                "dark" = "#0c2230",
+                "red" = "#ed195a",
+                "blue" = "#1c86ee",
+                "green" = "#7CAE7A",
+                "dark_green" = "#496F5D",
+                "gold" = "#DAA520",
+                "brown" = "#613104")
+
 
 matched_data_long <- readRDS(paste0(clean_data_dir, "/matched_data_long.rds"))
 
-
+set.seed(0331)
 ovr_results <- data.frame()
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #### All
@@ -90,7 +105,8 @@ smallholder_trees_plot <- ggplot(es_plot_df, aes(x = e, y = ATT, color = post)) 
   geom_hline(yintercept = 0)+
   scale_color_manual(values = c(palette$red, palette$blue))+
   theme_classic()+
-  theme(legend.title = element_blank())
+  theme(legend.title = element_blank())+
+  ylim(-0.018, 0.03)
 smallholder_trees_plot
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #### Other interested
@@ -133,7 +149,14 @@ other_trees_plot <- ggplot(es_plot_df, aes(x = e, y = ATT, color = post)) +
   geom_hline(yintercept = 0)+
   scale_color_manual(values = c(palette$red, palette$blue))+
   theme_classic()+
-  theme(legend.title = element_blank())
+  theme(legend.title = element_blank())+
+  ylim(-0.018, 0.03)
 other_trees_plot
 
+library(ggpubr)
+library(here)
+ggarrange(smallholder_trees_plot, other_trees_plot, ncol = 2, nrow = 1,
+          labels = c("A", "B"),
+          legend = "bottom", common.legend = T)
+ggsave(paste0(here("analysis_main", "figs"), "/eventstudy_duo.png"), width = 12, height = 5)
 

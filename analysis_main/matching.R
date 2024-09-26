@@ -178,7 +178,7 @@ unmatched_balance <- bal.tab(unmatched_diag_df, stats = c("mean.diffs", "varianc
 
 
 
-named_vars <- c("Tree cover trend (00-08)",
+vars <- c("Tree cover trend (00-08)",
                 "Crop trend (00-08)",
                 "Grassland trend (00-08)",
                 "Native forest (Heilmayr et al., 2020)",
@@ -226,6 +226,58 @@ kbl(covar_balance,
   
 export(covar_balance, paste0(clean_data_dir, "/covar_balance_table.rds"))
 
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+### Matching plots for selected covariates
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+plot_vars <- c("Forest", "Plantation", "Trees_baseline", "Grassland_baseline", "precip")
+
+for(i in 1:length(plot_vars)){
+  
+  this_var <- plot_vars[i]
+  print(this_var)
+  this_varname <- named_vars[this_var]
+  
+  unmatched_balplot <- bal.plot(unmatched_diag_df, treat = unmatched_diag_df$treat,
+                                var.name = this_var,
+                                sample.names = "Unmatched"
+  ) + 
+    xlab(this_varname) + theme(legend.position = "none") + ggtitle("") 
+  ggsave(unmatched_balplot, path = "analysis_main/figs", filename = paste0("balplot_unmatched_", this_var, ".png"), width = 5, height = 2.5)
+  
+  
+  matched_balplot <- bal.plot(matched_diag_df, treat = matched_diag_df$treat,
+                              var.name = this_var,
+                              sample.names = "Matched"
+  ) + 
+    xlab(this_varname) + theme(legend.position = "none") + ggtitle("")
+  matched_balplot <- matched_balplot +
+    ylim( 0, max(
+      layer_scales(unmatched_balplot)$y$get_limits(), layer_scales(matched_balplot)$y$get_limits()
+    )
+    )
+  
+  ggsave(matched_balplot, path = "analysis_main/figs", filename = paste0("balplot_matched_", this_var, ".png"), width = 5, height = 2.5)
+  
+}
+
+### include and put legend on bottom for one of the variables
+
+unmatched_balplot <- bal.plot(unmatched_diag_df, treat = unmatched_diag_df$treat,
+                              var.name = "elev",
+                              sample.names = "Unmatched"
+) + 
+  xlab("Elevation") + ggtitle("") + theme(legend.position = "bottom") + scale_fill_discrete("")
+ggsave(unmatched_balplot, path = "analysis_main/figs", filename = "balplot_unmatched_elev_legend.png", width = 5, height = 3.2)
+
+
+matched_balplot <- bal.plot(matched_diag_df, treat = matched_diag_df$treat,
+                            var.name = "elev",
+                            sample.names = "Matched"
+) + 
+  xlab("Elevation") + ggtitle("")+ theme(legend.position = "bottom")+
+  ylim(layer_scales(unmatched_balplot)$y$get_limits()) + scale_fill_discrete("")
+ggsave(matched_balplot, path = "analysis_main/figs", filename = "balplot_matched_elev_legend.png", width = 5, height = 3.2)
 
 
 

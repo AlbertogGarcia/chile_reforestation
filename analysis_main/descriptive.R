@@ -1,10 +1,10 @@
 library(tidyverse)
-#library(reshape2)
 library(ggplot2)
 library(stringi)
 library(fixest)
 library(modelsummary)
 library(kableExtra)
+library(here)
 
 
 clean_data_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
@@ -31,7 +31,8 @@ regrowth <- covariates_enrolled %>%
   mutate(property_hectares = pixels_count / 0.09 ,
          ind_dist = unlist(ind_dist)/1000,
          natin_dist = unlist(natin_dist)/1000,
-         city_dist = unlist(city_dist)/1000
+         city_dist = unlist(city_dist)/1000,
+         Trees_0800 = Trees_2008 - Trees_2000
   )
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -55,7 +56,7 @@ psize_density <- ggplot(data = admin_df, aes(x = rptpre_superficie_predial, colo
   theme_minimal()+
   ggtitle("Distribution of enrollee property sizes")
 psize_density
-ggsave(psize_density, path = "paper/figs", filename = "psize_density.png",
+ggsave(psize_density, path = "analysis_main/figs", filename = "psize_density.png",
        width = 6, height = 4)
 
 proportion_subsidy_density <- ggplot(data = admin_df, aes(x = proportion_subsidized, color = `Contest type`))+
@@ -66,7 +67,7 @@ proportion_subsidy_density <- ggplot(data = admin_df, aes(x = proportion_subsidi
   theme_minimal()+
   ggtitle("Proportion of property subsidized amongst enrollees")
 proportion_subsidy_density
-ggsave(proportion_subsidy_density, path = "paper/figs", filename = "proportion_subsidy_density.png",
+ggsave(proportion_subsidy_density, path = "analysis_main/figs", filename = "proportion_subsidy_density.png",
        width = 6, height = 4)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Main summary statistics table
@@ -81,8 +82,8 @@ app_summary <- describe((admin_df %>% filter(is.finite(proportion_subsidized)))[
 
 app_summary$rowname <- app_labs$name2
 
-regrowth_labs <- data.frame(name1 = c("Forest", "Plantation", "Trees_2008", "Crop_2008", "Grassland_2008", "natin_dist", "ind_dist", "city_dist", "elev"),
-                       name2 = c("Native forest", "Plantation", "Tree cover", "Crop", "Grassland",  "Dist. to native timber processing (km)", "Dist. to sawmill (km)", "Dist. to city (km)", "Elevation (m)"))
+regrowth_labs <- data.frame(name1 = c("Forest", "Plantation", "Trees_0800", "Crop_2008", "Grassland_2008", "Shrubs_2008", "natin_dist", "ind_dist", "city_dist", "elev"),
+                       name2 = c("Native forest (2001)", "Plantation (2001)", "Tree cover change (00-08)", "Crop (2008)", "Grassland (2008)",  "Shrubs (2008)", "Dist. to native timber processing (km)", "Dist. to sawmill (km)", "Dist. to city (km)", "Elevation (m)"))
 
 regrowth_summary <- describe(regrowth[, regrowth_labs$name1]) %>% select(mean, median, sd) %>%
   rownames_to_column() 
@@ -91,7 +92,19 @@ regrowth_summary$rowname <- regrowth_labs$name2
 main_summarystats <- rbind(app_summary, regrowth_summary)%>%
   mutate_at(vars(mean:sd), ~ round(., digits = 3))
 
-export(main_summarystats, "paper/results/main_summarystats.rds")
+kbl(main_summarystats,
+      format = "latex",
+      booktabs = T,
+      caption = "Summary statistics describing participants in the Native Forest Law subsidy competition",
+      col.names = c("Variable", "Mean", "Median", "Std. dev."),
+      align = c("l", "c", "c", "c"),
+      label = "summary-main"
+)%>%
+ # kableExtra::row_spec(2, hline_after = TRUE) %>%
+# add_header_above(c(" " = 1, "Outcome" = 3))%>%
+ # footnote(general = "* p<0.1, ** p<0.05, *** p<0.01; standard errors clustered at property level") %>%
+  kableExtra::save_kable(paste0(results_dir, "/summary_main.tex"))
+
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### Now preparing to compare enrolled groups
@@ -147,9 +160,20 @@ p_value <-  c(payment$p.value, area_bono$p.value,  area_prop$p.value, timber$p.v
               elev$p.value, native_ind$p.value, industry$p.value, city_dist$p.value)
 
 contest_ttest <- data.frame(covar, smallholder, other_interested, p_value) %>%
-  mutate_at(vars(smallholder, other_interested, p_value), ~ round(., digits = 4))
+  mutate_at(vars(smallholder, other_interested, p_value), ~ round(., digits = 4))%>%
+  mutate(p_value = ifelse(p_value < 0.0001 , "< 0.0001", p_value))
 
-library(rio)
-export(contest_ttest, "paper/results/contest_ttest_table.rds")
+kbl(contest_ttest,
+    format = "latex",
+    booktabs = T,
+    caption = "Comparison of Native Forest Law competition participants in the Smallholder versus Other Interested Parties Contests.",
+    col.names = c(" ", "Smallholders", "Other interested", " "),
+    align = c("l", "c", "c", "c"),
+    label = "contest-ttest"
+)%>%
+  # kableExtra::row_spec(2, hline_after = TRUE) %>%
+  add_header_above(c("Variable" = 1, "Contest mean" = 2, "T-test p-value"=1))%>%
+  # footnote(general = "* p<0.1, ** p<0.05, *** p<0.01; standard errors clustered at property level") %>%
+  kableExtra::save_kable(paste0(results_dir, "/contest_ttest_table.tex"))
 
 

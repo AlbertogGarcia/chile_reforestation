@@ -396,21 +396,21 @@ rawtreetrends <- bind_rows(rawtreetrends_unenrolled, rawtreetrends_cmatches)
 raw_trends <- ggplot(rawtreetrends_cmatches, aes(x = as.numeric(Year), y = Trees, color = group))+
   geom_line() + geom_point() + theme_minimal()+
   geom_vline(xintercept = 2008, linetype = "dashed")+
-  scale_color_manual(values = c(palette$blue, palette$red))+
+  scale_color_manual(values = c(palette$blue, palette$dark_green))+
   ylab("Share of property with tree cover") + xlab("Year") + guides(color = guide_legend(title = "Group"))
 raw_trends
 
 raw_trends_even <- ggplot(rawtreetrends_cmatches_even, aes(x = as.numeric(Year), y = Trees, color = group))+
   geom_line() + geom_point() + theme_minimal()+
   geom_vline(xintercept = 2008, linetype = "dashed")+
-  scale_color_manual(values = c(palette$blue, palette$red))+
+  scale_color_manual(values = c(palette$blue, palette$dark_green))+
   ylab("Tree cover relative to 2008") + xlab("Year")+ guides(color = guide_legend(title = "Group"))
 raw_trends_even
 
 raw_trends_all <- ggplot(rawtreetrends, aes(x = as.numeric(Year), y = Trees, color = group))+
   geom_line() + geom_point() + theme_minimal()+
   geom_vline(xintercept = 2008, linetype = "dashed")+
-  scale_color_manual(values = c(palette$blue, palette$red, palette$dark))+
+  scale_color_manual(values = c(palette$blue, palette$dark_green, palette$dark))+
   ylab("Share of property with tree cover") + xlab("Year") + guides(color = guide_legend(title = "Group"))
 raw_trends_all
 

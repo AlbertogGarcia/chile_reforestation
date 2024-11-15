@@ -215,7 +215,7 @@ my_coef_names <- c("log(social_puntaje + 1)"= "ln(Social score)",
 
 modelsummary(models,
              output="latex",
-             title = 'Social score is negatively associated with compliance for smallholders.',
+             title = '\\label{compliance-determinants}Social score is negatively associated with compliance for smallholders.',
              fmt = 5, # 4 digits and trailing zero
              vcov = ~rptpre_id,
              stars = c('*' = .1, '**' = .05, '***' = .01),

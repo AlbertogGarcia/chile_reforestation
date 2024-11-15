@@ -103,7 +103,7 @@ f1 <- function(x) format(round(x, 5), big.mark=",")
 options("modelsummary_format_numeric_latex" = "plain")
 modelsummary(models_contest,
              output="latex",
-             title = 'Estimates of subsidy impact across Smallholder and Other Interested Parties contests',
+             title = '\\label{tab:twfe-contest}Estimates of subsidy impact across Smallholder and Other Interested Parties contests',
              fmt = f1, # 4 digits and trailing zero
              vcov = ~property_ID,
              stars = c('*' = .1, '**' = .05, '***' = .01),
@@ -146,7 +146,7 @@ f1 <- function(x) format(round(x, 5), big.mark=",")
 options("modelsummary_format_numeric_latex" = "plain")
 modelsummary(models_compliers,
              output="latex",
-             title = 'Estimates of subsidy impact for all landowners receiving payment versus those who do not follow-through',
+             title = '\\label{tab:twfe-compliers}Estimates of subsidy impact for all landowners receiving payment versus those who do not follow-through',
              fmt = f1, # 4 digits and trailing zero
              vcov = ~property_ID,
              stars = c('*' = .1, '**' = .05, '***' = .01),

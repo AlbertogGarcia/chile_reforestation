@@ -63,6 +63,21 @@ usd_saved <- utm_saved * dollar_per_utm
 marginalized_df <- admin_df %>%
   filter(indigenous == 1 | `Contest type` == "Smallholder")
 
+smallholder_df <- admin_df %>%
+  filter(`Contest type` == "Smallholder")
+
+indigenous_df <- admin_df %>%
+  filter(indigenous == 1)
+
+
+# Amount awarded to smallholder applicants
+smallholder_awarded <- sum(smallholder_df$rptpro_monto_total) * dollar_per_utm
+pct_targeted_to_smallholder <- smallholder_awarded / total_awarded
+
+# Amount awarded to indigenous applicants
+indigenous_awarded <- sum(indigenous_df$rptpro_monto_total) * dollar_per_utm
+pct_targeted_to_ingigenous <- indigenous_awarded / total_awarded
+
 # Amount awarded to smallholder or indigenous applicants
 marginalized_awarded <- sum(marginalized_df$rptpro_monto_total) * dollar_per_utm
 

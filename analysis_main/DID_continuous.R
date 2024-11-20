@@ -107,7 +107,7 @@ modelsummary(models_contest,
              fmt = f1, # 4 digits and trailing zero
              vcov = ~property_ID,
              stars = c('*' = .1, '**' = .05, '***' = .01),
-             coef_rename = c("treat1:post:intensity" = "Intensity"),
+             coef_rename = c("treat:post:intensity" = "Intensity"),
              gof_omit = 'DF|Deviance|Adj|Within|Pseudo|AIC|BIC|Log|Year|FE|Std|RMSE'
              , add_rows = rows
              , notes = "Standard errors are clustered at the property level."
@@ -127,6 +127,7 @@ models_compliers = list("(1)" = twfe_trees_all,
               "(5)" = twfe_crop_nonc,
               "(6)" = twfe_grassland_nonc
 )
+
 
 crop_all <- round(mean(subset(matched_data_long, Year < first.treat & treat == 1)$Crop, na.rm = T), digits = 3) 
 grassland_all <- round(mean(subset(matched_data_long, Year < first.treat & treat == 1)$Grassland, na.rm = T) , digits = 3)
@@ -150,7 +151,7 @@ modelsummary(models_compliers,
              fmt = f1, # 4 digits and trailing zero
              vcov = ~property_ID,
              stars = c('*' = .1, '**' = .05, '***' = .01),
-             coef_rename = c("treat1:post:intensity" = "Intensity"),
+             coef_rename = c("treat:post:intensity" = "Intensity"),
              gof_omit = 'DF|Deviance|Adj|Within|Pseudo|AIC|BIC|Log|Year|FE|Std|RMSE'
              , add_rows = rows
              , notes = "Standard errors are clustered at the property level."
@@ -206,6 +207,25 @@ dwplot(plot_models,
 scale_fill_manual(values = c(palette$brown, palette$gold, palette$green), name = "Outcome") # start/end for light/dark greys
 
 ggsave(paste0(here("analysis_main", "figs"), "/spec_chart_DIDcontinuous.png"), width = 7, height = 5)
+
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+###############  Indigenous landowners
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

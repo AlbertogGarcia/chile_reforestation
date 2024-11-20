@@ -156,6 +156,8 @@ export(matched_data_long, paste0(clean_data_dir, "/matched_data_long.rds"))
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ### Matching diagnostics
 
+#matched_data_wide <- readRDS(paste0(clean_data_dir, "/matched_data_wide.rds"))
+
 diag_vars <- match_vars
 
 matched_diag_df <- matched_data_wide %>% select(diag_vars, treat)%>%
@@ -220,9 +222,10 @@ covar_balance <- cbind(#data.frame("covariate" = varnames),
 kbl(covar_balance,
     format = "latex",
     booktabs = T,
+    caption = "\\label{covar-balance} Covariate balance before and after matching.",
     col.names = c("Variable", "Unmatched", "Matched", "Unmatched", "Matched"))%>%
   add_header_above(c(" " = 1, "Norm. mean difference" = 2, "Variance" = 2))%>%
-  save_kable(here("results", "covar_balance.tex"))
+  save_kable(here("analysis_main", "results", "covar_balance.tex"))
   
 export(covar_balance, paste0(clean_data_dir, "/covar_balance_table.rds"))
 

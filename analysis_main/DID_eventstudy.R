@@ -245,3 +245,85 @@ ggarrange(trees_plot + ylim(-0.0248, 0.0273)
           legend = "bottom", common.legend = T)
 ggsave(paste0(here("analysis_main", "figs"), "/eventstudy_trio.png"), width = 15, height = 5)
 
+
+
+
+
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#### Above/Below median treatment "dose"
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+matched_data_long_dose <- matched_data_long %>%
+  mutate(post = ifelse(treat == 1 & Year >= first.treat, 1, 0),
+         intensity = ifelse(treat == 1, rptpre_superficie_bonificada/rptpre_superficie_predial, 0),
+         aboveMed_intensity = ifelse(intensity >= median(intensity[treat == 1]),
+                                      1,
+                                      0)
+  )
+
+######## Above median
+did_aboveMed <- att_gt(yname="Trees",
+                   tname="Year",
+                   idname="property_ID",
+                   gname="first.treat",
+                   control_group = "notyettreated",
+                   xformla= ~ ind_dist + natin_dist + city_dist + elev + pop + Forest + Plantation + Grassland_baseline + Crop_baseline + Trees_trend + Trees0800
+                   , 
+                   base_period = "universal",
+                   data=
+                     matched_data_long_dose %>% filter(treat == 0 | aboveMed_intensity == 1)
+                   , 
+                   clustervars = "property_ID"
+)
+did.ovr <- aggte(did_aboveMed, type="simple")
+did.ovr
+did.es <- aggte(did_aboveMed, type="dynamic", min_e = -15)
+ggdid(did.es)
+
+dose_es_plot_df <- data.frame("outcome" = "Trees", "dose" = "Above Median", "group" = "all", "ATT" = did.es$att.egt, "e" = did.es$egt, "se" = did.es$se.egt, "crit" = did.es$crit.val.egt)%>%
+  mutate(se = replace_na(se, 0),
+         post = ifelse(e >= 0, "post enrollment", "pre enrollment")
+  )
+
+######## Below median
+did_belowMed <- att_gt(yname="Trees",
+                       tname="Year",
+                       idname="property_ID",
+                       gname="first.treat",
+                       control_group = "notyettreated",
+                       xformla= ~ ind_dist + natin_dist + city_dist + elev + pop + Forest + Plantation + Grassland_baseline + Crop_baseline + Trees_trend + Trees0800
+                       , 
+                       base_period = "universal",
+                       data=
+                         matched_data_long_dose %>% filter(treat == 0 | aboveMed_intensity == 0), 
+                       clustervars = "property_ID"
+)
+did.ovr <- aggte(did_belowMed, type="simple")
+did.ovr
+did.es <- aggte(did_belowMed, type="dynamic", min_e = -15)
+ggdid(did.es)
+
+dose_es_plot_df <- data.frame("outcome" = "Trees", "dose" = "Below Median", "group" = "all", "ATT" = did.es$att.egt, "e" = did.es$egt, "se" = did.es$se.egt, "crit" = did.es$crit.val.egt)%>%
+  mutate(se = replace_na(se, 0),
+         post = ifelse(e >= 0, "post enrollment", "pre enrollment")
+  )%>%
+  rbind(dose_es_plot_df)
+
+
+dose_plot <- ggplot(dose_es_plot_df, aes(x = e, y = ATT, color = dose)) + 
+  ylab("Tree cover")+ xlab("Years since enrollment")+
+  geom_ribbon(aes(ymin= ATT - crit*se, ymax=ATT + crit*se, fill = dose), color = NA, alpha=0.15)+
+  geom_line() +
+  #geom_errorbar(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), width = 0.25, linewidth = 0.4)+
+  #geom_point()+
+  geom_vline(xintercept = -1, linetype = "dashed", color = palette$dark)+
+  geom_hline(yintercept = 0)+
+  scale_color_manual(values = c(palette$red, palette$blue))+
+  scale_fill_manual(values = c(palette$red, palette$blue))+
+  theme_classic()+
+  guides(color = guide_legend(title="Land enrollment"),
+         fill=F)
+dose_plot
+

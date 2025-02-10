@@ -4,6 +4,8 @@ library(sf)
 library(kableExtra)
 library(modelsummary)
 library(here)
+library(ggplot2)
+library(ggpubr)
 clean_data_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
 
 palette <- list("white" = "#FAFAFA",
@@ -260,18 +262,63 @@ me_data <- matched_data_long %>%
 matched_trees_cpov <- feols(Trees ~ treatment   + treatment*log_cpov
                             | Year + property_ID, data = me_data %>% filter(is.finite(treatment)))
 
+min(me_data$log_cpov)
+max(me_data$log_cpov)
 
 log_cpov_ME <- marginaleffects::plot_comparisons(matched_trees_cpov, variables = "treatment", condition = list("log_cpov"))+
 #  geom_rug(aes(x = log_cpov), data = me_data) +
   theme_minimal()+
   geom_hline(yintercept = 0)+
-  xlab("ln(Comuna Poverty %)")+ylab("ATT")+
-  theme(axis.text.y = element_blank())+
-  geom_vline(xintercept = mean(me_data$log_cpov+0.01), linetype = "dashed", color = "#1c86ee")
+  #xlab("ln(Comuna Poverty %)")+
+  ylab("Expected effect of Native Forest\nLaw award on tree cover")+
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        plot.margin = unit(c(0,0,0,0), "cm"))+
+  scale_x_continuous(limits = c(1.1, 3.65), breaks = c(1, 2, 3))
+#  geom_vline(xintercept = mean(me_data$log_cpov+0.01), linetype = "dashed", color = "#1c86ee")
   #ylim(-0.007, 0.022)
 log_cpov_ME
 
-ggsave(paste0(here("analysis_main", "figs"), "/Meffects_comunapov.png"), width = 7, height = 5)
+log_cpov_density <- ggplot(me_data, aes(x = log_cpov)) +
+  geom_histogram(aes(y=..density..), fill = palette$light_grey, color = palette$dark) + 
+  geom_density(aes(y=..density..), bw = 0.15) +
+  theme_minimal()+theme(plot.margin = unit(c(0,0,0,0.35), "cm"))+
+  xlab("logarithm of participants' comuna-level poverty") + ylab("Density\n")+
+  scale_x_continuous(limits = c(1.1, 3.65), breaks = c(1, 2, 3)
+                     )
+log_cpov_density
+
+ggarrange(log_cpov_ME, log_cpov_density, ncol = 1, nrow = 2,
+          labels = NULL#c("A", "B"),
+        #  legend = "bottom", common.legend = T
+          )
+ggsave(paste0(here("analysis_main", "figs"), "/Meffects_comunapov.png"), width = 7, height = 7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 matched_trees_cpov_contest <- feols(Trees ~ treatment   + treatment*log_cpov*control_contest

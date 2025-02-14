@@ -253,8 +253,35 @@ ggsave(paste0(here("analysis_main", "figs"), "/eventstudy_trio.png"), width = 15
 
 
 
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#### Use noncompliers as control group
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+matched_noncomplier_data_long <- readRDS(paste0(clean_data_dir, "/matched_noncomplier_data_long.rds"))%>%
+  filter(first.treat > 0)%>%
+  mutate(treat = 0,
+         first.treat = 0)
 
+matched_data_long_ncControl <- matched_data_long %>%
+  filter(first.treat > 0)%>%
+  bind_rows(matched_noncomplier_data_long)
+
+######## Above median
+did_ncControl <- att_gt(yname="Trees",
+                       tname="Year",
+                       idname="property_ID",
+                       gname="first.treat",
+                       control_group = "notyettreated",
+                       xformla= ~ ind_dist + natin_dist + city_dist + elev + pop + Forest + Plantation + Grassland_baseline + Crop_baseline + Trees_trend + Trees0800
+                       , 
+                       base_period = "universal",
+                       data= matched_data_long_ncControl, 
+                       clustervars = "property_ID"
+)
+did.ovr <- aggte(did_ncControl, type="simple")
+did.ovr
+did.es <- aggte(did_ncControl, type="dynamic", min_e = -15)
+ggdid(did.es)
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

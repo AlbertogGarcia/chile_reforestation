@@ -140,6 +140,9 @@ ovr_results <- data.frame("outcome" = "Trees", "group" = "Other Interested", "AT
 )%>%
   rbind(ovr_results)
 
+saveRDS(ovr_results, here("analysis_main", "results", "staggeredDID_results.rds"))
+
+
 es_plot_df <- data.frame("outcome" = "Trees", "group" = "Other Interested", "ATT" = did.es$att.egt, "e" = did.es$egt, "se" = did.es$se.egt, "crit" = did.es$crit.val.egt)%>%
   mutate(se = replace_na(se, 0),
          post = ifelse(e >= 0, "post enrollment", "pre enrollment")

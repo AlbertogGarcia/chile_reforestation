@@ -1,10 +1,12 @@
+library(did)
+library(Rcpp)
 library(tidyverse)
 library(fixest)
 library(sf)
 library(kableExtra)
-library(did)
 library(ggpubr)
 library(here)
+my_data_dir <- here::here("remote")
 clean_data_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
 
 palette <- list("white" = "#FAFAFA",
@@ -67,6 +69,7 @@ trees_plot <- ggplot(es_plot_df, aes(x = e, y = ATT, color = post)) +
   theme_classic()+
   theme(legend.title = element_blank())
 trees_plot
+
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #### Smallholder

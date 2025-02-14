@@ -6,6 +6,7 @@ library(modelsummary)
 library(here)
 library(ggplot2)
 library(ggpubr)
+library(janitor)
 clean_data_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
 
 palette <- list("white" = "#FAFAFA",
@@ -39,6 +40,9 @@ summary(twfe_trees_smallholder, vcov = ~property_ID)
 
 twfe_trees_other <- feols(Trees ~ treat : post : intensity| Year + property_ID, data = matched_data_long %>% filter(control_contest == "Otros Interesados"))
 summary(twfe_trees_other, vcov = ~property_ID)
+
+twfe_trees_binary <- feols(Trees ~ treat : post | Year + property_ID, data = matched_data_long)
+summary(twfe_trees_binary, vcov = ~property_ID)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### Grassland
@@ -120,7 +124,7 @@ modelsummary(models_contest,
   kableExtra::save_kable(paste0(here("analysis_main", "results"), "/twfe_contest_table.tex"))
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-###############  regression table for smallholders and other interested parties
+###############  regression table for all properties and then noncompliers
 
 models_compliers = list("(1)" = twfe_trees_all,
               "(2)" = twfe_crop_all,
@@ -209,6 +213,54 @@ dwplot(plot_models,
 scale_fill_manual(values = c(palette$brown, palette$gold, palette$green), name = "Outcome") # start/end for light/dark greys
 
 ggsave(paste0(here("analysis_main", "figs"), "/spec_chart_DIDcontinuous.png"), width = 7, height = 5)
+
+
+
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+##### Results table for comparisons w/ staggered DID estimator
+
+staggeredDID_results <- readRDS(here("analysis_main", "results", "staggeredDID_results.rds"))%>%
+  filter(outcome == "Trees", group == "all")
+
+continuous_twfe_sum <- summary(twfe_trees_all, vcov = ~property_ID)
+binary_twfe_sum <- summary(twfe_trees_binary, vcov = ~property_ID)
+
+
+comp_results <- data.frame("Model" = c("Continuous TWFE", "TWFE", "Staggered DID"),
+                           "PostxIntensity" = c(continuous_twfe_sum$coefficients, NA, NA),
+                           "se1" = c(continuous_twfe_sum$se, NA, NA),
+                           "Post" = c(NA, binary_twfe_sum$coefficients, staggeredDID_results$ATT),
+                           "se2" = c(NA, binary_twfe_sum$se, staggeredDID_results$se),
+                           "pre-treat" = trees_all, 
+                           "Nprop" = length(unique(matched_data_long$property_ID))
+)%>% 
+  mutate_at(vars(se1, se2), ~ ifelse(!is.na(.), paste0("(", round(., digits = 5), ")    "), " ")) %>%
+  mutate_at(vars(PostxIntensity, Post), ~ ifelse(!is.na(.), paste0(round(., digits = 6), "***"), " ")) %>%
+  t()%>%
+  row_to_names(row_number = 1) %>%
+  as.data.frame()
+
+# comp_results <- cbind( " " = c("Post x Intensity", "Post x Intensity", "Post", "Post", "Pre-treat mean", "N properties"),
+#                       comp_results)     
+
+row.names(comp_results) <- c("Post x Intensity", " ", "Post", "  ", "Pre-treat mean", "N properties")
+
+kable(comp_results,
+      format = "latex",
+      booktabs = T,
+      caption = "Estimates of the impact of Native Forest Law subsidy payments by estimator",
+     # col.names = NULL,
+      align = c("l", "c", "c", "c"),
+      label = "estimator-comp-table"
+)%>%
+ # collapse_rows(columns = 1)%>%
+  kableExtra::row_spec(4, hline_after = TRUE)%>%
+  #add_header_above(c(" " = 1, "Outcome" = 3))%>%
+  footnote(general = "* p<0.1, ** p<0.05, *** p<0.01; standard errors clustered at property level")%>%
+  kable_styling(latex_options = c("hold_position"))%>%
+  kableExtra::save_kable(here("analysis_main", "results", "estimator_comparison.tex"))
 
 
 

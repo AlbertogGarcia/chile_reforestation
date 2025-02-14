@@ -16,7 +16,7 @@ palette <- list("white" = "#FAFAFA",
                 "dark_green" = "#496F5D",
                 "gold" = "#DAA520")
 
-#my_data_dir <- here::here("remote")
+my_data_dir <- here::here("remote")
 clean_data_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
 
 all_property_wide <- readRDS(paste0(clean_data_dir, "/all_property_share_wide.rds"))%>%

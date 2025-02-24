@@ -39,7 +39,7 @@ did_trees <- att_gt(yname="Trees",
                     base_period = "universal",
                     data=
                       matched_data_long, 
-                    clustervars = "property_ID"
+                    clustervars = "property_ID" # TODO: Should we be clustering by comuna? Or using conley standard errors?
 )
 did.ovr <- aggte(did_trees, type="simple")
 did.ovr

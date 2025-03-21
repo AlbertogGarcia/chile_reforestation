@@ -51,7 +51,7 @@ palette <- list("white" = "#FAFAFA",
 psize_density <- ggplot(data = admin_df, aes(x = rptpre_superficie_predial, color = `Contest type`))+
   geom_density()+
   xlim(0,600)+
-  scale_colour_manual(values = c(palette$gold, palette$dark_green))+
+  scale_colour_manual(values = c(palette$red, palette$blue))+
   xlab("Property size (ha)")+
   theme_minimal()+
   ggtitle("Distribution of enrollee property sizes")
@@ -62,13 +62,19 @@ ggsave(psize_density, path = "analysis_main/figs", filename = "psize_density.png
 proportion_subsidy_density <- ggplot(data = admin_df, aes(x = proportion_subsidized, color = `Contest type`))+
   geom_density()+
   xlim(0,1)+
-  scale_colour_manual(values = c(palette$gold, palette$dark_green))+
+  scale_colour_manual(values = c(palette$red, palette$blue))+
   xlab("Proportion of property enrolled")+
   theme_minimal()+
   ggtitle("Proportion of property subsidized amongst enrollees")
 proportion_subsidy_density
 ggsave(proportion_subsidy_density, path = "analysis_main/figs", filename = "proportion_subsidy_density.png",
        width = 6, height = 4)
+
+ggarrange(psize_density, proportion_subsidy_density, ncol = 1, nrow = 2,
+          labels = c("A", "B"),
+          legend = "bottom", common.legend = T)
+ggsave(paste0(here("analysis_main", "figs"), "/density_duo.png"), width = 8, height = 9)
+
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Main summary statistics table
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -171,9 +177,7 @@ kbl(contest_ttest,
     align = c("l", "c", "c", "c"),
     label = "contest-ttest"
 )%>%
-  # kableExtra::row_spec(2, hline_after = TRUE) %>%
   add_header_above(c("Variable" = 1, "Contest mean" = 2, "T-test p-value"=1))%>%
-  # footnote(general = "* p<0.1, ** p<0.05, *** p<0.01; standard errors clustered at property level") %>%
   kableExtra::save_kable(paste0(results_dir, "/contest_ttest_table.tex"))
 
 

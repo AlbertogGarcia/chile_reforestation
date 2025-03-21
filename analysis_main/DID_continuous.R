@@ -172,13 +172,13 @@ modelsummary(models_compliers,
 ###############  Spec chart
 
 library(dotwhisker)
-tidy_models <- twfe_crop_other %>% tidy(vcov = ~property_ID) %>% mutate(group = "Other interested", outcome = "Crop")
-tidy_models <- twfe_grassland_other %>% tidy(vcov = ~property_ID) %>% mutate(group = "Other interested", outcome = "Grassland") %>% rbind(tidy_models)
-tidy_models <- twfe_trees_other %>% tidy(vcov = ~property_ID) %>% mutate(group = "Other interested", outcome = "Tree cover") %>% rbind(tidy_models)
-
-tidy_models <- twfe_crop_smallholder %>% tidy(vcov = ~property_ID) %>% mutate(group = "Smallholders", outcome = "Crop") %>% rbind(tidy_models)
+tidy_models <- twfe_trees_smallholder %>% tidy(vcov = ~property_ID) %>% mutate(group = "Smallholders", outcome = "Tree cover") 
 tidy_models <- twfe_grassland_smallholder %>% tidy(vcov = ~property_ID) %>% mutate(group = "Smallholders", outcome = "Grassland")  %>% rbind(tidy_models)
-tidy_models <- twfe_trees_smallholder %>% tidy(vcov = ~property_ID) %>% mutate(group = "Smallholders", outcome = "Tree cover") %>% rbind(tidy_models)
+tidy_models <- twfe_crop_smallholder %>% tidy(vcov = ~property_ID) %>% mutate(group = "Smallholders", outcome = "Crop") %>% rbind(tidy_models)
+
+tidy_models <- twfe_trees_other %>% tidy(vcov = ~property_ID) %>% mutate(group = "Other interested", outcome = "Tree cover") %>% rbind(tidy_models)
+tidy_models <- twfe_grassland_other %>% tidy(vcov = ~property_ID) %>% mutate(group = "Other interested", outcome = "Grassland") %>% rbind(tidy_models)
+tidy_models <- twfe_crop_other %>% tidy(vcov = ~property_ID) %>% mutate(group = "Other interested", outcome = "Crop") %>% rbind(tidy_models)
 
 
 plot_models <- tidy_models %>%
@@ -186,7 +186,7 @@ plot_models <- tidy_models %>%
   rename(model = outcome,
          term = group)
 
-dwplot(plot_models,
+spec_chart <- dwplot(plot_models,
        whisker_args = list(size = 1.1,
                            aes(colour = model)),
        dot_args = list(
@@ -200,23 +200,58 @@ dwplot(plot_models,
   theme_bw() + 
   geom_vline(xintercept = 0, linetype = "dashed")+
   labs(#title = "ATT estimates by contest group", 
-       x = "ATT Estimate with 95% CI", 
-       y = "") +
+       x = "ATT (main specification)", 
+       y = "Contest") +
   theme(plot.title = element_text(face="bold"),
         legend.position = "bottom",
         legend.background = element_rect(colour="grey80"),
-        legend.title.align = .5
+        legend.title.align = .5,
+        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=0.5)
         ) +
+  coord_flip()+
   scale_x_continuous(minor_breaks = c(-0.02, -0.01, 0, 0.01, 0.02, 0.03))+
 #  scale_shape_discrete(name  = "Outcome", breaks = c(0, 1, 2)) + # breaks assign shapes
-  scale_color_manual(values = c(palette$brown, palette$gold, palette$green), name = "Outcome") +# start/end for light/dark greys
-scale_fill_manual(values = c(palette$brown, palette$gold, palette$green), name = "Outcome") # start/end for light/dark greys
+  scale_color_manual(values = c(palette$green, palette$gold, palette$brown), name = "Outcome") +# start/end for light/dark greys
+scale_fill_manual(values = c(palette$green, palette$gold, palette$brown), name = "Outcome") # start/end for light/dark greys
+spec_chart
 
-ggsave(paste0(here("analysis_main", "figs"), "/spec_chart_DIDcontinuous.png"), width = 7, height = 5)
+ggsave(plot = spec_chart, paste0(here("analysis_main", "figs"), "/spec_chart_DIDcontinuous.png"), width = 7, height = 5)
 
+#%%%%%
+### Same for overall results
 
+spec_chart_ovr <- dwplot(plot_models_ovr,
+                         whisker_args = list(size = 1,
+                                             aes(colour = model)),
+                         dot_args = list(
+                           aes(fill = model
+                               #  , shape = model
+                           ), 
+                           size = 3,
+                           shape = 21,
+                           color = palette$white)
+) + 
+  theme_bw() + 
+  geom_vline(xintercept = 0, linetype = "dashed")+
+  labs(#title = "ATT estimates by contest group", 
+    x = "ATT (main specification)",
+    y = "") +
+  coord_flip()+
+  theme(plot.title = element_text(face="bold"),
+        legend.position = "right",
+        legend.background = element_rect(colour="grey80"),
+        # legend.title = element_blank(),
+        legend.title.align = .5,
+        axis.ticks.x = element_blank(),
+        #axis.title.y = element_blank()
+        axis.text.x = element_blank()#text(angle = 90, vjust = 0.5, hjust=0.5)
+  ) +
+  scale_x_continuous(minor_breaks = c(-0.02, -0.01, 0, 0.01, 0.02))+
+  #  scale_shape_discrete(name  = "Outcome", breaks = c(0, 1, 2)) + # breaks assign shapes
+  scale_color_manual(values = c(palette$green, palette$gold, palette$brown), name = "Outcome") +# start/end for light/dark greys
+  scale_fill_manual(values = c(palette$green, palette$gold, palette$brown), name = "Outcome") # start/end for light/dark greys
 
-
+spec_chart_ovr
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### Results table for comparisons w/ staggered DID estimator
@@ -322,7 +357,7 @@ log_cpov_ME <- marginaleffects::plot_comparisons(matched_trees_cpov, variables =
   theme_minimal()+
   geom_hline(yintercept = 0)+
   #xlab("ln(Comuna Poverty %)")+
-  ylab("Expected effect of Native Forest\nLaw award on tree cover")+
+  ylab("Expected effect of\naward on forest cover")+
   theme(axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         plot.margin = unit(c(0,0,0,0), "cm"))+
@@ -331,7 +366,7 @@ log_cpov_ME <- marginaleffects::plot_comparisons(matched_trees_cpov, variables =
   #ylim(-0.007, 0.022)
 log_cpov_ME
 
-log_cpov_density <- ggplot(me_data, aes(x = log_cpov)) +
+log_cpov_density <- ggplot(me_data %>% filter(treat ==1), aes(x = log_cpov)) +
   geom_histogram(aes(y=..density..), fill = palette$light_grey, color = palette$dark) + 
   geom_density(aes(y=..density..), bw = 0.15) +
   theme_minimal()+theme(plot.margin = unit(c(0,0,0,0.35), "cm"))+
@@ -340,49 +375,143 @@ log_cpov_density <- ggplot(me_data, aes(x = log_cpov)) +
                      )
 log_cpov_density
 
-ggarrange(log_cpov_ME, log_cpov_density, ncol = 1, nrow = 2,
+MEplot <- ggarrange(log_cpov_ME, log_cpov_density, ncol = 1, nrow = 2,
           labels = NULL#c("A", "B"),
         #  legend = "bottom", common.legend = T
           )
-ggsave(paste0(here("analysis_main", "figs"), "/Meffects_comunapov.png"), width = 7, height = 7)
+ggsave(plot = MEplot, paste0(here("analysis_main", "figs"), "/Meffects_comunapov.png"), width = 7, height = 7)
+
+#%%%%%%%%%%%%%%%%%%%%
+#### Combining spec chart and comuna poverty marginal effects plots
+#%%%%%%%%%%%%%%%%%%%%
+
+
+schart_MEplot <- ggarrange(spec_chart, MEplot 
+                               , ncol = 2, nrow = 1,
+                               labels = c("A", "B")
+                               #  legend = "bottom", common.legend = T
+)
+schart_MEplot
+
+ggsave(plot = schart_MEplot, paste0(here("analysis_main", "figs"), "/schart_ME_duo.png"), width = 10, height = 5)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#%%%%%%%%%%%%%%%%%%%%
+#### Same marginal effects plot separated by contest
+#%%%%%%%%%%%%%%%%%%%%
 
 matched_trees_cpov_contest <- feols(Trees ~ treatment   + treatment*log_cpov*control_contest
                             | Year + property_ID, data = me_data %>% filter(is.finite(treatment)))
 
 
 log_cpov_ME <- marginaleffects::plot_comparisons(matched_trees_cpov_contest, variables = "treatment", condition = list("log_cpov", "control_contest"))+
- # geom_rug(aes(x = log_cpov), data = me_data) +
   theme_minimal()+
-  geom_hline(yintercept = 0)+
-  xlab("ln(ComunaPov)")+ylab("ATT")+
-  theme(axis.text.y = element_blank())+
-  geom_vline(xintercept = mean(me_data$log_cpov+0.01), linetype = "dashed", color = "#1c86ee")
-#ylim(-0.007, 0.022)
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  ylab("Expected effect of\naward on forest cover")+
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        plot.margin = unit(c(0,0,0,0), "cm"),
+        legend.position = "none")+
+  scale_color_manual(values = c(palette$red, palette$blue))+
+  scale_fill_manual(values = c(palette$red, palette$blue))+
+  scale_x_continuous(limits = c(1.1, 3.65), breaks = c(1, 2, 3))
 log_cpov_ME
+
+log_cpov_density <- ggplot(me_data %>% filter(treat ==1), aes(x = log_cpov)) +
+  geom_histogram(aes(y=..density.., fill = `Contest type`), color = palette$dark, alpha = 0.65) + 
+  geom_density(aes(y=..density.., color = `Contest type`), bw = 0.15) +
+  theme_minimal()+
+  theme(plot.margin = unit(c(0,0,0,0.8), "cm"),
+        legend.position = "bottom")+
+  xlab("logarithm of participants' comuna-level poverty") + ylab("Density\n")+
+  scale_color_manual(values = c(palette$red, palette$blue))+
+  scale_fill_manual(values = c(palette$red, palette$blue))+
+  scale_x_continuous(limits = c(1.1, 3.65), breaks = c(1, 2, 3))
+log_cpov_density
+
+MEplot_contest <- ggarrange(log_cpov_ME, log_cpov_density, ncol = 1, nrow = 2,
+                    labels = NULL#c("A", "B")
+                   # , legend = "bottom", common.legend = F
+)
+MEplot_contest
+ggsave(plot = MEplot_contest, paste0(here("analysis_main", "figs"), "/Meffects_comunapov_contest.png"), width = 7, height = 7)
+
+
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#### Alternative matching approaches
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ratios <- seq(from = 1, to = 5)
+calipers <- c(0.25, 0.5,1,2, "none")
+altmatch_results <- twfe_trees_all %>% tidy(vcov = ~property_ID) %>% mutate(ratio = 3, caliper = "none", outcome = "Tree cover") 
+for(calip in calipers){
+  
+  for(r in ratios){
+    
+    if(r == 3 & calip == "none"){
+      altmatch_results <- altmatch_results
+      
+    } else{
+      
+      this_data <- readRDS(paste0(clean_data_dir, "/matched_data_long_", r, "_", calip,  ".rds"))%>%
+        mutate(post = ifelse(treat == 1 & Year >= first.treat, 1, 0),
+               intensity = ifelse(treat == 1, rptpre_superficie_bonificada/rptpre_superficie_predial, 0))
+      
+      ##### Trees
+      twfe_trees <- feols(Trees ~ treat : post : intensity| Year + property_ID, data = this_data)
+      altmatch_results <- twfe_trees %>% tidy(vcov = ~property_ID) %>% mutate(ratio = r, caliper = calip, outcome = "Tree cover") %>% rbind(altmatch_results)
+      
+    }
+    
+  }
+  
+}
+
+
+
+plot_models <- altmatch_results %>%
+  select(-term)%>%
+  mutate(term = as.numeric(ratio),
+         model = caliper)%>%
+  arrange(-term)
+
+altmatch_pal <- c(palette$blue, palette$red, palette$dark_green, palette$gold, palette$dark)
+
+spec_altmatch <- dwplot(plot_models,
+                     whisker_args = list(size = 1.1,
+                                         aes(colour = model)),
+                     dot_args = list(
+                       aes(fill = model
+                           #  , shape = model
+                       ), 
+                       size = 3,
+                       shape = 21,
+                       color = palette$white)
+) + 
+  theme_bw() + 
+  geom_vline(xintercept = 0, linetype = "dashed")+
+  labs(#title = "ATT estimates by contest group", 
+    x = "ATT for tree cover (main specification)", 
+    y = "# of nearest neighbors") +
+  theme(plot.title = element_text(face="bold"),
+        legend.position = "bottom",
+        legend.background = element_rect(colour="grey80"),
+        legend.title.align = .5,
+        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust=0.5)
+  ) +
+  coord_flip()+
+  scale_x_continuous(minor_breaks = c(-0.02, -0.01, 0, 0.01, 0.02, 0.03),
+                     limits = c(-0.01, 0.035))+
+  #  scale_shape_discrete(name  = "Outcome", breaks = c(0, 1, 2)) + # breaks assign shapes
+  scale_color_manual(values = altmatch_pal, name = "Caliper") +# start/end for light/dark greys
+  scale_fill_manual(values = altmatch_pal, name = "Caliper") # start/end for light/dark greys
+spec_altmatch
+
+ggsave(plot = spec_altmatch, paste0(here("analysis_main", "figs"), "/spec_chart_altmatch.png"), width = 8, height = 5)
+
+
+
+          

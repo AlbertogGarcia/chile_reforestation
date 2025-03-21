@@ -39,7 +39,7 @@ did_trees <- att_gt(yname="Trees",
                     base_period = "universal",
                     data=
                       matched_data_long, 
-                    clustervars = "property_ID" # TODO: Should we be clustering by comuna? Or using conley standard errors?
+                    clustervars = "property_ID"
 )
 did.ovr <- aggte(did_trees, type="simple")
 did.ovr
@@ -57,15 +57,15 @@ es_plot_df <- data.frame("outcome" = "Trees", "group" = "all", "ATT" = did.es$at
          post = ifelse(e >= 0, "post enrollment", "pre enrollment")
   )
 
-trees_plot <- ggplot(es_plot_df, aes(x = e, y = ATT, color = post)) + 
-  ylab("Tree cover")+ xlab("Years since enrollment")+
- # geom_ribbon(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), fill = palette$light_grey, color = palette$light_grey, alpha=1)+
+trees_plot <- ggplot(es_plot_df, aes(x = e, y = ATT)) + 
+  ylab("ATT (binary treatment)")+ xlab("Years since enrollment")+
+  # geom_ribbon(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), fill = palette$light_grey, color = palette$light_grey, alpha=1)+
   #geom_line() +
-  geom_errorbar(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), width = 0.25, linewidth = 0.4)+
-  geom_point()+
+  geom_errorbar(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), width = 0.25, linewidth = 0.4, color = palette$green)+
+  geom_point(color = palette$green)+
   geom_vline(xintercept = -1, linetype = "dashed", color = palette$dark)+
   geom_hline(yintercept = 0)+
-  scale_color_manual(values = c(palette$red, palette$blue))+
+  #scale_color_manual(values = c(palette$red, palette$blue))+
   theme_classic()+
   theme(legend.title = element_blank())
 trees_plot
@@ -166,7 +166,13 @@ other_trees_plot
 ggarrange(smallholder_trees_plot, other_trees_plot, ncol = 2, nrow = 1,
           labels = c("A", "B"),
           legend = "bottom", common.legend = T)
-ggsave(paste0(here("analysis_main", "figs"), "/eventstudy_duo.png"), width = 12, height = 5)
+ggsave(paste0(here("analysis_main", "figs"), "/eventstudy_horiz_duo.png"), width = 12, height = 5)
+
+
+ggarrange(smallholder_trees_plot, other_trees_plot, ncol = 1, nrow = 2,
+          labels = c("A", "B"),
+          legend = "bottom", common.legend = T)
+ggsave(paste0(here("analysis_main", "figs"), "/eventstudy_vert_duo.png"), width = 7, height = 9)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #### Other Land Cover Types
@@ -194,17 +200,19 @@ es_plot_df <- data.frame("outcome" = "Crop", "group" = "all", "ATT" = did.es$att
          post = ifelse(e >= 0, "post enrollment", "pre enrollment")
   )
 
-crop_plot <- ggplot(es_plot_df, aes(x = e, y = ATT, color = post)) + 
-  ylab("Cropland")+ xlab("Years since enrollment")+
+crop_plot <- ggplot(es_plot_df, aes(x = e, y = ATT)) + 
+  ylab("")+ 
+  xlab("Years since enrollment")+
   # geom_ribbon(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), fill = palette$light_grey, color = palette$light_grey, alpha=1)+
   #geom_line() +
-  geom_errorbar(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), width = 0.25, linewidth = 0.4)+
-  geom_point()+
+  geom_errorbar(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), width = 0.25, linewidth = 0.4, color = palette$brown)+
+  geom_point(color = palette$brown)+
   geom_vline(xintercept = -1, linetype = "dashed", color = palette$dark)+
   geom_hline(yintercept = 0)+
-  scale_color_manual(values = c(palette$red, palette$blue))+
+  #scale_color_manual(values = c(palette$red, palette$blue))+
   theme_classic()+
-  theme(legend.title = element_blank())
+  theme(legend.title = element_blank(),
+        axis.title.y = element_blank())
 crop_plot
 
 ######## GRASSLAND
@@ -225,33 +233,56 @@ did.ovr
 did.es <- aggte(did_grass, type="dynamic", min_e = -15)
 ggdid(did.es)
 
-es_plot_df <- data.frame("outcome" = "Crop", "group" = "all", "ATT" = did.es$att.egt, "e" = did.es$egt, "se" = did.es$se.egt, "crit" = did.es$crit.val.egt)%>%
+es_plot_df <- data.frame("outcome" = "Grassland", "group" = "all", "ATT" = did.es$att.egt, "e" = did.es$egt, "se" = did.es$se.egt, "crit" = did.es$crit.val.egt)%>%
   mutate(se = replace_na(se, 0),
          post = ifelse(e >= 0, "post enrollment", "pre enrollment")
   )
 
-grass_plot <- ggplot(es_plot_df, aes(x = e, y = ATT, color = post)) + 
-  ylab("Grassland")+ xlab("Years since enrollment")+
+grass_plot <- ggplot(es_plot_df, aes(x = e, y = ATT)) + 
+  xlab("Years since enrollment")+
   # geom_ribbon(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), fill = palette$light_grey, color = palette$light_grey, alpha=1)+
   #geom_line() +
-  geom_errorbar(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), width = 0.25, linewidth = 0.4)+
-  geom_point()+
+  geom_errorbar(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), width = 0.25, linewidth = 0.4, color = palette$gold)+
+  geom_point(color = palette$gold)+
   geom_vline(xintercept = -1, linetype = "dashed", color = palette$dark)+
   geom_hline(yintercept = 0)+
-  scale_color_manual(values = c(palette$red, palette$blue))+
+  #scale_color_manual(values = c(palette$red, palette$blue))+
   theme_classic()+
-  theme(legend.title = element_blank())
+  theme(legend.title = element_blank(),
+        axis.title.y = element_blank())
 grass_plot
 
-ggarrange(trees_plot + ylim(-0.0248, 0.0273)
-          , grass_plot + ylim(-0.0248, 0.0273)
-          , crop_plot + ylim(-0.0248, 0.0273)
-          , ncol = 3, nrow = 1,
-          labels = c("A", "B", "C"),
-          legend = "bottom", common.legend = T)
-ggsave(paste0(here("analysis_main", "figs"), "/eventstudy_trio.png"), width = 15, height = 5)
+eventstudy_trio <- ggarrange(trees_plot + ylim(-0.0248, 0.0273)
+                             , grass_plot + ylim(-0.0248, 0.0273)
+                             , crop_plot + ylim(-0.0248, 0.0273)
+                             , ncol = 3, nrow = 1
+                             # labels = c("A", "B", "C"),
+)
+eventstudy_trio
+ggsave(plot = eventstudy_trio, paste0(here("analysis_main", "figs"), "/eventstudy_trio.png"), width = 15, height = 5)
 
+eventstudy_quad <- ggarrange(eventstudy_trio
+                             , spec_chart_ovr
+                             , ncol = 2, nrow = 1
+                             , widths = c(3.5,1)
+                             , labels = c("A", "B")
+                             , legend = "bottom", common.legend = T
+)
 
+eventstudy_quad
+
+eventstudy_quad <- ggarrange(trees_plot + ylim(-0.0248, 0.0273)
+                             , grass_plot + ylim(-0.0248, 0.0273)
+                             , crop_plot + ylim(-0.0248, 0.0273)
+                             , spec_chart_vert
+                             , ncol = 4, nrow = 1
+                             , widths = c(1.4, 4/3, 4/3, 0.9)
+                             , labels = c("A", "B", "C", "D")
+                             , legend = "bottom", common.legend = T
+)
+
+eventstudy_quad
+ggsave(paste0(here("analysis_main", "figs"), "/eventstudy_quad.png"), width = 15, height = 5)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #### Use noncompliers as control group
@@ -268,15 +299,15 @@ matched_data_long_ncControl <- matched_data_long %>%
 
 ######## Above median
 did_ncControl <- att_gt(yname="Trees",
-                       tname="Year",
-                       idname="property_ID",
-                       gname="first.treat",
-                       control_group = "notyettreated",
-                       xformla= ~ ind_dist + natin_dist + city_dist + elev + pop + Forest + Plantation + Grassland_baseline + Crop_baseline + Trees_trend + Trees0800
-                       , 
-                       base_period = "universal",
-                       data= matched_data_long_ncControl, 
-                       clustervars = "property_ID"
+                        tname="Year",
+                        idname="property_ID",
+                        gname="first.treat",
+                        control_group = "notyettreated",
+                        xformla= ~ ind_dist + natin_dist + city_dist + elev + pop + Forest + Plantation + Grassland_baseline + Crop_baseline + Trees_trend + Trees0800
+                        , 
+                        base_period = "universal",
+                        data= matched_data_long_ncControl, 
+                        clustervars = "property_ID"
 )
 did.ovr <- aggte(did_ncControl, type="simple")
 did.ovr
@@ -292,23 +323,23 @@ matched_data_long_dose <- matched_data_long %>%
   mutate(post = ifelse(treat == 1 & Year >= first.treat, 1, 0),
          intensity = ifelse(treat == 1, rptpre_superficie_bonificada/rptpre_superficie_predial, 0),
          aboveMed_intensity = ifelse(intensity >= median(intensity[treat == 1]),
-                                      1,
-                                      0)
+                                     1,
+                                     0)
   )
 
 ######## Above median
 did_aboveMed <- att_gt(yname="Trees",
-                   tname="Year",
-                   idname="property_ID",
-                   gname="first.treat",
-                   control_group = "notyettreated",
-                   xformla= ~ ind_dist + natin_dist + city_dist + elev + pop + Forest + Plantation + Grassland_baseline + Crop_baseline + Trees_trend + Trees0800
-                   , 
-                   base_period = "universal",
-                   data=
-                     matched_data_long_dose %>% filter(treat == 0 | aboveMed_intensity == 1)
-                   , 
-                   clustervars = "property_ID"
+                       tname="Year",
+                       idname="property_ID",
+                       gname="first.treat",
+                       control_group = "notyettreated",
+                       xformla= ~ ind_dist + natin_dist + city_dist + elev + pop + Forest + Plantation + Grassland_baseline + Crop_baseline + Trees_trend + Trees0800
+                       , 
+                       base_period = "universal",
+                       data=
+                         matched_data_long_dose %>% filter(treat == 0 | aboveMed_intensity == 1)
+                       , 
+                       clustervars = "property_ID"
 )
 did.ovr <- aggte(did_aboveMed, type="simple")
 did.ovr

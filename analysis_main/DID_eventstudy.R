@@ -261,20 +261,20 @@ eventstudy_trio <- ggarrange(trees_plot + ylim(-0.0248, 0.0273)
 eventstudy_trio
 ggsave(plot = eventstudy_trio, paste0(here("analysis_main", "figs"), "/eventstudy_trio.png"), width = 15, height = 5)
 
-eventstudy_quad <- ggarrange(eventstudy_trio
-                             , spec_chart_ovr
-                             , ncol = 2, nrow = 1
-                             , widths = c(3.5,1)
-                             , labels = c("A", "B")
-                             , legend = "bottom", common.legend = T
-)
-
-eventstudy_quad
+# eventstudy_quad <- ggarrange(eventstudy_trio
+#                              , spec_chart_ovr
+#                              , ncol = 2, nrow = 1
+#                              , widths = c(3.5,1)
+#                              , labels = c("A", "B")
+#                              , legend = "bottom", common.legend = T
+# )
+# 
+# eventstudy_quad
 
 eventstudy_quad <- ggarrange(trees_plot + ylim(-0.0248, 0.0273)
                              , grass_plot + ylim(-0.0248, 0.0273)
                              , crop_plot + ylim(-0.0248, 0.0273)
-                             , spec_chart_vert
+                             , spec_chart_ovr
                              , ncol = 4, nrow = 1
                              , widths = c(1.4, 4/3, 4/3, 0.9)
                              , labels = c("A", "B", "C", "D")

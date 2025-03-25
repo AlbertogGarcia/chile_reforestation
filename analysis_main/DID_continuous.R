@@ -34,6 +34,7 @@ matched_noncomplier_data_long <- readRDS(paste0(clean_data_dir, "/matched_noncom
 ##### Trees
 twfe_trees_all <- feols(Trees ~ treat : post : intensity| Year + property_ID, data = matched_data_long)
 summary(twfe_trees_all, vcov = ~property_ID)
+#vcov_conley(twfe_trees_all, cutoff = 100)
 
 twfe_trees_smallholder <- feols(Trees ~ treat : post : intensity| Year + property_ID, data = matched_data_long %>% filter(control_contest != "Otros Interesados"))
 summary(twfe_trees_smallholder, vcov = ~property_ID)
@@ -197,7 +198,7 @@ spec_chart <- dwplot(plot_models,
          shape = 21,
          color = palette$white)
        ) + 
-  theme_bw() + 
+  theme_minimal() + 
   geom_vline(xintercept = 0, linetype = "dashed")+
   labs(#title = "ATT estimates by contest group", 
        x = "ATT (main specification)", 
@@ -220,6 +221,16 @@ ggsave(plot = spec_chart, paste0(here("analysis_main", "figs"), "/spec_chart_DID
 #%%%%%
 ### Same for overall results
 
+tidy_models_ovr <- twfe_trees_all %>% tidy(vcov = ~property_ID) %>% mutate(outcome = "Tree cover") 
+tidy_models_ovr <- twfe_grassland_all %>% tidy(vcov = ~property_ID) %>% mutate(outcome = "Grassland") %>% rbind(tidy_models_ovr)
+tidy_models_ovr <- twfe_crop_all %>% tidy(vcov = ~property_ID) %>% mutate(outcome = "Crop") %>% rbind(tidy_models_ovr)
+
+
+plot_models_ovr <- tidy_models_ovr %>%
+ # select(-term)%>%
+  rename(model = outcome)
+
+
 spec_chart_ovr <- dwplot(plot_models_ovr,
                          whisker_args = list(size = 1,
                                              aes(colour = model)),
@@ -231,7 +242,7 @@ spec_chart_ovr <- dwplot(plot_models_ovr,
                            shape = 21,
                            color = palette$white)
 ) + 
-  theme_bw() + 
+  theme_minimal() + 
   geom_vline(xintercept = 0, linetype = "dashed")+
   labs(#title = "ATT estimates by contest group", 
     x = "ATT (main specification)",

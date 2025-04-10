@@ -297,7 +297,7 @@ matched_data_long_ncControl <- matched_data_long %>%
   filter(first.treat > 0)%>%
   bind_rows(matched_noncomplier_data_long)
 
-######## Above median
+######## noncompliers as control
 did_ncControl <- att_gt(yname="Trees",
                         tname="Year",
                         idname="property_ID",
@@ -316,19 +316,25 @@ ggdid(did.es)
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#### Above/Below median treatment "dose"
+#### treatment "dose" by quartile
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 matched_data_long_dose <- matched_data_long %>%
   mutate(post = ifelse(treat == 1 & Year >= first.treat, 1, 0),
          intensity = ifelse(treat == 1, rptpre_superficie_bonificada/rptpre_superficie_predial, 0),
-         aboveMed_intensity = ifelse(intensity >= median(intensity[treat == 1]),
-                                     1,
-                                     0)
+         aboveMed_intensity = ifelse(intensity >= median(intensity[treat == 1]), 1, 0),
+         intensity_1 = ifelse(between(intensity, 0, quantile(intensity[treat == 1], 1/4)), 1, 0),
+         intensity_2 = ifelse(between(intensity, quantile(intensity[treat == 1], 1/4), quantile(intensity[treat == 1], 1/2)), 1, 0),
+         intensity_3 = ifelse(between(intensity, quantile(intensity[treat == 1], 1/2), quantile(intensity[treat == 1], 3/4)), 1, 0),
+         intensity_4 = ifelse(between(intensity, quantile(intensity[treat == 1], 3/4), 1), 1, 0),
   )
 
-######## Above median
-did_aboveMed <- att_gt(yname="Trees",
+
+set.seed(0930)
+
+
+######## quartile 1
+did_1 <- att_gt(yname="Trees",
                        tname="Year",
                        idname="property_ID",
                        gname="first.treat",
@@ -337,39 +343,90 @@ did_aboveMed <- att_gt(yname="Trees",
                        , 
                        base_period = "universal",
                        data=
-                         matched_data_long_dose %>% filter(treat == 0 | aboveMed_intensity == 1)
+                         matched_data_long_dose %>% filter(treat == 0 | intensity_1 == 1)
                        , 
                        clustervars = "property_ID"
 )
-did.ovr <- aggte(did_aboveMed, type="simple")
+did.ovr <- aggte(did_1, type="simple")
 did.ovr
-did.es <- aggte(did_aboveMed, type="dynamic", min_e = -15)
+did.es <- aggte(did_1, type="dynamic", min_e = -15)
 ggdid(did.es)
 
-dose_es_plot_df <- data.frame("outcome" = "Trees", "dose" = "Above Median", "group" = "all", "ATT" = did.es$att.egt, "e" = did.es$egt, "se" = did.es$se.egt, "crit" = did.es$crit.val.egt)%>%
+dose_es_plot_df <- data.frame("outcome" = "Trees", "dose" = "1", "group" = "all", "ATT" = did.es$att.egt, "e" = did.es$egt, "se" = did.es$se.egt, "crit" = did.es$crit.val.egt)%>%
   mutate(se = replace_na(se, 0),
          post = ifelse(e >= 0, "post enrollment", "pre enrollment")
   )
 
-######## Below median
-did_belowMed <- att_gt(yname="Trees",
-                       tname="Year",
-                       idname="property_ID",
-                       gname="first.treat",
-                       control_group = "notyettreated",
-                       xformla= ~ ind_dist + natin_dist + city_dist + elev + pop + Forest + Plantation + Grassland_baseline + Crop_baseline + Trees_trend + Trees0800
-                       , 
-                       base_period = "universal",
-                       data=
-                         matched_data_long_dose %>% filter(treat == 0 | aboveMed_intensity == 0), 
-                       clustervars = "property_ID"
+######## quartile 2
+did_2 <- att_gt(yname="Trees",
+                tname="Year",
+                idname="property_ID",
+                gname="first.treat",
+                control_group = "notyettreated",
+                xformla= ~ ind_dist + natin_dist + city_dist + elev + pop + Forest + Plantation + Grassland_baseline + Crop_baseline + Trees_trend + Trees0800
+                , 
+                base_period = "universal",
+                data=
+                  matched_data_long_dose %>% filter(treat == 0 | intensity_2 == 1)
+                , 
+                clustervars = "property_ID"
 )
-did.ovr <- aggte(did_belowMed, type="simple")
+did.ovr <- aggte(did_2, type="simple")
 did.ovr
-did.es <- aggte(did_belowMed, type="dynamic", min_e = -15)
+did.es <- aggte(did_2, type="dynamic", min_e = -15)
 ggdid(did.es)
 
-dose_es_plot_df <- data.frame("outcome" = "Trees", "dose" = "Below Median", "group" = "all", "ATT" = did.es$att.egt, "e" = did.es$egt, "se" = did.es$se.egt, "crit" = did.es$crit.val.egt)%>%
+dose_es_plot_df <- data.frame("outcome" = "Trees", "dose" = "2", "group" = "all", "ATT" = did.es$att.egt, "e" = did.es$egt, "se" = did.es$se.egt, "crit" = did.es$crit.val.egt)%>%
+  mutate(se = replace_na(se, 0),
+         post = ifelse(e >= 0, "post enrollment", "pre enrollment")
+  )%>%
+  rbind(dose_es_plot_df)
+
+######## quartile 3
+did_3 <- att_gt(yname="Trees",
+                tname="Year",
+                idname="property_ID",
+                gname="first.treat",
+                control_group = "notyettreated",
+                xformla= ~ ind_dist + natin_dist + city_dist + elev + pop + Forest + Plantation + Grassland_baseline + Crop_baseline + Trees_trend + Trees0800
+                , 
+                base_period = "universal",
+                data=
+                  matched_data_long_dose %>% filter(treat == 0 | intensity_3 == 1)
+                , 
+                clustervars = "property_ID"
+)
+did.ovr <- aggte(did_3, type="simple")
+did.ovr
+did.es <- aggte(did_3, type="dynamic", min_e = -15)
+ggdid(did.es)
+
+dose_es_plot_df <- data.frame("outcome" = "Trees", "dose" = "3", "group" = "all", "ATT" = did.es$att.egt, "e" = did.es$egt, "se" = did.es$se.egt, "crit" = did.es$crit.val.egt)%>%
+  mutate(se = replace_na(se, 0),
+         post = ifelse(e >= 0, "post enrollment", "pre enrollment")
+  )%>%
+  rbind(dose_es_plot_df)
+
+######## quartile 4
+did_4 <- att_gt(yname="Trees",
+                tname="Year",
+                idname="property_ID",
+                gname="first.treat",
+                control_group = "notyettreated",
+                xformla= ~ ind_dist + natin_dist + city_dist + elev + pop + Forest + Plantation + Grassland_baseline + Crop_baseline + Trees_trend + Trees0800
+                , 
+                base_period = "universal",
+                data=
+                  matched_data_long_dose %>% filter(treat == 0 | intensity_4 == 1)
+                , 
+                clustervars = "property_ID"
+)
+did.ovr <- aggte(did_4, type="simple")
+did.ovr
+did.es <- aggte(did_4, type="dynamic", min_e = -15)
+ggdid(did.es)
+
+dose_es_plot_df <- data.frame("outcome" = "Trees", "dose" = "4", "group" = "all", "ATT" = did.es$att.egt, "e" = did.es$egt, "se" = did.es$se.egt, "crit" = did.es$crit.val.egt)%>%
   mutate(se = replace_na(se, 0),
          post = ifelse(e >= 0, "post enrollment", "pre enrollment")
   )%>%
@@ -378,16 +435,19 @@ dose_es_plot_df <- data.frame("outcome" = "Trees", "dose" = "Below Median", "gro
 
 dose_plot <- ggplot(dose_es_plot_df, aes(x = e, y = ATT, color = dose)) + 
   ylab("Tree cover")+ xlab("Years since enrollment")+
-  geom_ribbon(aes(ymin= ATT - crit*se, ymax=ATT + crit*se, fill = dose), color = NA, alpha=0.15)+
+  geom_ribbon(aes(ymin= ATT - crit*se, ymax=ATT + crit*se, fill = dose), color = NA, alpha=0.2)+
   geom_line() +
   #geom_errorbar(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), width = 0.25, linewidth = 0.4)+
   #geom_point()+
   geom_vline(xintercept = -1, linetype = "dashed", color = palette$dark)+
   geom_hline(yintercept = 0)+
-  scale_color_manual(values = c(palette$red, palette$blue))+
-  scale_fill_manual(values = c(palette$red, palette$blue))+
+  scale_color_manual(values = c(palette$brown, palette$green, palette$red, palette$blue))+
+  scale_fill_manual(values = c(palette$brown, palette$green, palette$red, palette$blue))+
   theme_classic()+
-  guides(color = guide_legend(title="Land enrollment"),
+  theme(legend.position = "bottom")+
+  guides(color = guide_legend(title="Land enrollment quartile"),
          fill=F)
 dose_plot
+
+ggsave(paste0(here("analysis_main", "figs"), "/eventstudy_dose_quartile.png"), width = 7, height = 7)
 

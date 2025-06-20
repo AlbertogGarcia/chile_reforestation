@@ -25,6 +25,11 @@ matched_data_long <- readRDS(paste0(clean_data_dir, "/matched_data_long.rds"))%>
   mutate(post = ifelse(treat == 1 & Year >= first.treat, 1, 0),
          intensity = ifelse(treat == 1, rptpre_superficie_bonificada/rptpre_superficie_predial, 0))
 
+intensity_avg <- matched_data_long %>%
+  filter(treat == 1 & Year == first.treat & is.finite(intensity)) %>%
+  select(intensity)%>%
+  pull() %>% mean()
+
 matched_noncomplier_data_long <- readRDS(paste0(clean_data_dir, "/matched_noncomplier_data_long.rds"))%>%
   mutate(treat = (first.treat > 0)*1,
          post = ifelse(treat == 1 & Year >= first.treat, 1, 0),
@@ -33,7 +38,7 @@ matched_noncomplier_data_long <- readRDS(paste0(clean_data_dir, "/matched_noncom
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### Trees
 twfe_trees_all <- feols(Trees ~ treat : post : intensity| Year + property_ID, data = matched_data_long)
-summary(twfe_trees_all, vcov = ~property_ID)
+summary(twfe_trees_all, vcov = ~pre_comuna)
 #vcov_conley(twfe_trees_all, cutoff = 100)
 
 twfe_trees_smallholder <- feols(Trees ~ treat : post : intensity| Year + property_ID, data = matched_data_long %>% filter(control_contest != "Otros Interesados"))

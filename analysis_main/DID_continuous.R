@@ -38,7 +38,7 @@ matched_noncomplier_data_long <- readRDS(paste0(clean_data_dir, "/matched_noncom
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### Trees
 twfe_trees_all <- feols(Trees ~ treat : post : intensity| Year + property_ID, data = matched_data_long)
-summary(twfe_trees_all, vcov = ~pre_comuna)
+summary(twfe_trees_all, vcov = ~property_ID)
 #vcov_conley(twfe_trees_all, cutoff = 100)
 
 twfe_trees_smallholder <- feols(Trees ~ treat : post : intensity| Year + property_ID, data = matched_data_long %>% filter(control_contest != "Otros Interesados"))
@@ -206,7 +206,7 @@ spec_chart <- dwplot(plot_models,
   theme_minimal() + 
   geom_vline(xintercept = 0, linetype = "dashed")+
   labs(#title = "ATT estimates by contest group", 
-       x = "ATT (main specification)", 
+       x = "ATT (continuous TWFE)", 
        y = "Contest") +
   theme(plot.title = element_text(face="bold"),
         legend.position = "bottom",
@@ -250,7 +250,7 @@ spec_chart_ovr <- dwplot(plot_models_ovr,
   theme_minimal() + 
   geom_vline(xintercept = 0, linetype = "dashed")+
   labs(#title = "ATT estimates by contest group", 
-    x = "ATT (main specification)",
+    x = "ATT (continuous TWFE)",
     y = "") +
   coord_flip()+
   theme(plot.title = element_text(face="bold"),
@@ -312,25 +312,6 @@ kable(comp_results,
   footnote(general = "* p<0.1, ** p<0.05, *** p<0.01; standard errors clustered at property level")%>%
   kable_styling(latex_options = c("hold_position"))%>%
   kableExtra::save_kable(here("analysis_main", "results", "estimator_comparison.tex"))
-
-
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-###############  Indigenous landowners
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -419,7 +400,7 @@ ggsave(plot = schart_MEplot, paste0(here("analysis_main", "figs"), "/schart_ME_d
 
 matched_trees_cpov_contest <- feols(Trees ~ treatment   + treatment*log_cpov*control_contest
                             | Year + property_ID, data = me_data %>% filter(is.finite(treatment)))
-
+summary(matched_trees_cpov_contest)
 
 log_cpov_ME <- marginaleffects::plot_comparisons(matched_trees_cpov_contest, variables = "treatment", condition = list("log_cpov", "control_contest"))+
   theme_minimal()+
@@ -528,6 +509,3 @@ spec_altmatch
 
 ggsave(plot = spec_altmatch, paste0(here("analysis_main", "figs"), "/spec_chart_altmatch.png"), width = 8, height = 5)
 
-
-
-          

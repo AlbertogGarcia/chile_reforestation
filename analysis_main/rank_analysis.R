@@ -645,7 +645,7 @@ counterfactual_impact_plot <- ggplot(scores_counterfactual,
                              )) +
   #geom_smooth(n=5, linewidth = 1.5)+
   #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3), se = F)+
-  geom_smooth()+
+  geom_smooth(linewidth = 2)+
   theme_classic(16)+
   theme(legend.position = "top")+
   guides(color=guide_legend(title="Scoring method",

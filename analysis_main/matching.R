@@ -237,7 +237,8 @@ for(i in 1:length(plot_vars)){
   
   unmatched_balplot <- bal.plot(unmatched_diag_df, treat = unmatched_diag_df$treat,
                                 var.name = this_var,
-                                sample.names = "Unmatched"
+                                sample.names = "Unmatched",
+                                colors = c(palette$dark, palette$gold)
   ) + 
     xlab(this_varname) + theme(legend.position = "none") + ggtitle("") 
   ggsave(unmatched_balplot, path = "analysis_main/figs", filename = paste0("balplot_unmatched_", this_var, ".png"), width = 5, height = 2.5)
@@ -245,7 +246,8 @@ for(i in 1:length(plot_vars)){
   
   matched_balplot <- bal.plot(matched_diag_df, treat = matched_diag_df$treat,
                               var.name = this_var,
-                              sample.names = "Matched"
+                              sample.names = "Matched",
+                              colors = c(palette$dark, palette$gold)
   ) + 
     xlab(this_varname) + theme(legend.position = "none") + ggtitle("")
   matched_balplot <- matched_balplot +
@@ -262,18 +264,20 @@ for(i in 1:length(plot_vars)){
 
 unmatched_balplot <- bal.plot(unmatched_diag_df, treat = unmatched_diag_df$treat,
                               var.name = "elev",
-                              sample.names = "Unmatched"
+                              sample.names = "Unmatched",
+                              colors = c(palette$dark, palette$gold)
 ) + 
-  xlab("Elevation") + ggtitle("") + theme(legend.position = "bottom") + scale_fill_discrete("")
+  xlab("Elevation") + ggtitle("") + theme(legend.position = "bottom", legend.title = element_blank())
 ggsave(unmatched_balplot, path = "analysis_main/figs", filename = "balplot_unmatched_elev_legend.png", width = 5, height = 3.2)
 
 
 matched_balplot <- bal.plot(matched_diag_df, treat = matched_diag_df$treat,
                             var.name = "elev",
-                            sample.names = "Matched"
+                            sample.names = "Matched",
+                            colors = c(palette$dark, palette$gold)
 ) + 
-  xlab("Elevation") + ggtitle("")+ theme(legend.position = "bottom")+
-  ylim(layer_scales(unmatched_balplot)$y$get_limits()) + scale_fill_discrete("")
+  xlab("Elevation") + ggtitle("")+ theme(legend.position = "bottom", legend.title = element_blank())+
+  ylim(layer_scales(unmatched_balplot)$y$get_limits()) 
 ggsave(matched_balplot, path = "analysis_main/figs", filename = "balplot_matched_elev_legend.png", width = 5, height = 3.2)
 
 
@@ -374,8 +378,8 @@ rawtreetrends_cmatches <- matched_data_wide %>%
   dplyr::summarise(Trees = mean(Trees, na.rm = T))%>%
   mutate(group = ifelse(treat == 0, "Complier matches", "Compliers"))
 
-TreatTrees08 <- (rawtreetrends_cmatches %>% filter(treat ==1 & Year == 2008))$Trees
-MatchTrees08 <- (rawtreetrends_cmatches %>% filter(treat ==0 & Year == 2008))$Trees
+TreatTrees08 <- (rawtreetrends_cmatches %>% filter(treat ==1 & Year == 2007))$Trees
+MatchTrees08 <- (rawtreetrends_cmatches %>% filter(treat ==0 & Year == 2007))$Trees
 
 rawtreetrends_cmatches_even <- rawtreetrends_cmatches %>%
   mutate(Trees = ifelse(treat == 1, Trees - TreatTrees08, Trees - MatchTrees08))
@@ -391,23 +395,23 @@ rawtreetrends_unenrolled <- complier_pool_wide %>% filter(treat == 0)%>%
 rawtreetrends <- bind_rows(rawtreetrends_unenrolled, rawtreetrends_cmatches)
   
 raw_trends <- ggplot(rawtreetrends_cmatches, aes(x = as.numeric(Year), y = Trees, color = group))+
-  geom_line() + geom_point() + theme_minimal()+
+  geom_line() + geom_point() + theme_classic()+
   geom_vline(xintercept = 2008, linetype = "dashed")+
-  scale_color_manual(values = c(palette$blue, palette$dark_green))+
+  scale_color_manual(values = c(palette$gold, palette$dark))+
   ylab("Share of property with tree cover") + xlab("Year") + guides(color = guide_legend(title = "Group"))
 raw_trends
 
 raw_trends_even <- ggplot(rawtreetrends_cmatches_even, aes(x = as.numeric(Year), y = Trees, color = group))+
-  geom_line() + geom_point() + theme_minimal()+
+  geom_line() + geom_point() + theme_classic()+
   geom_vline(xintercept = 2008, linetype = "dashed")+
-  scale_color_manual(values = c(palette$blue, palette$dark_green))+
+  scale_color_manual(values = c(palette$gold, palette$dark))+
   ylab("Tree cover relative to 2008") + xlab("Year")+ guides(color = guide_legend(title = "Group"))
 raw_trends_even
 
 raw_trends_all <- ggplot(rawtreetrends, aes(x = as.numeric(Year), y = Trees, color = group))+
   geom_line() + geom_point() + theme_minimal()+
   geom_vline(xintercept = 2008, linetype = "dashed")+
-  scale_color_manual(values = c(palette$blue, palette$dark_green, palette$dark))+
+  scale_color_manual(values = c(palette$gold, palette$dark, palette$dark))+
   ylab("Share of property with tree cover") + xlab("Year") + guides(color = guide_legend(title = "Group"))
 raw_trends_all
 

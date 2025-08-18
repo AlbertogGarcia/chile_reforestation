@@ -58,7 +58,7 @@ es_plot_df <- data.frame("outcome" = "Trees", "group" = "all", "ATT" = did.es$at
   )
 
 trees_plot <- ggplot(es_plot_df, aes(x = e, y = ATT)) + 
-  labs(y = "ATT", x = "Years since enrollment", title = "Forest")+
+  labs(y = "ATT (staggered DID)", x = "Years since enrollment", title = "Forest")+
   geom_vline(xintercept = -1, linetype = "dashed", color = palette$dark, linewidth = 0.25)+
   geom_hline(yintercept = 0, color = palette$dark, linewidth = 0.25)+
   geom_errorbar(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), width = 0.25, linewidth = 0.4, color = palette$green)+
@@ -126,14 +126,14 @@ es_plot_df <- data.frame("outcome" = "Trees", "group" = "Smallholders", "ATT" = 
 dyn.es_bycontest <- data.frame("Contest type" = "Smallholder", "ATT" = did.es$att.egt, "e" = did.es$egt, "se" = did.es$se.egt, "crit" = did.es$crit.val.egt)%>%
   mutate(se = replace_na(se, 0))
 
-smallholder_trees_plot <- ggplot(es_plot_df, aes(x = e, y = ATT, fill = post)) + 
+smallholder_trees_plot <- ggplot(es_plot_df, aes(x = e, y = ATT)) + 
   labs(y = "ATT (staggered DID)", x = "Years since enrollment", title = "Smallholders")+
   geom_vline(xintercept = -1, linetype = "dashed", color = palette$dark, linewidth = 0.25)+
   geom_hline(yintercept = 0, color = palette$dark, linewidth = 0.25)+
   # geom_ribbon(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), fill = palette$light_grey, color = palette$light_grey, alpha=1)+
   #geom_line() +
-  geom_errorbar(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), width = 0.25, linewidth = 0.4, color = palette$dark)+
-  geom_point(shape = 21, color = palette$dark)+
+  geom_errorbar(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), width = 0.25, linewidth = 0.4, color = palette$blue)+
+  geom_point(color = palette$blue)+
   theme_classic()+
   theme(legend.title = element_blank(),
         plot.title = element_text(hjust = 0.5))+
@@ -180,14 +180,14 @@ dyn.es_bycontest <- data.frame("Contest type" = "Other interested", "ATT" = did.
   mutate(se = replace_na(se, 0))%>%
   rbind(dyn.es_bycontest)
 
-other_trees_plot <- ggplot(es_plot_df, aes(x = e, y = ATT, fill = post)) + 
+other_trees_plot <- ggplot(es_plot_df, aes(x = e, y = ATT)) + 
   labs(y = "ATT (staggered DID)", x = "Years since enrollment", title = "Other interested parties")+
   geom_vline(xintercept = -1, linetype = "dashed", color = palette$dark, linewidth = 0.25)+
   geom_hline(yintercept = 0, color = palette$dark, linewidth = 0.25)+
   # geom_ribbon(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), fill = palette$light_grey, color = palette$light_grey, alpha=1)+
   #geom_line() +
-  geom_errorbar(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), width = 0.25, linewidth = 0.4)+
-  geom_point(shape = 21, color = palette$dark)+
+  geom_errorbar(aes(ymin= ATT - crit*se, ymax=ATT + crit*se), color = palette$red, width = 0.25, linewidth = 0.4)+
+  geom_point(color = palette$red)+
   theme_classic()+
   theme(legend.title = element_blank(),
         plot.title = element_text(hjust = 0.5))+
@@ -373,28 +373,28 @@ eventstudy_trio2 <- ggarrange(trees_plot2 + ylim(-0.0248, 0.0273)
 eventstudy_trio2
 ggsave(plot = eventstudy_trio2, paste0(here("analysis_main", "figs"), "/eventstudy_trio2.png"), width = 12.5, height = 4)
 
-# eventstudy_quad <- ggarrange(eventstudy_trio
-#                              , spec_chart_ovr
-#                              , ncol = 2, nrow = 1
-#                              , widths = c(3.5,1)
-#                              , labels = c("A", "B")
-#                              , legend = "bottom", common.legend = T
-# )
-# 
-# eventstudy_quad
+eventstudy_quad <- ggarrange(eventstudy_trio
+                             , spec_chart_ovr
+                             , ncol = 2, nrow = 1
+                             , widths = c(3.5,1)
+                             , labels = c("A", "B")
+                             , legend = "bottom", common.legend = T
+)
 
-# eventstudy_quad <- ggarrange(trees_plot + ylim(-0.0248, 0.0273)
-#                              , grass_plot + ylim(-0.0248, 0.0273)
-#                              , crop_plot + ylim(-0.0248, 0.0273)
-#                              , spec_chart_ovr
-#                              , ncol = 4, nrow = 1
-#                              , widths = c(1.4, 4/3, 4/3, 0.9)
-#                              , labels = c("A", "B", "C", "D")
-#                              , legend = "bottom", common.legend = T
-# )
-# 
-# eventstudy_quad
-# ggsave(paste0(here("analysis_main", "figs"), "/eventstudy_quad.png"), width = 15, height = 5)
+eventstudy_quad
+
+eventstudy_quad <- ggarrange(trees_plot + ylim(-0.0248, 0.0273)
+                             , grass_plot + ylim(-0.0248, 0.0273)
+                             , crop_plot + ylim(-0.0248, 0.0273)
+                             , spec_chart_ovr
+                             , ncol = 4, nrow = 1
+                             , widths = c(1.4, 4/3, 4/3, 0.9)
+                             , labels = c("A", "B", "C", "D")
+                             , legend = "bottom", common.legend = T
+)
+
+eventstudy_quad
+ggsave(paste0(here("analysis_main", "figs"), "/eventstudy_quad.png"), width = 15, height = 5)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #### Use noncompliers as control group
@@ -597,8 +597,8 @@ treatment_trees_plot <- ggplot(data = treatment_trends ,
   geom_line(linewidth = 0.9)+
   geom_ribbon(aes(ymin=(value-1.96*se), ymax=(value+1.96*se)), alpha = 0.2, linewidth = 0)+
   scale_x_continuous(name = "Years since enrollment", breaks = c(-10, -5, 0, 5), limits = c(-15, 8))+
-  scale_y_continuous(name = "Proportion of property with forest", labels = scales::percent)+
-  scale_color_manual(values = c(palette$dark, palette$blue))+
+  scale_y_continuous(name = "Proportion of property with forest", labels = scales::percent, limits = c(0.665, 0.825))+
+  scale_color_manual(values = c(palette$red, palette$blue))+
   guides(color=guide_legend(override.aes=list(fill=NA), title.position="top", title.hjust = 0.5),
          linetype=guide_legend(override.aes=list(fill=NA), title.position="top", title.hjust = 0.5))+
   theme(legend.position = "bottom")+

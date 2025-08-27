@@ -5,14 +5,23 @@ library(fixest)
 library(modelsummary)
 library(kableExtra)
 library(here)
-
+library(ggplot2)
+library(ggpubr)
 
 clean_data_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
 results_dir <- here("analysis_main", "results")
 
+dollar_per_utm <- 36679 * 0.0010274427
+
 admin_df <- readRDS(paste0(clean_data_dir, "/admin_df.rds")) %>%
   filter(rptpro_ano <= 2019)%>%
-  mutate(proportion_subsidized = rptpre_superficie_bonificada/rptpre_superficie_predial)
+  mutate(proportion_subsidized = rptpre_superficie_bonificada/rptpre_superficie_predial,
+         rptpro_monto_total = rptpro_monto_total*dollar_per_utm
+         )%>%
+  mutate_at(vars(cpov_pct_2007), as.numeric)%>%
+  mutate_at(vars(
+    proportion_subsidized, received_bonus, submitted_management_plan, timber, extensionista
+  ), ~.*100)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ####### Starting to integrate matched properties
@@ -28,6 +37,7 @@ regrowth <- covariates_enrolled %>%
   mutate(lu_pixels_count = Forest + Plantation + Urban + Water + `Snow/ice` + `No data` + `Pasture and ag` + Shrub + `Permanent bare soil` + `Temporary bare soil`)%>%
   mutate_at(vars(Trees_2000:`0_2018`), ~ . / pixels_count)%>%
   mutate_at(vars(Forest, Plantation), ~ . / lu_pixels_count)%>%
+  mutate_at(vars(Forest, Plantation, Trees_2000:`0_2018`), ~ . *100)%>%
   mutate(property_hectares = pixels_count / 0.09 ,
          ind_dist = unlist(ind_dist)/1000,
          natin_dist = unlist(natin_dist)/1000,
@@ -80,23 +90,26 @@ ggsave(paste0(here("analysis_main", "figs"), "/density_duo.png"), width = 8, hei
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 library(psych)
 
-app_labs <- data.frame(name1 = c("rptpre_superficie_predial", "rptpro_superficie", "proportion_subsidized", "rptpro_monto_total", "received_bonus", "submitted_management_plan", "timber", "extensionista"),
-                   name2 = c("Property size (ha)", "Subsidized surface (ha)", "Proportion of property subsidized", "Bonus amount (UTM)", "Received payment", "Submitted management plan", "Timber production objective", "Received extensionist support"))
+app_labs <- data.frame(name1 = c("rptpre_superficie_predial", "rptpro_superficie", "rptpro_monto_total", "proportion_subsidized", "cpov_pct_2007", "timber", "extensionista", "submitted_management_plan", "received_bonus"),
+                   name2 = c("Property size (ha)", "Subsidized area (ha)", "Bonus amount (USD)", "Percent of property subsidized", "Comuna poverty (%)", "Timber production objective (%)", "Received extensionist support (%)", "Submitted management plan (%)", "Received payment (%)"))
 
 app_summary <- describe((admin_df %>% filter(is.finite(proportion_subsidized)))[, app_labs$name1]) %>% select(mean, median, sd) %>%
   rownames_to_column()
 
 app_summary$rowname <- app_labs$name2
 
-regrowth_labs <- data.frame(name1 = c("Forest", "Plantation", "Trees_0800", "Crop_2008", "Grassland_2008", "Shrubs_2008", "natin_dist", "ind_dist", "city_dist", "elev"),
-                       name2 = c("Native forest (2001)", "Plantation (2001)", "Tree cover change (00-08)", "Crop (2008)", "Grassland (2008)",  "Shrubs (2008)", "Dist. to native timber processing (km)", "Dist. to sawmill (km)", "Dist. to city (km)", "Elevation (m)"))
+regrowth_labs <- data.frame(name1 = c("ind_dist", "natin_dist", "city_dist", "elev", "Forest", "Plantation", "Trees_0800", "Crop_2008", "Grassland_2008", "Shrubs_2008"),
+                       name2 = c("Dist. to sawmill (km)", "Dist. to native timber processing (km)", "Dist. to city (km)", "Elevation (m)", "Native forest (2001 %)", "Plantation (2001 %)", "Tree cover change (pp, 00-08)", "Crop (2008 %)", "Grassland (2008 %)",  "Shrubs (2008 %)"))
 
 regrowth_summary <- describe(regrowth[, regrowth_labs$name1]) %>% select(mean, median, sd) %>%
   rownames_to_column() 
 regrowth_summary$rowname <- regrowth_labs$name2
 
-main_summarystats <- rbind(app_summary, regrowth_summary)%>%
-  mutate_at(vars(mean:sd), ~ round(., digits = 3))
+main_summarystats <- rbind(
+  app_summary, 
+  regrowth_summary
+  )%>%
+  mutate_at(vars(mean:sd), ~ round(., digits = 2))
 
 kbl(main_summarystats,
       format = "latex",
@@ -106,9 +119,10 @@ kbl(main_summarystats,
       align = c("l", "c", "c", "c"),
       label = "summary-main"
 )%>%
- # kableExtra::row_spec(2, hline_after = TRUE) %>%
-# add_header_above(c(" " = 1, "Outcome" = 3))%>%
- # footnote(general = "* p<0.1, ** p<0.05, *** p<0.01; standard errors clustered at property level") %>%
+  pack_rows("Application characteristics", 1, 7) %>%
+  pack_rows("Follow-through", 8, 9)%>%
+  pack_rows("Property accessibility", 10, 13)%>%
+  pack_rows("Land cover", 14, 19)%>%
   kableExtra::save_kable(paste0(results_dir, "/summary_main.tex"))
 
 
@@ -144,30 +158,32 @@ timber <- t.test(timber ~ `Contest type`, data = admin_df)
 proportion <- t.test(proportion_subsidized ~ `Contest type`, data = admin_df %>% filter(is.finite(proportion_subsidized)))
 managementplan <- t.test(submitted_management_plan ~ `Contest type`, data = admin_df)
 received_bonus <- t.test(received_bonus ~ `Contest type`, data = admin_df)
+cpov <- t.test(cpov_pct_2007 ~ `Contest type`, data = admin_df)
 
-covar <- c("Award (UTM)", "Bonus area (ha)", "Property area (ha)","Timber production objective" ,  
-           "Proportion native forest", "Proportion plantation", "Proportion grassland", "Proportion crop", "Proportion shrub", 
-           "Elevation", "Dist. to native timber processing (km)", "Dist. to sawmill (km)", "Dist. to city (m)")
-smallholder <- c(payment$estimate[2], area_bono$estimate[2],  area_prop$estimate[2], timber$estimate[2],  
+covar <- c("Award (USD)", "Subsidized area (ha)", "Property area (ha)", "Timber production objective (%)" ,  "Elevation (m)", 
+           "Native forest (%)", "Plantation (%)", "Grassland (%)", "Crop (%)", "Shrub (%)", 
+           "Dist. to native timber processing (km)", "Dist. to sawmill (km)", "Dist. to city (km)")
+smallholder <- c(payment$estimate[2], area_bono$estimate[2],  area_prop$estimate[2], timber$estimate[2], elev$estimate[2],  
                  native_forest$estimate[2], plantation$estimate[2], grassland$estimate[2], crop$estimate[2], shrub$estimate[2], 
-                 elev$estimate[2], native_ind$estimate[2], industry$estimate[2], city_dist$estimate[2])
+                 native_ind$estimate[2], industry$estimate[2], city_dist$estimate[2])
 
 
 
-other_interested <- c(payment$estimate[1], area_bono$estimate[1],  area_prop$estimate[1], timber$estimate[1],  
+other_interested <- c(payment$estimate[1], area_bono$estimate[1],  area_prop$estimate[1], timber$estimate[1], elev$estimate[1],  
                       native_forest$estimate[1], plantation$estimate[1], grassland$estimate[1], crop$estimate[1], shrub$estimate[1], 
-                      elev$estimate[1], native_ind$estimate[1], industry$estimate[1], city_dist$estimate[1])
+                      native_ind$estimate[1], industry$estimate[1], city_dist$estimate[1])
 
 # other_df <- ttest_df %>% filter(`Contest type` == "Other interested")
 # other_interested_med <- c(median())
 
-p_value <-  c(payment$p.value, area_bono$p.value,  area_prop$p.value, timber$p.value,  
+p_value <-  c(payment$p.value, area_bono$p.value,  area_prop$p.value, timber$p.value, elev$p.value,  
               native_forest$p.value, plantation$p.value, grassland$p.value, crop$p.value, shrub$p.value, 
-              elev$p.value, native_ind$p.value, industry$p.value, city_dist$p.value)
+              native_ind$p.value, industry$p.value, city_dist$p.value)
 
 contest_ttest <- data.frame(covar, smallholder, other_interested, p_value) %>%
-  mutate_at(vars(smallholder, other_interested, p_value), ~ round(., digits = 4))%>%
-  mutate(p_value = ifelse(p_value < 0.0001 , "< 0.0001", p_value))
+  mutate_at(vars(smallholder, other_interested), ~ round(., digits = 2))%>%
+  mutate_at(vars(p_value), ~ round(., digits = 3))%>%
+  mutate(p_value = ifelse(p_value < 0.001 , "< 0.001", p_value))
 
 kbl(contest_ttest,
     format = "latex",

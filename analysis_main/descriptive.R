@@ -4,6 +4,7 @@ library(stringi)
 library(fixest)
 library(modelsummary)
 library(kableExtra)
+library(readxl)
 library(here)
 library(ggplot2)
 library(ggpubr)
@@ -44,6 +45,16 @@ regrowth <- covariates_enrolled %>%
          city_dist = unlist(city_dist)/1000,
          Trees_0800 = Trees_2008 - Trees_2000
   )
+
+#stands
+rodal_df <- read_xlsx(paste0(my_data_dir, "/external_data/concurso_conaf/program/rodal.xlsx"))
+#activities
+actividades_df <- rodal_df %>%
+  left_join(read_xlsx(paste0(my_data_dir, "/external_data/concurso_conaf/program/actividad.xlsx"))
+            , by = "rptro_id")
+table(actividades_df$rptac_tipo)
+nonrefor <- actividades_df %>% filter(!(rptac_tipo %in% c("regeneracion", "plantacion", "plantacion-suplementaria", "enriquecimiento", "siembra-directa", "corta-regeneracion", "escarificado-manual", "escarificado-mecanico")))
+length(unique(nonrefor$rptpre_id))/length(unique(actividades_df$rptpre_id))
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Property size and proportion enrolled density plots

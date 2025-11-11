@@ -3,6 +3,7 @@ library(tidyverse)
 library(ggplot2)
 library(stringi)
 library(fixest)
+library(here)
 library(modelsummary)
 library(kableExtra)
 
@@ -16,6 +17,10 @@ admin_df <- readRDS(paste0(clean_data_dir, "/admin_df.rds")) %>%
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #### Descriptive
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+# which regions are the aplications from
+table(admin_df$rptpre_region)
+nrow(subset(admin_df, rptpre_region %in% c("Región de La Araucanía", "Región de Los Lagos", "Región de Los Ríos", "Región de Ñuble", "Región de Valparaíso", "Región del Bío-Bío", "Región del Libertador General Bernardo O'Higgins", "Región del Maule", "Región Metropolitana de Santiago")))/nrow(admin_df)
 
 past_2_years <- admin_df %>% filter(rptpro_ano <= 2019)
 

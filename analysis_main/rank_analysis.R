@@ -7,6 +7,7 @@ library(stringi)
 library(fixest)
 library(modelsummary)
 library(kableExtra)
+library(here)
 
 `%ni%` <- Negate(`%in%`)  # "not in" function
 
@@ -461,7 +462,7 @@ score_VP_together <- together_VMBSVFCIVASOB %>%
   
   
 together_score_all <- admin_df %>%
-  select(rptpro_id, rptpro_tipo_concurso, cpov_pct_2007, rptpro_puntaje, received_bonus)%>%
+  select(rptpro_id, rptpro_tipo_concurso, cpov_pct_2007, rptpro_puntaje, received_bonus, rptpre_superficie_predial, rptpre_superficie_bonificada, rptpro_monto_total)%>%
   group_by(rptpro_id)%>%
   slice_head()%>%
   ungroup %>%
@@ -470,7 +471,8 @@ together_score_all <- admin_df %>%
   left_join(VT_score, by = "rptpro_id")%>%
   mutate(VP = 0.45*VBSU + 0.35*VASOB + 0.1*VMBS + 0.1*VFCI,
          rptpro_puntaje2 = 0.45*VT + 0.2*VI + 0.35*VP,
-         rptpro_puntaje3 = 0.45*VT + 0.35*VP)
+         rptpro_puntaje3 = 0.45*VT + 0.35*VP,
+         intensity = rptpre_superficie_bonificada/rptpre_superficie_predial)
   
   
   
@@ -588,6 +590,30 @@ score_all %>%
   )
 ggsave(paste0(here("analysis_main", "figs"), "/priority_score_smallholder.png"), width = 6, height = 7)
 
+score_all %>%
+  filter(rank_type %in% c("real_rank_pctl", "combined_rank_pctl"))%>%
+  ggplot(aes(x = Smallholder, y = rank_pctl, color = rank_type
+  )) +
+  geom_smooth(method = lm)+
+  #geom_smooth()+
+  #geom_smooth(method = lm, formula = y ~ splines::bs(x, 3), se = T, linetype = 2)+
+  theme_classic()+
+  theme(legend.position = "top")+
+  guides(color=guide_legend(title="Scoring method",
+                            title.position="top", title.hjust = 0.5,
+                            override.aes=list(fill=NA)
+  )
+  )+
+  scale_y_continuous(labels = scales::percent,
+                     breaks = c(.25, .50, .75),
+                     name = "Application rank percentile (higher = better)")+
+  xlab("Proportion smallholders")+
+  scale_color_manual(values = c(palette$dark, palette$blue)
+                     , breaks = c("real_rank_pctl", "combined_rank_pctl"),
+                     labels = c("Actual", "Combined contests")
+  )
+ggsave(paste0(here("analysis_main", "figs"), "/priority_score_smallholder.png"), width = 6, height = 7)
+
 
 priority_cpov_plot <- ggplot(score_all, 
        aes(x = cpov_pct_2007, y = rank_pctl, color = rank_type
@@ -630,8 +656,10 @@ beta_smallxlogcpov = -0.004330
   
 scores_counterfactual <- scores_all %>%
   mutate(log_cpov = log(cpov_pct_2007 + 0.01))%>%
-  select(Smallholder, log_cpov, real_rank_pctl, combined_rank_pctl, VT_rank_pctl, combined_VT_rank_pctl)%>%
-  mutate(treatment_effect = alpha + beta_cpov*log_cpov + beta_small*Smallholder + beta_smallxlogcpov*Smallholder*log_cpov)%>%
+  select(Smallholder, log_cpov, intensity, real_rank_pctl, combined_rank_pctl, VT_rank_pctl, combined_VT_rank_pctl, rptpre_superficie_predial, rptpre_superficie_bonificada, rptpro_monto_total)%>%
+  mutate(treatment_effect = (alpha + beta_cpov*log_cpov + beta_small*Smallholder + beta_smallxlogcpov*Smallholder*log_cpov)*intensity
+                             )%>%
+  filter(rptpre_superficie_predial >= rptpre_superficie_bonificada)%>%
   pivot_longer(cols = 
                  c("real_rank_pctl", "VT_rank_pctl", "combined_rank_pctl", "combined_VT_rank_pctl"), 
                names_to = "rank_type", values_to = "rank_pctl"
@@ -664,31 +692,59 @@ counterfactual_impact_plot
   
 ggsave(paste0(here("analysis_main", "figs"), "/counterfactual_impact_plot.png"), width = 7.5, height = 7.5)
 
-scores_counterfactual_binned <- scores_counterfactual %>%
+# scores_counterfactual_binned <- scores_counterfactual %>%
+#   group_by(rank_type)%>%
+#   mutate(bin = case_when(
+#     rank_pctl < 0.2 ~ 0.1,
+#     rank_pctl < 0.4 & rank_pctl >= 0.2 ~ 0.3,
+#     rank_pctl < 0.6 & rank_pctl >= 0.4 ~ 0.5,
+#     rank_pctl < 0.8 & rank_pctl >= 0.6 ~ 0.7,
+#     rank_pctl >= 0.8 ~ 0.9,
+#   )
+#          )%>%
+#   ungroup %>% 
+#   group_by(rank_type, bin)%>%
+#   summarise(treatment_effect = mean(treatment_effect, na.rm = T)
+#             )%>%
+#   ungroup
+# 
+# 
+# ggplot(data = scores_counterfactual_binned,
+#        aes(x = bin, y = treatment_effect, color = rank_type)
+#        )  +
+#   geom_point()
+  
+  
+impact_counterfactual <- scores_counterfactual %>%
+  mutate(additional_forest_ha = treatment_effect*rptpre_superficie_predial)%>%
+  arrange(-rank_pctl)%>%
   group_by(rank_type)%>%
-  mutate(bin = case_when(
-    rank_pctl < 0.2 ~ 0.1,
-    rank_pctl < 0.4 & rank_pctl >= 0.2 ~ 0.3,
-    rank_pctl < 0.6 & rank_pctl >= 0.4 ~ 0.5,
-    rank_pctl < 0.8 & rank_pctl >= 0.6 ~ 0.7,
-    rank_pctl >= 0.8 ~ 0.9,
-  )
-         )%>%
-  ungroup %>% 
-  group_by(rank_type, bin)%>%
-  summarise(treatment_effect = mean(treatment_effect, na.rm = T)
-            )%>%
+  mutate(percent_funded = cumsum(rptpro_monto_total) / sum(rptpro_monto_total, na.rm = T),
+         cumulative_impact = cumsum(additional_forest_ha))%>%
   ungroup
 
+ggplot(impact_counterfactual 
+       %>% filter(percent_funded <= 0.99)
+         , aes(x = percent_funded, y = cumulative_impact, color = reorder(rank_type, -cumulative_impact))
+       ) +
+  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.3, color = palette$dark)+
+  #geom_vline(xintercept = 0.6, linewidth = 0.5, color = palette$dark)+
+  geom_smooth(linewidth = 2)+
+  theme_classic(14)+
+  theme(legend.position = "top")+
+  guides(color=guide_legend(title="Scoring method",
+                            title.position="top", title.hjust = 0.5, 
+                            override.aes=list(fill=NA)
+  )
+  )+
+  scale_x_continuous(labels = scales::percent,
+                     name = "Percent of total requested funding awarded")+
+  ylab("Total additional forest (Ha)")+
+  scale_color_manual(values = c(palette$dark, palette$blue, palette$gold, palette$red)
+                     , breaks = c("real_rank_pctl", "VT_rank_pctl", "combined_rank_pctl", "combined_VT_rank_pctl"),
+                     labels = c("Actual", "       Removed\nsocial components", "Combined contests", "Combined contests\n       & removed\nsocial components")
+  )
+  
+ggsave(paste0(here("analysis_main", "figs"), "/counterfactual_funding_plot.png"), width = 7.5, height = 7.5)
 
-ggplot(data = scores_counterfactual_binned,
-       aes(x = bin, y = treatment_effect, color = rank_type)
-       )  +
-  geom_point()
-  
-  
-  
-  
-  
-  
   

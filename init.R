@@ -13,15 +13,17 @@ library(R.utils)
 # Define the path to your local code directory
 # code_dir <- 'C:\\Users\\garci\\Documents\\chile_reforestation\\'
 code_dir <- here::here()
+dir.exists(code_dir)
+
 # code_dir <- 'D:\\dev\\chile\\chile_reforestation\\'
 
 
 # Define the path to the local path of your dropbox folder 
 data_dir <- 'C:\\Users\\AG2964\\Dropbox\\chile_reforestation\\'
-# data_dir <- 'D:\\cloud\\Dropbox\\collaborations\\chile_reforestation\\'
+data_dir <- '/Users/rheilmayr/Dropbox/collaborations/chile_reforestation/'
+dir.exists(data_dir)
 
-
-createLink(paste0(code_dir, '\\remote\\'), data_dir, overwrite = FALSE)
+createLink(paste0(code_dir, '/remote'), data_dir, overwrite = FALSE)
 
 my_data_dir <- here::here("remote")
 

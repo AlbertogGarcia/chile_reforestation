@@ -691,6 +691,7 @@ counterfactual_impact_plot <- ggplot(scores_counterfactual,
 counterfactual_impact_plot
   
 ggsave(paste0(here("analysis_main", "figs"), "/counterfactual_impact_plot.png"), width = 7.5, height = 7.5)
+ggsave(paste0(here("analysis_main", "figs"), "/counterfactual_impact_plot.svg"), width = 12, height = 7.5)
 
 # scores_counterfactual_binned <- scores_counterfactual %>%
 #   group_by(rank_type)%>%
@@ -746,5 +747,5 @@ ggplot(impact_counterfactual
   )
   
 ggsave(paste0(here("analysis_main", "figs"), "/counterfactual_funding_plot.png"), width = 7.5, height = 7.5)
+ggsave(paste0(here("analysis_main", "figs"), "/counterfactual_funding_plot.svg"), width = 12, height = 7.5)
 
-  

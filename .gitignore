@@ -41,3 +41,4 @@ vignettes/*.pdf
 # Remote symlink to data directory
 remote
 remote.LNK
+analysis_main/figs

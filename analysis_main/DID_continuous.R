@@ -1,4 +1,4 @@
-library(dplyr)
+library(tidyverse)
 library(fixest)
 library(sf)
 library(kableExtra)
@@ -7,6 +7,10 @@ library(here)
 library(ggplot2)
 library(ggpubr)
 library(janitor)
+library(systemfit)
+library(data.table)
+library(car)
+
 clean_data_dir <- here::here(my_data_dir, "data", "native_forest_law", "cleaned_output")
 
 palette <- list("white" = "#FAFAFA",
@@ -23,7 +27,10 @@ palette <- list("white" = "#FAFAFA",
 
 matched_data_long <- readRDS(paste0(clean_data_dir, "/matched_data_long.rds"))%>%
   mutate(post = ifelse(treat == 1 & Year >= first.treat, 1, 0),
-         intensity = ifelse(treat == 1, rptpre_superficie_bonificada/rptpre_superficie_predial, 0))
+         intensity = ifelse(treat == 1, rptpre_superficie_bonificada/rptpre_superficie_predial, 0),
+         extension = ifelse(extensionista == 0 | is.na(extensionista), 0, 1),
+         subclass = as.character(subclass)) %>%
+  group_by(subclass, control_contest) %>% filter(!max(intensity, na.rm = T)>1) %>% ungroup
 
 intensity_avg <- matched_data_long %>%
   filter(treat == 1 & Year == first.treat & is.finite(intensity)) %>%
@@ -39,7 +46,6 @@ matched_noncomplier_data_long <- readRDS(paste0(clean_data_dir, "/matched_noncom
 ##### Trees
 twfe_trees_all <- feols(Trees ~ treat : post : intensity| Year + property_ID, data = matched_data_long)
 summary(twfe_trees_all, vcov = ~property_ID)
-#vcov_conley(twfe_trees_all, cutoff = 100)
 
 twfe_trees_smallholder <- feols(Trees ~ treat : post : intensity| Year + property_ID, data = matched_data_long %>% filter(control_contest != "Otros Interesados"))
 summary(twfe_trees_smallholder, vcov = ~property_ID)
@@ -49,6 +55,13 @@ summary(twfe_trees_other, vcov = ~property_ID)
 
 twfe_trees_binary <- feols(Trees ~ treat : post | Year + property_ID, data = matched_data_long)
 summary(twfe_trees_binary, vcov = ~property_ID)
+
+twfe_trees_ext <- feols(Trees ~ treat:post:intensity + treat:post:intensity:`control_contest` + treat:post:intensity:extension| Year + property_ID, data = matched_data_long)
+summary(twfe_trees_ext, vcov = ~property_ID)
+
+twfe_trees_contests <- feols(Trees ~ treat:post:intensity + treat:post:intensity:`control_contest` | Year + property_ID, data = matched_data_long,
+                             vcov = ~property_ID)
+summary(twfe_trees_contests)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### Grassland
@@ -62,7 +75,9 @@ summary(twfe_grassland_smallholder, vcov = ~property_ID)
 twfe_grassland_other <- feols(Grassland ~ treat : post : intensity| Year + property_ID, data = matched_data_long %>% filter(control_contest == "Otros Interesados"))
 summary(twfe_grassland_other, vcov = ~property_ID)
 
-
+twfe_grassland_contests <- feols(Grassland ~ treat:post:intensity + treat:post:intensity:`control_contest` | Year + property_ID, data = matched_data_long,
+                                 vcov = ~property_ID)
+summary(twfe_grassland_contests)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##### Crop
 
@@ -75,17 +90,40 @@ summary(twfe_crop_smallholder, vcov = ~property_ID)
 twfe_crop_other <- feols(Crop ~ treat : post : intensity| Year + property_ID, data = matched_data_long %>% filter(control_contest == "Otros Interesados"))
 summary(twfe_crop_other, vcov = ~property_ID)
 
+twfe_crop_contests <- feols(Crop ~ treat:post:intensity + treat:post:intensity:`control_contest` | Year + property_ID, data = matched_data_long,
+                            vcov = ~property_ID)
+summary(twfe_crop_contests)
+
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-##### Noncompliers
-twfe_crop_nonc <- feols(Crop ~ treat : post : intensity| Year + property_ID, data = matched_noncomplier_data_long)
-summary(twfe_crop_nonc, vcov = ~property_ID)
+##### Jointly testing whether smallholders are distinct from other interested
 
+matched_data_longer <- matched_data_long %>%
+  mutate(treated = treat*post*intensity) %>%
+  pivot_longer(cols = c("Trees", "Grassland", "Crop"), names_to = "LU_outcome", values_to = "y")
+
+est <- feols(y ~ LU_outcome + LU_outcome:(treated * control_contest) | Year + property_ID, 
+             vcov = ~property_ID,
+             data = matched_data_longer)
+coef(est)
+linearHypothesis(est, c(
+  "LU_outcomeTrees:treated:control_contestPequeños Propietarios = 0",
+  "LU_outcomeGrassland:treated:control_contestPequeños Propietarios = 0",
+  "LU_outcomeCrop:treated:control_contestPequeños Propietarios = 0"
+))
+
+## Results: The joint Wald test indicates that the interaction term is statistically significant across the three outcomes \chi^2(3)=9.73, p=0.02104
+# suggesting that the treatment effect varies between the two contests
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+##### Noncompliers
 twfe_trees_nonc <- feols(Trees ~ treat : post : intensity| Year + property_ID, data = matched_noncomplier_data_long)
 summary(twfe_trees_nonc, vcov = ~property_ID)
 
 twfe_grassland_nonc <- feols(Grassland ~ treat : post : intensity| Year + property_ID, data = matched_noncomplier_data_long)
 summary(twfe_grassland_nonc, vcov = ~property_ID)
+
+twfe_crop_nonc <- feols(Crop ~ treat : post : intensity| Year + property_ID, data = matched_noncomplier_data_long)
+summary(twfe_crop_nonc, vcov = ~property_ID)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ###############  regression table for smallholders and other interested parties
 
@@ -173,6 +211,45 @@ modelsummary(models_compliers,
   add_header_above(c(" " = 1, "All compliers" = 3, "Noncompliers" = 3))%>%
   kableExtra::save_kable(paste0(here("analysis_main", "results"), "/twfe_compliers_table.tex"))
 
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+############### alternative regression table including comparison of smallholders and other interested parties within same specification
+
+models_contest_alt = list("(1)" = twfe_trees_smallholder,
+                      "(2)" = twfe_crop_smallholder,
+                      "(3)" = twfe_grassland_smallholder,
+                      "(4)" = twfe_trees_other,
+                      "(5)" = twfe_crop_other,
+                      "(6)" = twfe_grassland_other,
+                      "(7)" = twfe_trees_contests,
+                      "(8)" = twfe_crop_contests,
+                      "(9)" = twfe_grassland_contests
+)
+
+rows <- tribble(~term, ~`(1)`, ~`(2)`, ~`(3)`, ~`(4)`, ~`(5)`, ~`(6)`, ~`(7)`, ~`(8)`, ~`(9)`,
+                'Match ratio', '3-to-1', '3-to-1', '3-to-1', '3-to-1', '3-to-1', '3-to-1', '3-to-1', '3-to-1', '3-to-1',
+                'Pre-treat mean', as.character(trees_smallholder), as.character(crop_smallholder), as.character(grassland_smallholder), as.character(trees_other), as.character(crop_other), as.character(grassland_other), as.character(trees_all), as.character(crop_all), as.character(grassland_all)    
+)%>%
+  as.data.frame()
+
+f1 <- function(x) format(round(x, 5), big.mark=",")
+options("modelsummary_format_numeric_latex" = "plain")
+modelsummary(models_contest_alt,
+             output="latex",
+             title = '\\label{tab:twfe-contest}Estimates of subsidy impact between Smallholder and Other Interested Parties contests',
+             fmt = f1, # 4 digits and trailing zero
+             vcov = ~property_ID,
+             stars = c('*' = .1, '**' = .05, '***' = .01),
+             coef_rename = c("treat:post:intensity" = "Intensity",
+                             "treat:post:intensity:control_contestPequeños Propietarios" = "Intensity x Smallholder"),
+             gof_omit = 'DF|Deviance|Adj|Within|Pseudo|AIC|BIC|Log|Year|FE|Std|RMSE'
+             , add_rows = rows
+             , notes = "Standard errors are clustered at the property level."
+             , linesep = c("", "\\addlinespace", "", "", "", "", "")
+)%>%
+  kable_styling(latex_options = c("hold_position"))%>%
+  add_header_above(c("Outcome" = 1, "Tree cover" = 1, "Crop" = 1, "Grassland" = 1, "Tree cover" = 1, "Crop" = 1, "Grassland" = 1, "Tree cover" = 1, "Crop" = 1, "Grassland" = 1))%>%
+  add_header_above(c(" " = 1, "Smallholders" = 3, "Other Interested Parties" = 3, "All" = 3))%>%
+  kableExtra::save_kable(paste0(here("analysis_main", "results"), "/twfe_contest_table_alternate.tex"))
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ###############  Spec chart
@@ -398,9 +475,9 @@ ggsave(plot = schart_MEplot, paste0(here("analysis_main", "figs"), "/schart_ME_d
 #### Same marginal effects plot separated by contest
 #%%%%%%%%%%%%%%%%%%%%
 
-matched_trees_cpov_contest <- feols(Trees ~ treatment   + treatment*log_cpov*control_contest
+matched_trees_cpov_contest <- feols(Trees ~ treatment*log_cpov*control_contest
                             | Year + property_ID, data = me_data %>% filter(is.finite(treatment)))
-summary(matched_trees_cpov_contest)
+summary(matched_trees_cpov_contest, vcov = ~property_ID)
 
 log_cpov_ME <- marginaleffects::plot_comparisons(matched_trees_cpov_contest, variables = "treatment", condition = list("log_cpov", "control_contest"))+
   theme_minimal()+
